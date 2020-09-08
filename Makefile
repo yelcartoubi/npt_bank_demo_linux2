@@ -32,18 +32,18 @@ TMSSRCDIR = module/libtms/src
 
 # SDK directory definition
 SDKDIR = C:\\NPT_SDK
-SDKAPIDIR = $(SDKDIR)\\api\\legacy_ndk
+SDKAPIDIR = $(SDKDIR)\\Linux\\Core\\api\\legacy_ndk
 SDKAPILIB = $(SDKAPIDIR)\\lib\\gcc_4.9.4
 
 # NAPI
-SDKNAPIDIR = $(SDKDIR)\\api\\napi
+SDKNAPIDIR = $(SDKDIR)\\Linux\\Core\\api\\napi
 SDKNAPIINC = $(SDKNAPIDIR)\\inc
 SDKNAPILIB = $(SDKNAPIDIR)\\lib
 
 # EMV L2
-LIBL2EMVDIR = $(SDKDIR)\\EMV\\L2_SDK\\library\\lib\\gcc_4.9.4
+LIBL2EMVDIR = $(SDKDIR)\\Linux\\Core\\EMV\\L2_SDK\\library\\lib\\gcc_4.9.4
 
-SDKSYSLIB = $(SDKDIR)\\tools\\cross-compiler\\gcc_4.9.4\\arm-linux-gnueabi\\libc\\usr\\lib
+SDKSYSLIB = $(SDKDIR)\\Linux\Compiler\4.9.4\\arm-linux-gnueabi\\libc\\usr\\lib
 
 CFLAGS += -Wall -Werror -DNDEBUG $(CROSS_CFLAGS) -O2 -g $(INCPATH) -D USE_TMS -D DEMO
 CFLAGS += -funwind-tables
