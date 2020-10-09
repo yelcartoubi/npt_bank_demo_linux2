@@ -409,7 +409,7 @@ int ExportPosParam()
 {
 	ASSERT_FAIL(LoadTagParam(FILE_APPSETTLEMENT, (void *)&gstSettleParam));
 	SetSettleData(&gstSettleParam.stSettle);
-	ASSERT_FAIL(LoadTagParam(FILE_APPREVERSAL, (void *)&gstReversalParam.stReversal));
+	ASSERT_FAIL(LoadTagParam(FILE_APPREVERSAL, (void *)&gstReversalParam));
 	ASSERT_FAIL(LoadTagParam(FILE_APPTRANSPARAM, (void *)&gstTransParam));
 	ASSERT_FAIL(LoadTagParam(FILE_APPPOSPARAM, (void *)&gstAppPosParam));
 
