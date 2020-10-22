@@ -253,14 +253,14 @@ int WirelessInit(STGPRSPARAM *pstGprsParam, STCDMAPARAM *pstCdmaParam, char cSsl
 	if (pstGprsParam != NULL)
 	{
 		strcpy(stPPPCfg.szPin, pstGprsParam->szPinPassWord);
-		strcpy(stPPPCfg.szDailNum, pstGprsParam->szModemDialNo);
+		strcpy(stPPPCfg.szDialNum, pstGprsParam->szModemDialNo);
 		strcpy(stPPPCfg.szApn, pstGprsParam->szGprsApn);
 		strcpy(stPPPCfg.pdpType, pstGprsParam->szPdpType);
 	}
 	else if(pstCdmaParam != NULL)
 	{
 		strcpy(stPPPCfg.szPin, pstCdmaParam->szPinPassWord);
-		strcpy(stPPPCfg.szDailNum, pstCdmaParam->szModemDialNo);
+		strcpy(stPPPCfg.szDialNum, pstCdmaParam->szModemDialNo);
 		strcpy(stPPPCfg.pdpType, pstCdmaParam->szPdpType);
 	}
 	if (strlen(stPPPCfg.pdpType) == 0)
@@ -271,10 +271,10 @@ int WirelessInit(STGPRSPARAM *pstGprsParam, STCDMAPARAM *pstCdmaParam, char cSsl
 	stPPPCfg.PPPIntervalTimeOut = KEEP_PPP_TIME;
 
 	WIRELESS_TRACE(WIRELESS_DEBUG_LEVEL, "NEW WirelessInit start--[simPin: %s][FlagStatus:%d][Apn:%s][DialNo:%s]", stPPPCfg.szPin, gcIsPppConnected\
-		, stPPPCfg.szApn, stPPPCfg.szDailNum);
+		, stPPPCfg.szApn, stPPPCfg.szDialNum);
 	
 
-	nRet = NAPI_WlmSetDailCfg(&stPPPCfg, sizeof(stPPPCfg));
+	nRet = NAPI_WlmSetDialCfg(&stPPPCfg, sizeof(stPPPCfg));
 	if (nRet != NAPI_OK)
 	{
 		WIRELESS_TRACE(WIRELESS_DEBUG_LEVEL, "NEW NAPI_WlmsetDailCfg fail");
