@@ -328,7 +328,8 @@ int TcpRead(int nIsNonBlock, int nHandle, char cSslFlag, char *psOutData, uint n
 	int nRet;
 	uint unOverTime = 0;
 
-	PubDebugSelectly(2, "TcpRead start---[len:%d]",nLen);
+	PubDebugSelectly(2, "TcpRead start---[len:%d] cSslFlag [%d] nIsNonBlock %d gcSSLDataAvailable %d, nTimeOut [%d]",nLen, cSslFlag,
+	nIsNonBlock, gcSSLDataAvailable, nTimeOut);
 
 	switch (cSslFlag)
 	{
@@ -341,14 +342,16 @@ int TcpRead(int nIsNonBlock, int nHandle, char cSslFlag, char *psOutData, uint n
 		}
 		if (gcSSLDataAvailable == FALSE)
 		{
-			nRet= _SSLDataAvailable_((SSL_HANDLE)nHandle, 0);
+			nRet= _SSLDataAvailable_((SSL_HANDLE)nHandle, nTimeOut);
 			if(nRet != NAPI_OK)
 			{
 				SetCommErrorCode(FAIL_TCPIP_SSL_READ);
 				SetNapiErrorCode(nRet);
 				if (nRet == NAPI_ERR_SSL_TIMEOUT)
 				{
-					return 0;
+                    PubDebugSelectly(3, "SSL timeout !!!!");
+                    SetCommError(APP_TIMEOUT, 0);
+					return APP_TIMEOUT;
 				}
 				else
 				{
