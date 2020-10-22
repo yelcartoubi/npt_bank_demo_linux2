@@ -142,7 +142,6 @@ int ChkPinpad(void)
 		PubUpdateWindow();
 
 		nMode = SECRITY_MODE_PINPAD;
-		
 		GetVarPinpadAuxNo(&nPinpadAux);
 		stPinpadParam.cAux = nPinpadAux;
 		GetVarPinpadTimeOut(&nPinpadTimeout);
@@ -152,7 +151,6 @@ int ChkPinpad(void)
 		if (nRet != APP_SUCC)
 		{
 			PubMsgDlg(tr("DETECT DEV"),tr("PINPAD NOT CONNECTTED"), 3, 10);
-			
 			return APP_FAIL;
 		}
 		SetControlChkPinpad(NO);
@@ -301,7 +299,6 @@ static int GetKcv(void)
 	KeyType = KEY_TYPE_DES;
 	if (GetVarKeySystemType() == KS_MSK)
 	{
-
 		KeyUsage = KEY_USE_KEK;
 	}
 	else
@@ -873,11 +870,11 @@ static int InitAppDefaultParam()
 		return nRet;
 	}
 	PubClearAll();
-	ASSERT_FAIL(PubFsDel(FILE_APPCOMMPARAM));
-	ASSERT_FAIL(PubFsDel(FILE_APPSETTLEMENT));
-	ASSERT_FAIL(PubFsDel(FILE_APPREVERSAL));
-	ASSERT_FAIL(PubFsDel(FILE_APPTRANSPARAM));
-	ASSERT_FAIL(PubFsDel(FILE_APPPOSPARAM));
+	PubFsDel(FILE_APPCOMMPARAM);
+	PubFsDel(FILE_APPSETTLEMENT);
+	PubFsDel(FILE_APPREVERSAL);
+	PubFsDel(FILE_APPTRANSPARAM);
+	PubFsDel(FILE_APPPOSPARAM);
 	PubDeReclFile(LASTSETTLEFILE);
 	PubDisplayGen(2, tr("INITIALIZE"));
 	PubDisplayGen(3, tr("PLEASE WAIT...."));
@@ -905,7 +902,6 @@ int AdminMenu()
 	}; 
 	int nSelcItem = 1, nStartItem = 1;
 
-	
 	while (1)
 	{
 		ASSERT_QUIT(PubShowMenuItems(tr("SYSTEM"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 0))
@@ -924,6 +920,8 @@ int AdminMenu()
 			break;
 		case 4:
 			SetFunctionIsPinPad();
+			ChkPinpad();
+			TxnL3Init();
 			break;
 		case 5:
 			setLanguage();
@@ -1062,7 +1060,7 @@ int SystemManage()
 			continue;
 		}
 		switch(nSelcItem)
-		{		
+		{
 		case 1:
 			MerchantManage();
 			break;

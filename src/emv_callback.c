@@ -14,6 +14,7 @@
 #include "appinc.h"
 #include "napi_crypto.h"
 #include "pinpadtool.h"
+#include "pinpad.h"
 
 static char gszLanguageType[2+1] = {0};
 static char gszAmount[12+1] = {0};
@@ -24,6 +25,7 @@ static char gszExpriryDate[4+1] = {0};
 static char gszCvv[4+1] = {0};
 
 extern int ActivePIN(L3_PIN_TYPE type, char *pszPan, publicKey *pinPK);
+extern int PubGetKeySystemType();
 
 #define ASSERT_L3_RET(e) \
 		{\
@@ -115,10 +117,14 @@ int Func_UI_Event(unsigned int uiEventID, unsigned char*uiEventData)
  	int nLine = 3;
 	
     PubClear2To4();
-
 	switch(uiEventID)
 	{
 	case UI_PRESENT_CARD:
+		if (uiEventData == NULL)
+		{
+			TRACE("uiEventData is NULL");
+			ASSERT_L3_RET(APP_FAIL);
+		}
 		UI_PresentCard(uiEventData[0]);
 		break;
 	case UI_PROCESSING:
@@ -137,7 +143,7 @@ int Func_UI_Event(unsigned int uiEventID, unsigned char*uiEventData)
 			char szPan[19+1] = {0};
 			int nLen = 0;
 
-			NAPI_L3GetData(L3_DATA_POS_ENTRY_MODE, &cEntryMode, 1);
+			TxnL3GetData(L3_DATA_POS_ENTRY_MODE, &cEntryMode, 1);
 			if(cEntryMode == ATTR_CONTACT || cEntryMode == ATTR_CONTACTLESS)
 			{
 				return APP_SUCC;
@@ -149,12 +155,13 @@ int Func_UI_Event(unsigned int uiEventID, unsigned char*uiEventData)
  			}
 			else
 			{
-				nLen = NAPI_L3GetData(L3_DATA_PAN, szPan, 19);
+				nLen = TxnL3GetData(L3_DATA_PAN, szPan, 19);
 			}
 			if(nLen <= 0)
 			{
 				ASSERT_L3_RET(APP_FAIL);
 			}
+			
 			ASSERT_L3_RET(DispPan(szPan));
 		}
 		break;
@@ -162,7 +169,7 @@ int Func_UI_Event(unsigned int uiEventID, unsigned char*uiEventData)
 		PubMsgDlg(NULL, "Chip Error, Retry", 0, 1);
 		break;
 	}
-	
+
     return APP_SUCC;
 }
 
@@ -214,7 +221,7 @@ int Func_GET_PIN(L3_PIN_TYPE type, unsigned int cnt, publicKey *pinPK, unsigned 
 		nLine++;
 	}
 
-	NAPI_L3GetData(L3_DATA_POS_ENTRY_MODE, &cEntryMode, 1);
+	TxnL3GetData(L3_DATA_POS_ENTRY_MODE, &cEntryMode, 1);
 
 	if (cEntryMode == ATTR_MANUAL)
 	{
@@ -222,7 +229,7 @@ int Func_GET_PIN(L3_PIN_TYPE type, unsigned int cnt, publicKey *pinPK, unsigned 
 	}
 	else
 	{
-		nRet = NAPI_L3GetData(L3_DATA_PAN, szPan, 19);
+		nRet = TxnL3GetData(L3_DATA_PAN, szPan, 19);
 		if (nRet <= 0)
 		{
 			cPinResultStatus = TRUE;
@@ -491,7 +498,7 @@ int Func_SELECT_LANGUAGE()
 	int nRet = 0;
 	char languagePreference[8+1] = {0};
 
-	nRet = NAPI_L3GetData(0x5F2D, languagePreference, 8);
+	nRet = TxnL3GetData(0x5F2D, languagePreference, 8);
 	if (nRet <= 0)
 	{
 		memcpy(gszLanguageType, "en", 2);
@@ -563,13 +570,13 @@ int Func_CHECK_CREDENTIALS(void)
 		tr("OTHER")
 	};
 
-	nRet = NAPI_L3GetData(0x9F62, &ucType, 1);
-	if (nRet <= 0 || ucType <= 0x05)
+	nRet = TxnL3GetData(0x9F62, &ucType, 1);
+	if (nRet <= 0 || ucType > 0x05)
 	{
 	    return L3_ERR_FAIL;
 	}
 
-	nLen = NAPI_L3GetData(0x9F61, szNumber, sizeof(szNumber));
+	nLen = TxnL3GetData(0x9F61, szNumber, sizeof(szNumber));
 	if (nLen <= 0)
 	{
 	    return L3_ERR_FAIL;
@@ -597,7 +604,7 @@ int Func_VOICE_REFERRALS(int *result)
 	}; 
 	int nSelectItem = 1, nStartItem = 1;
 
-	nRet = NAPI_L3GetData(L3_DATA_PAN, szPan, 19);
+	nRet = TxnL3GetData(L3_DATA_PAN, szPan, 19);
 	if (nRet <= 0)
 	{
 	    return L3_ERR_FAIL;
@@ -657,7 +664,7 @@ int Func_AFTER_FINAL_SELECT(L3_CARD_INTERFACE interface, unsigned char *aid, int
 	{
 		if (0 == memcmp(aid, "\xA0\x00\x00\x00\x04\x30\x60", 7))
 		{
-		    NAPI_L3SetData(_EMVPARAM_9F09_APPVER, "\x00\x02", 2);
+		    TxnL3SetData(_EMVPARAM_9F09_APPVER, "\x00\x02", 2);
 		}
 	    
 	}
@@ -665,7 +672,7 @@ int Func_AFTER_FINAL_SELECT(L3_CARD_INTERFACE interface, unsigned char *aid, int
 	{
 		if (0 == memcmp(aid, "\xA0\x00\x00\x03\x33", 5))
 		{
-		    NAPI_L3SetData(_EMVPARAM_5F2A_TRANSCCODE, "\x01\x56", 2);
+		    TxnL3SetData(_EMVPARAM_5F2A_TRANSCCODE, "\x01\x56", 2);
 		}
 	    
 	}
@@ -835,6 +842,20 @@ void EmvGetOnlinePin(char *psOnlinePin)
 }
 
 /**
+* @brief  set emv online pin
+* @return void
+* @li 
+* @li 
+*/
+void EmvSetOnlinePin(char *psOnlinePin)
+{
+	if (NULL != psOnlinePin)
+	{
+		memcpy(gsPINBlock, psOnlinePin, 8);
+	}
+}
+
+/**
 * @brief  clear emv online pin
 * @return void
 * @li 
@@ -934,6 +955,7 @@ int CtrlCardPan(uchar *pCardPan, const uint nPanLen, const uchar cTransType, con
 		}
 #endif
 		break;
+	case TRANS_OFFLINE:
 	case TRANS_VOID:
 	case TRANS_REFUND:
 	case TRANS_VOID_PREAUTH:
@@ -1014,4 +1036,540 @@ int GetServiceCodeFromTk2(const char *pszTk2, char *pszServiceCode)
 	return APP_FAIL;
 }
 
+static int GetCredemtialData(unsigned char tlv_list[], int tlv_len, uchar *pcType, char *pszCerNumber)
+{
+	int i = 0;
+	int nRet = 0;
+	tlv_t stTlvObj[5]; 
+
+	memset(stTlvObj, 0, sizeof(stTlvObj));
+	nRet = TlvParse(tlv_list, tlv_len, stTlvObj, 5);
+	if (nRet != 0)
+	{
+		TRACE("nRet = %d", nRet);
+		return APP_FAIL;
+	}
+
+	for(i=1; i <= stTlvObj[0].nChildNum; i++)
+	{
+		TRACE("stTlvObj[i].unTagName = %x", stTlvObj[i].unTagName);
+		switch(stTlvObj[i].unTagName)
+		{
+		case 0x9F62:
+			*pcType = stTlvObj[i].pusValue[0];
+			break;
+		case 0x9F61:
+			memcpy(pszCerNumber, stTlvObj[i].pusValue, stTlvObj[i].unValueLen);
+			break;
+		default:
+			break;
+		}
+	}
+	return APP_SUCC;
+}
+
+static int Pinpad_UI_Event(char *pszData)
+{
+	int nOff = 0;
+	int nUiEventDataLen;
+	uint unEventId = pszData[nOff];
+
+	nOff += 1;
+	PubC2ToInt((uint *)&nUiEventDataLen, (uchar *)pszData + nOff);
+	nOff += 2;// uiEventData len
+	if (unEventId == UI_PRESENT_CARD)
+	{
+		PubClear2To4();
+		//UI_PresentCard(pszData[nOff]);
+		PubDisplayStr(DISPLAY_MODE_CENTER, 3, 1, "Please Use Card On Pinpad");
+		PubUpdateWindow();
+		return APP_SUCC;
+	}
+	else if (unEventId == 0x05) // UI pin status
+	{
+		int nRet;
+		PubC4ToInt((uint *)&nRet, (uchar *)pszData + nOff);
+		TRACE("nRet = %d", nRet);
+		return APP_SUCC;
+	}
+
+	return  Func_UI_Event(unEventId, (uchar *)pszData + nOff);
+}
+
+static int CandidateParse(unsigned char tlv_list[], int tlv_len, L3_CANDIDATE_LIST *pstCandidate)
+{
+	int i = 0;
+	int nRet = 0;
+	tlv_t stTlvObj[30]; 
+
+	memset(stTlvObj, 0, sizeof(stTlvObj));
+	nRet = TlvParse(tlv_list, tlv_len, stTlvObj, 30);
+	if (nRet != 0)
+	{
+		TRACE("nRet = %d", nRet);
+		return APP_FAIL;
+	}
+
+	for(i=1; i <= stTlvObj[0].nChildNum; i++)
+	{
+		TRACE("stTlvObj[i].unTagName = %x", stTlvObj[i].unTagName);
+		//TRACE_HEX(stTlvObj[i].pusValue, stTlvObj[i].unValueLen, "stTlvObj[i].unValue");
+		switch(stTlvObj[i].unTagName)
+		{
+		case 0x9F40:
+			memcpy(pstCandidate->terminalCodeTable, stTlvObj[i].pusValue, stTlvObj[i].unValueLen);
+			break;
+		case 0x9F12:
+			memcpy(pstCandidate->perferName , stTlvObj[i].pusValue, stTlvObj[i].unValueLen);
+			pstCandidate->perferNameLen = stTlvObj[i].unValueLen;
+			break;
+		case 0x50:
+			memcpy(pstCandidate->lable , stTlvObj[i].pusValue, stTlvObj[i].unValueLen);
+			pstCandidate->lableLen = stTlvObj[i].unValueLen;
+			break;
+		case 0x87:
+			memcpy(&pstCandidate->priority , stTlvObj[i].pusValue, 1);
+			break;
+		case 0x4F:
+			memcpy(pstCandidate->perferName , stTlvObj[i].pusValue, stTlvObj[i].unValueLen);
+			pstCandidate->perferNameLen = stTlvObj[i].unValueLen;
+			break;
+		case 0x9F11:
+			memcpy(&pstCandidate->issuerCodeTableIndex , stTlvObj[i].pusValue, 1);
+			break;
+		case 0x1F811F:
+			if (stTlvObj[i].unValueLen > 64)
+			{
+				TRACE("stTlvObj[i].unValueLen = %d", stTlvObj[i].unValueLen);
+				stTlvObj[i].unValueLen = 64;
+			}
+			memcpy(pstCandidate->customTagData , stTlvObj[i].pusValue, stTlvObj[i].unValueLen);
+			pstCandidate->customDataSize = stTlvObj[i].unValueLen;
+			break;
+		default:
+			break;
+		}
+	}
+	return APP_SUCC;
+}
+
+static int Pinpad_SELECT_CANDIDATE_LIST(char *pszData, char *pszOutPut, int *pnOutLen)
+{
+	L3_CANDIDATE_LIST candidateList[10] = {{0}};
+	STPINPADL3_IN stL3Param;
+	char szInputData[32]= {0};
+	uchar szAid[10][16+1] = {{0}};
+	uchar szLable[10][20+1] = {{0}};
+	uchar szPerferName[10][20+1] = {{0}};
+	uchar customTagData[10][64+1] = {{0}};
+	
+	int nListNum;
+	int nTlvLen;
+	int nOff = 0, nRet, nSelect, i;
+
+	nListNum = pszData[nOff];
+	nOff += 1;
+
+	for (i = 0; i < nListNum; i++)
+	{
+		PubC2ToInt((uint *)&nTlvLen, (uchar *)pszData + nOff);
+		nOff += 2;
+		candidateList[i].aid = szAid[i];
+		candidateList[i].lable = szLable[i];
+		candidateList[i].perferName = szPerferName[i];
+		candidateList[i].customTagData = customTagData[i];
+		nRet = CandidateParse((uchar *)pszData + nOff, nTlvLen, &candidateList[i]);
+		if (nRet != APP_SUCC)
+		{
+			TRACE("nRet = %d", nRet);
+			return APP_FAIL;
+		}
+		nOff += nTlvLen;
+	}
+
+	nRet = Func_SELECT_CANDIDATE_LIST(candidateList, nListNum, &nSelect);
+	if (nRet != L3_ERR_SUCC)
+	{
+		TRACE("nRet = %d", nRet);
+		return APP_FAIL;
+	}
+
+	nOff = 0;
+	szInputData[nOff] = nSelect;
+	nOff += 1;
+	nOff += 2; // length
+	memcpy(szInputData + nOff, "\x9F\x06", 2);
+	nOff += 2;
+	szInputData[nOff] = candidateList[nSelect].aidLen;
+	nOff += 1;
+	memcpy(szInputData + nOff, candidateList[nSelect].aid, candidateList[nSelect].aidLen);
+	nOff += candidateList[nSelect].aidLen;
+
+	PubIntToC2((uchar *)szInputData + 1, (uint)nOff - 3);
+	stL3Param.cMsgType = PINPAD_L3CALLBACK;
+	stL3Param.pszInputData = szInputData;
+	stL3Param.nInputDataLen = nOff;
+	return PubL3OrderSet_PINPAD((char *)&stL3Param, pszOutPut, pnOutLen);
+}
+
+static int Pinpad_AFTER_FINAL_SELECT(char *pszData, char *pszOutPut, int *pnOutLen)
+{
+	L3_CARD_INTERFACE cardInterface;
+	STPINPADL3_IN stL3Param;
+	int nOff = 0;
+	int nAidLen;
+	char szInputData[32]= {0};
+	char szAid[16] = {0};
+
+	memset((char *)&stL3Param, 0, sizeof(STPINPADL3_IN));
+	cardInterface = pszData[nOff];
+	nOff += 1;
+	PubC2ToInt((uint *)&nAidLen, (uchar *)pszData + nOff);
+	nOff += 2;
+	memcpy(szAid, pszData + nOff, nAidLen);
+
+	nOff = 0;
+	szInputData[nOff] = L3_CALLBACK_AFTER_FINAL_SELECT;
+	nOff += 1;
+	nOff += 4; // data length
+	if (L3_CONTACT == cardInterface)
+	{
+		if (0 == memcmp(szAid, "\xA0\x00\x00\x00\x04\x30\x60", 7))
+		{
+			memcpy(szInputData + nOff, "\x9F\x09", 2);
+			nOff += 2;
+			szInputData[nOff] = 0x02;
+			nOff += 1;
+			memcpy(szInputData + nOff, "\x00\x02", 2);
+			nOff += 2;
+		}
+	}
+	else //CONTACTLESS
+	{
+		if (0 == memcmp(szAid, "\xA0\x00\x00\x03\x33", 5))
+		{
+			memcpy(szInputData + nOff, "\x5F\x2A", 2);
+			nOff += 2;
+			szInputData[nOff] = 0x02;
+			nOff += 1;
+			memcpy(szInputData + nOff, "\x01\x56", 2);
+			nOff += 2;
+		}
+	}
+
+	PubIntToC4((uchar *)szInputData + 1, (uint)nOff - 5);
+	stL3Param.cMsgType = PINPAD_L3CALLBACK;
+	stL3Param.pszInputData = szInputData;
+	stL3Param.nInputDataLen = nOff;
+	return PubL3OrderSet_PINPAD((char *)&stL3Param, pszOutPut, pnOutLen);
+}
+
+static int Pinpad_GET_PIN(char *pszData, char *pszOutPut, int *pnOutLen)
+{
+	int nOff;
+	int nIndex;
+	int nTlvLen = 0;
+	char szInputData[64] = {0};
+	char szTlvList[32+1] = {0};
+	char szTmpData[8] = {0};
+	L3_PIN_TYPE type;
+	STPINPADL3_IN stL3Param;
+
+	memset(&stL3Param, 0, sizeof(STPINPADL3_IN));
+
+	nOff = 0;
+	type = pszData[nOff];
+	nOff += 1;
+
+	// package send data
+	nOff = 0;
+	szInputData[nOff] = L3_CALLBACK_GET_PIN;
+	nOff += 1;
+	nOff += 2; // len
+	if (type == L3_PIN_ONLINE)
+	{
+		// KeyType
+		szTmpData[0] = PubGetKeySystemType();
+		TlvAdd(0x1F8136, 1, szTmpData, szTlvList, &nTlvLen);
+
+		// key index
+		GetVarMainKeyNo(&nIndex);
+		szTmpData[0] = nIndex;
+		TlvAdd(0x1F8137, 1, szTmpData, szTlvList, &nTlvLen);
+	}
+	// timeout
+	szTmpData[0] = 60;
+	TlvAdd(0x1F8138, 1, szTmpData, szTlvList, &nTlvLen);
+	PubIntToC2((uchar *)szInputData + 1, (uint)nTlvLen);
+	memcpy(szInputData + nOff, szTlvList, nTlvLen);
+	nOff += nTlvLen;
+	stL3Param.cMsgType = PINPAD_L3CALLBACK;
+	stL3Param.pszInputData = szInputData;
+	stL3Param.nInputDataLen = nOff;
+	return PubL3OrderSet_PINPAD((char *)&stL3Param, pszOutPut, pnOutLen);
+}
+
+static int Pinpad_CHECK_CREDENTIALS(char *pszData, char *pszOutPut, int *pnOutLen)
+{
+	uchar ucType = 0;
+    char szNumber[50] = {0};
+    char szBuf[100] = {0};
+	int nRet = 0;
+    int nLen = 1;
+	int nOff;
+	int nTlvLen;
+	STPINPADL3_IN stL3Param;
+
+	memset(&stL3Param, 0, sizeof(STPINPADL3_IN));
+    char *szTypestr[] = 
+	{
+		tr("ID CARD"),
+		tr("OFFICER"), 
+		tr("PASSPORT"),
+		tr("ENTRY CARD"),
+		tr("TEMP IDCARD"), 
+		tr("OTHER")
+	};
+
+	nOff = 0;
+	PubC2ToInt((uint *)&nTlvLen, (uchar *)pszData + nOff);
+	nOff += 2;
+	ASSERT_FAIL(GetCredemtialData((uchar *)pszData + nOff, nTlvLen, &ucType, szNumber));
+	if (ucType <= 0x05 || strlen(szNumber) <= 0)
+	{
+	    nRet = L3_ERR_FAIL;
+	}
+
+	if (nRet != L3_ERR_FAIL)
+	{
+		NAPI_ScrPush();
+	    sprintf(szBuf, "TYPE:%s\nCARD NO:%*.*s", szTypestr[ucType], nLen, nLen, szNumber);
+	    nRet = PubConfirmDlg("CHECK CREDENTIALS", szBuf, 1, 60);
+		if (nRet != APP_SUCC)
+		{
+			if(nRet == APP_QUIT)
+			{
+				nRet = L3_ERR_CANCEL;
+			}
+			else if (nRet == APP_TIMEOUT)
+			{
+			    nRet = L3_ERR_TIMEOUT;
+			}
+			nRet = L3_ERR_FAIL;
+		}
+	}
+	NAPI_ScrPop();
+
+	nOff = 0;
+	pszData[nOff] = L3_CALLBACK_CHECK_CREDENTIALS;
+	nOff += 1;
+	PubIntToC4((uchar *)pszData + nOff, nRet);
+	stL3Param.cMsgType = PINPAD_L3CALLBACK;
+	stL3Param.pszInputData = pszData;
+	stL3Param.nInputDataLen = nOff;
+	return PubL3OrderSet_PINPAD((char *)&stL3Param, pszOutPut, pnOutLen);	
+}
+
+static int Pinpad_CardConfirm(char *pszOutPut, int *pnOutLen)
+{
+	char cEntryMode;
+	char szInputData[32]= {0};
+	STPINPADL3_IN stL3Param;
+	int nLen, nRet, nOff = 0;
+	char szPan[19+1] = {0};
+
+	TxnL3GetData(L3_DATA_POS_ENTRY_MODE, &cEntryMode, 1);
+	if(cEntryMode == ATTR_CONTACT || cEntryMode == ATTR_CONTACTLESS)
+	{
+		//return APP_SUCC;
+	}
+
+	nLen = TxnL3GetData(L3_DATA_PAN, szPan, 19);
+	if (nLen <= 0)
+	{
+		TRACE("nLen = %d", nLen);
+		return APP_FAIL;
+	}
+	nRet = DispPan(szPan);
+	if (nRet != APP_SUCC)
+	{
+		nRet = L3_ERR_FAIL;
+	}
+	nOff = 0;
+	szInputData[nOff] = 0x0D;
+	nOff += 1;
+	
+	PubIntToC4((uchar *)szInputData + nOff, (uint)nRet);
+	nOff += 4;
+	stL3Param.cMsgType = PINPAD_L3CALLBACK;
+	stL3Param.pszInputData = szInputData;
+	stL3Param.nInputDataLen = nOff;
+	return PubL3OrderSet_PINPAD((char *)&stL3Param, pszOutPut, pnOutLen);
+}
+
+int PerformCallBack(char cCallbackId, char *pszInput, char *pszOutput, int *pnOutLen)
+{
+	switch (cCallbackId)
+	{
+	case L3_CALLBACK_UI_EVENT:
+		ASSERT_FAIL(Pinpad_UI_Event(pszInput));
+		ASSERT_FAIL(PubL3PerformRecv_PINPAD(pszOutput, pnOutLen));
+		break;
+	case L3_CALLBACK_SELECT_CANDIDATE_LIST:
+		return Pinpad_SELECT_CANDIDATE_LIST(pszInput, pszOutput, pnOutLen);
+	case L3_CALLBACK_AFTER_FINAL_SELECT:
+		return Pinpad_AFTER_FINAL_SELECT(pszInput, pszOutput, pnOutLen);
+	case L3_CALLBACK_GET_PIN:
+		PubClear2To4();
+		PubDisplayStr(DISPLAY_MODE_CENTER, 3, 1, "Please Enter PIN On Pinpad");
+		PubUpdateWindow();
+		return Pinpad_GET_PIN(pszInput, pszOutput, pnOutLen);
+	case L3_CALLBACK_CHECK_CREDENTIALS:
+		return Pinpad_CHECK_CREDENTIALS(pszInput, pszOutput, pnOutLen);
+	case 0x0D: // card confirm
+		return Pinpad_CardConfirm(pszOutput, pnOutLen);
+	default:
+		TRACE("callbackid = %x", cCallbackId);
+		return APP_FAIL;
+	}
+	
+	return APP_SUCC;
+}
+
+static int PerformTransResTlvParse(unsigned char tlv_list[], int tlv_len, STSYSTEM *pstSystem)
+{
+	int i = 0;
+	int nRet = 0;
+	char szExpire[6+1] = {0};
+	tlv_t stTlvObj[20]; 
+
+	memset(stTlvObj, 0, sizeof(stTlvObj));
+	nRet = TlvParse(tlv_list, tlv_len, stTlvObj, 20);
+	if (nRet != 0)
+	{
+		TRACE("nRet = %d", nRet);
+		return APP_FAIL;
+	}
+
+	for(i = 1; i <= stTlvObj[0].nChildNum; i++)
+	{
+		//TRACE("stTlvObj[i].unTagName = %x i == %d nChildNum = %d", stTlvObj[i].unTagName, i, stTlvObj[0].nChildNum);
+		//TRACE_HEX(stTlvObj[i].pusValue, stTlvObj[i].unValueLen, "stTlvObj[i].unValue");
+		switch(stTlvObj[i].unTagName)
+		{
+		case 0x5A:
+			memcpy(pstSystem->szPan, stTlvObj[i].pusValue, stTlvObj[i].unValueLen);
+			break;
+		case 0x9F39:
+			pstSystem->cTransAttr = stTlvObj[i].pusValue[0];
+			PubHexToAsc((uchar *)&pstSystem->cTransAttr, 2, 0, (uchar* )pstSystem->szInputMode);
+			break;
+		case 0x57:
+			memcpy(pstSystem->szTrack2, stTlvObj[i].pusValue, stTlvObj[i].unValueLen);
+			break;
+		case 0x1F8156:
+			memcpy(pstSystem->szTrack3, stTlvObj[i].pusValue, stTlvObj[i].unValueLen);
+			break;
+		case 0x5F20:
+			memcpy(pstSystem->szHolderName, stTlvObj[i].pusValue, stTlvObj[i].unValueLen);
+			break;
+		case 0x5F24:
+			memcpy(szExpire, stTlvObj[i].pusValue, stTlvObj[i].unValueLen);
+			memcpy(pstSystem->szExpDate, szExpire, 4);
+			break;
+		case 0x1F8154:
+			if(stTlvObj[i].pusValue[0] == 1)
+			{
+				pstSystem->cPinAndSigFlag |= CVM_SIG;
+			}
+			break;
+		case 0x1F8155:
+			EmvSetOnlinePin((char *)stTlvObj[i].pusValue);
+			break;
+		default:
+			break;
+		}
+	}
+	return APP_SUCC;
+}
+
+int PinPad_PerformTransaction(char *pszInput, int nInPutLen, L3_TXN_RES *res, STSYSTEM *pstSystem, char *pszResPonseCode)
+{
+	char cFunId;
+	char cCallbackId;
+	char szOutPut[2048+1] = {0};
+	char szIndata[2048+1] = {0};
+	int nOutLen;
+	int nRet, nErrCode, nTLvLen;
+	int nOff;
+
+	nRet = PinPad_L3PerformTransaction(pszInput, nInPutLen, szOutPut, &nOutLen);
+	if (nRet != APP_SUCC)
+	{
+		TRACE("nRet = %d", nRet);
+		return APP_FAIL;
+	}
+
+	while (1)
+	{
+		nOff = 0;
+		cFunId = szOutPut[nOff];
+		nOff += 1;
+		if (cFunId == FUNCID_L3CALLBACK)
+		{
+			cCallbackId = szOutPut[nOff];
+			nOff += 1;
+			memset(szIndata, 0, sizeof(szIndata));
+			memcpy(szIndata, szOutPut + nOff, nOutLen - nOff);
+			memset(szOutPut, 0, sizeof(szOutPut));
+			ASSERT_FAIL(PerformCallBack(cCallbackId, szIndata, szOutPut, &nOutLen));
+			continue;
+		}
+		else if (cFunId == FUNCID_PERFORMTRANS) // final perform
+		{
+			break;
+		}
+		else
+		{
+			TRACE("funid = %02x", cFunId);
+			return APP_FAIL;
+		}
+		memset(szOutPut, 0, sizeof(szOutPut));
+		if (PubL3PerformRecv_PINPAD(szOutPut, &nOutLen) != APP_SUCC)
+		{
+			return APP_FAIL;
+		}
+
+		if (nOutLen > 2048)
+		{
+			TRACE("nLen out limit (%d)", nOutLen);
+			return APP_FAIL;
+		}
+	}
+	
+	memcpy(pszResPonseCode, szOutPut + nOff, 2);
+	nOff += 2;
+	*res = szOutPut[nOff];
+	nOff += 1;
+	pstSystem->cCvmStatus = szOutPut[nOff];
+	nOff += 1;
+	PubC4ToInt((uint *)&nErrCode, (uchar *)szOutPut + nOff);
+	nOff += 4;
+	// shecm id
+	nOff += 1;
+	if (nOff >= nOutLen)
+	{
+		pstSystem->cGetPerformDataFlag = NO;
+		return nErrCode;
+	}
+	pstSystem->cGetPerformDataFlag = YES;
+	//tlv length
+	PubC4ToInt((uint *)&nTLvLen, (uchar *)szOutPut + nOff);
+	nOff += 4;
+	TRACE("nTlvLen = %d", nTLvLen);
+	PerformTransResTlvParse((uchar *)szOutPut + nOff, nTLvLen, pstSystem);
+	nOff += nTLvLen;
+
+	return nErrCode;
+}
 

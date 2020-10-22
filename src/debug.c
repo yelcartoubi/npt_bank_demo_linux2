@@ -15,7 +15,7 @@
 #include "libapiinc.h"
 #include "appinc.h"
 
-
+static YESORNO gcEmvLog = NO;
 
 /**
 ** brief: for debug
@@ -107,13 +107,16 @@ int MenuEmvSetDebug(void)
 	switch(nSelcItem)
 	{
 		case 1:
-			NAPI_L3SetDebugMode(LV_CLOSE);
+			TxnL3SetDebugMode(LV_CLOSE);
+			gcEmvLog = NO;
 			break;
 		case 2:
-			NAPI_L3SetDebugMode(LV_DEBUG);
+			gcEmvLog = YES;
+			TxnL3SetDebugMode(LV_DEBUG);
 			break;
 		case 3:
-			NAPI_L3SetDebugMode(LV_ALL);
+			TxnL3SetDebugMode(LV_ALL);
+			gcEmvLog = YES;
 			break;
 		default :
 			return APP_FAIL;
@@ -128,4 +131,10 @@ int emvDebug(const char *psLog, uint nLen)
 	PubDebug("%*.*s", nLen, nLen, psLog);
 	return 0;
 }
+
+YESORNO GetisOpenEmvLog()
+{
+	return gcEmvLog;
+}
+
 

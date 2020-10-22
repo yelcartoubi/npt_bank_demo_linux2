@@ -18,10 +18,12 @@ extern void GetCardEventData(char *pszOut);
 extern void GetManualExpiryDate(char *pszOut);
 extern void GetManualCVV(char *pszOut);
 extern void EmvGetOnlinePin(char *);
+extern void EmvSetOnlinePin(char *psOnlinePin);
 extern void SetEmvDebugPort(int );
 extern int CtrlCardPan(uchar *, const uint, const uchar, const uint);
 extern int DispPan(char *);
 extern void EmvClrOnlinePin();
 
+extern int PinPad_PerformTransaction(char *pszInput, int nInPutLen, L3_TXN_RES *res, STSYSTEM *pstSystem, char *pszResPonseCode);
 #endif
 

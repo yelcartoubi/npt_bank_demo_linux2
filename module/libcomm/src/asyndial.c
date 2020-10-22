@@ -495,14 +495,14 @@ static int ProGetAsynTelNo(char* pszTelNo, int nIndex)
 static int ProAsynDial(char *pszNum, int nIsPreConnect)
 {
 	int nRet = -1;
-	int nModemStatus = -1;
+	EM_MDMSTATUS emModemStatus;
 
 	if (nIsPreConnect == EM_CONNECT)//
 	{
 		PubDebugSelectly(1, "NAPI_MdmCheck...");
-		nRet = NAPI_MdmCheck((EM_MDMSTATUS*)&nModemStatus);//modem
-		PubDebugSelectly(1, "NAPI_MdmCheck [nRet:%d][nModemStatus:%d]",nRet,nModemStatus);
-		if (nRet == 0 && nModemStatus >= 0)//
+		nRet = NAPI_MdmCheck(&emModemStatus);//modem
+		PubDebugSelectly(1, "NAPI_MdmCheck [nRet:%d][nModemStatus:%d]",nRet,emModemStatus);
+		if (nRet == 0 && emModemStatus >= 0)//
 		{
 			return APP_SUCC;
 		}

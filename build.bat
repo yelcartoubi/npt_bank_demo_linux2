@@ -27,7 +27,7 @@ This batch file alters the PATH variable, restores it when done.
 @set OpenSSL_CONF=%SDK_INSTALL_DIR%\Common\tools\Package_Generator\pkgNLD\openssl.cnf
 
 @rem use Makefileto buid application
-make -f Makefile
+make -j8 -f Makefile
 
 
 pause

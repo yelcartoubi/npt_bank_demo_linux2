@@ -21,6 +21,7 @@ extern void DispTrace(char* lpszFormat, ...);
 extern void DispTraceHex(char* pszHexBuf, int nLen, char* lpszFormat, ...);
 extern int emvDebug(const char *psLog, uint nLen);
 extern int MenuEmvSetDebug(void);
+extern YESORNO GetisOpenEmvLog();
 
 
 #define TRACE_HEX(buf,len,title,args...) PubDebugData("[%s][%s][%d]>>>"""title,buf,len,__FILE__, __FUNCTION__, __LINE__,##args)

@@ -53,7 +53,7 @@ void ProTraceSecurity(char* lpszFormat, ...);
 void ProGetTraceInfo(char* buf);
 
 #define PINPAD_TRACE_SECU(fmt,args...) PubDebug("[SECU][%s][%s][%d]>>>"""fmt,__FILE__, __FUNCTION__, __LINE__,##args)
+#define PINPAD_TRACEHEX_SECU(buf,len,title,args...) PubDebugData("[%s][%s][%d]>>>"""title,buf,len,__FILE__, __FUNCTION__, __LINE__,##args)
 
 extern int ProSetSecurityErrCode(int nErr , int nNapiErr);
-
 #endif 

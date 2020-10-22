@@ -534,7 +534,6 @@ int DealPackAndComm(char* pszTitle, EM_OPERATEFLAG cOperFlag,STSYSTEM *pstSystem
 	}
 
 	IncVarTraceNo();
-
 	nRet = CommSend(sPackBuf, nPackLen);
 	if (nRet != APP_SUCC)
 	{

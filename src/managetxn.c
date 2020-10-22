@@ -471,7 +471,7 @@ static int DealFld57WorkKey(char *psField57, int nFieldLen)
 	char sPinKey[16];
 	char sMacKey[16];
 	char sTrkKey[16];
-	int nMainKeyNo = 0, nRet = 0;
+	int nMainKeyNo, nRet, nOff = 0;
 	
 	if (nFieldLen != 36 && nFieldLen != 58)
 	{
@@ -482,8 +482,10 @@ static int DealFld57WorkKey(char *psField57, int nFieldLen)
 	GetVarMainKeyNo(&nMainKeyNo);
 	PubSetCurrentMainKeyIndex(nMainKeyNo);
 
+	nOff += 10;
 	//PINKEY
-	memcpy(sPinKey, psField57+10, 16);
+	memcpy(sPinKey, psField57 + nOff, 16);
+	nOff += 16;
 	nRet = PubLoadWorkKey(KEY_TYPE_PIN, sPinKey, 16, NULL);
 	if (nRet != APP_SUCC)
 	{
@@ -492,7 +494,8 @@ static int DealFld57WorkKey(char *psField57, int nFieldLen)
 	}
 
 	//MACKEY
-	memcpy(sMacKey, psField57+26, 16);
+	memcpy(sMacKey, psField57 + nOff, 16);
+	nOff += 16;
 	nRet = PubLoadWorkKey(KEY_TYPE_MAC, sMacKey, 16, NULL);
 	if (nRet != APP_SUCC)
 	{
@@ -501,7 +504,8 @@ static int DealFld57WorkKey(char *psField57, int nFieldLen)
 	}
 
 	//DATAKEY
-	memcpy(sTrkKey, psField57+42, 16);
+	memcpy(sTrkKey, psField57 + nOff, 16);
+	nOff += 16;
 	nRet = PubLoadWorkKey(KEY_TYPE_DATA, sTrkKey, 16, NULL);
 	if (nRet != APP_SUCC)
 	{

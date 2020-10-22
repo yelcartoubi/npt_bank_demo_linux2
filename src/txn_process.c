@@ -14,6 +14,7 @@
 #include "apiinc.h"
 #include "libapiinc.h"
 #include "appinc.h"
+#include "pinpad.h"
 
 const static STTRANSCFG gstTxnCfg[] = 
 {
@@ -302,26 +303,27 @@ static YESORNO TxnIsNeedCard(char cTransType)
 	return YES;
 }
 
-#if 0
-static YESORNO TxnIsNeedPin(char cTransType)
+static YESORNO TxnIsNeedPin(STSYSTEM stSystem)
 {
-	switch(cTransType)
+	if(memcmp(stSystem.szPin, "\x00\x00\x00\x00\x00\x00\x00\x00", 8) != 0)
 	{
-	case TRANS_VOID:
-	case TRANS_VOID_PREAUTH:
-	case TRANS_VOID_AUTHSALE:
-		return GetVarIsVoidPin();
-		break;
-	case TRANS_AUTHCOMP:
 		return NO;
-		break;
-	default:
-		break;
 	}
 
-	return YES;
+	//Balance Transaction mandatory input pin (Cusomter can delete it based on their specific requirements)
+	if (stSystem.cTransType == TRANS_BALANCE)
+	{
+		return YES;
+	}
+
+	// contactless transaction : whether input pin controled by cvm status (pinpad mode)
+	if (GetVarIsPinpad() == YES && stSystem.cTransAttr == ATTR_CONTACTLESS && stSystem.cCvmStatus == 0x20)
+	{
+		return YES;
+	}
+
+	return NO;
 }
-#endif
 
 /**
 * @brief Change System structure to Reveral structure
@@ -1020,8 +1022,7 @@ int TxnCommonEntry(char cTransType, int *pnInputMode)
 	*/
 	EmvGetOnlinePin(stSystem.szPin);
 
-	//Balance Transaction mandatory input pin (Cusomter can delete it based on their specific requirements)
-	if((memcmp(stSystem.szPin, "\x00\x00\x00\x00\x00\x00\x00\x00", 8) == 0) && (stTransCfg.cTransType == TRANS_BALANCE))
+	if (TxnIsNeedPin(stSystem) == YES)
 	{
 		ASSERT_HANGUP_QUIT(GetPin(stSystem.szPan, stSystem.szAmount, stSystem.szPin));
 	}
@@ -1116,13 +1117,273 @@ regetpin:
 	if (stSystem.cTransAttr == ATTR_CONTACT || stSystem.cTransAttr == ATTR_CONTACTLESS)
 	{
 		stSystem.cEMV_Status = EMV_STATUS_ONLINE_SUCC;
-		NAPI_L3SetData(_EMV_TAG_8A_TM_ARC, (uchar *)stSystem.szResponse, 2);
+		TxnL3SetData(_EMV_TAG_8A_TM_ARC, (uchar *)stSystem.szResponse, 2);
 		EmvSaveRecord(TRUE, &stSystem);
 		EmvAddtionRecord(&stTransRecord);
 	}
 
 	SysToRecord(&stSystem, &stTransRecord);
 	TradeComplete(szTitle, &stSystem, &stTransRecord, szInvno);
+
+	return APP_SUCC;
+}
+
+int TxnL3PerformTransaction(char *pszTlvLise, int nTlvLen, L3_TXN_RES *res, STSYSTEM *pstSystem)
+{
+	int nErrcode;
+	if (GetVarIsPinpadReadCard() == YES)
+	{
+		char szPinPadResCode[2+1] = {0};
+		char szTmp[8] = {0};
+
+		if (GetFuncPinpadCallBackFlag() == NO)
+		{
+			PubClear2To4();
+			PubDisplayStrInline(DISPLAY_MODE_CENTER, 3, "Processing On PINPAD...");
+			PubUpdateWindow();
+		}
+		if (GetFuncPinpadCallBackFlag() == YES)
+		{
+			TlvAdd(0x1F8139, 3, "\xFF\x00\x00", pszTlvLise, &nTlvLen); // for support pinpad callback
+		}
+		else
+		{
+			TlvAdd(0x1F8139, 3, "\x00\x00\x00", pszTlvLise, &nTlvLen);
+		}
+
+		pszTlvLise[0] &= ~L3_CARD_MANUAL;
+		if (GetVarPinPadType() == PINPAD_SP100)
+		{
+			pszTlvLise[0] = L3_CARD_CONTACTLESS;
+		}
+		nErrcode = PinPad_PerformTransaction(pszTlvLise, nTlvLen, res, pstSystem, szPinPadResCode);
+		if (memcmp(szPinPadResCode, "00", 2) != 0)
+		{
+			return APP_QUIT;
+		}
+
+		if(TxnL3GetData(_EMV_TAG_5F34_IC_PANSN, szTmp, 1) > 0)
+		{
+			sprintf(pstSystem->szCardSerialNo, "0%02x", szTmp[0]);
+		}
+		else
+		{
+			memcpy(pstSystem->szCardSerialNo, "\x00\x00\x00", 3);
+		}
+	}
+	else
+	{
+		nErrcode = NAPI_L3PerformTransaction(pszTlvLise, nTlvLen, res);
+	}
+
+	return nErrcode;
+}
+
+void TxnL3TerminateTransaction()
+{
+	if (GetVarIsPinpadReadCard() == YES)
+	{
+		PinPad_L3TerminateTransaction();
+		PubClrPinPad_PINPAD();
+	}
+	else
+	{
+		NAPI_L3TerminateTransaction();
+	}
+}
+
+int TxnL3CompleteTransaction(char *pszTlvList, int nTlvLen, L3_TXN_RES *res)
+{
+	int nErrcode;
+	char szPinPadResCode[2+1] = {0};
+
+	if (GetVarIsPinpadReadCard() == YES)
+	{
+		nErrcode = PinPad_L3CompleteTransaction(pszTlvList[0], pszTlvList + 1, nTlvLen - 1, res, szPinPadResCode);
+		if (memcmp(szPinPadResCode, "00", 2) != 0)
+		{
+			return APP_QUIT;
+		}
+	}
+	else
+	{
+		nErrcode = NAPI_L3CompleteTransaction(pszTlvList, nTlvLen, res);
+	}
+	return nErrcode;
+}
+
+int TxnL3GetData(unsigned int type, void *data, int maxLen)
+{
+	if (GetVarIsPinpadReadCard() == YES)
+	{
+		return PinPad_L3GetData(type, data, maxLen);
+	}
+	else
+	{
+		return NAPI_L3GetData(type, data, maxLen);
+	}
+}
+
+int TxnL3SetData(unsigned int tag, void *data, unsigned int len)
+{
+	if (GetVarIsPinpadReadCard() == YES)
+	{
+		return PinPad_L3SetData(tag, data, len);
+	}
+	else
+	{
+		return NAPI_L3SetData(tag, data, len);
+	}
+}
+
+int TxnL3GetTlvData(unsigned int *tagList, unsigned int tagNum, unsigned char *tlvData, unsigned int maxLen,int ctl)
+{
+	if (GetVarIsPinpadReadCard() == YES)
+	{
+		return PinPad_L3GetTlvData(tagList, tagNum, tlvData, maxLen, ctl);
+	}
+	else
+	{
+		return NAPI_L3GetTlvData(tagList, tagNum, tlvData, maxLen, ctl);
+	}
+}
+
+int TxnL3SetDebugMode(int debugLV)
+{
+	if (GetVarIsPinpadReadCard() == YES)
+	{
+		return PinPad_L3SetDebugMode(debugLV);
+	}
+	else
+	{
+		NAPI_L3SetDebugMode(debugLV);
+	}
+	return APP_SUCC;
+}
+
+int TxnL3ModuleInit(char *filePath, char *config)
+{
+	if (GetVarIsPinpadReadCard() == YES)
+	{
+		return PinPad_L3init(config, 8);
+	}
+	else
+	{
+		return NAPI_L3Init(filePath, config);
+	}
+}
+
+int TxnL3LoadAIDConfig(L3_CARD_INTERFACE interface, L3_AID_ENTRY *aidEntry, unsigned char tlv_list[], int *tlv_len, L3_CONFIG_OP mode)
+{
+	if (GetVarIsPinpadReadCard() == YES)
+	{
+		PinPad_L3LoadAIDConfig(interface, aidEntry, tlv_list, tlv_len, mode);
+	}
+	else
+	{
+		NAPI_L3LoadAIDConfig(interface, aidEntry, tlv_list, tlv_len, mode);
+	}
+
+	return APP_SUCC;
+
+}
+
+int TxnL3LoadCAPK(L3_CAPK_ENTRY *capk, L3_CONFIG_OP mode)
+{
+	if (GetVarIsPinpadReadCard() == YES)
+	{
+		PinPad_L3LoadCapk(capk, mode);
+	}
+	else
+	{
+		NAPI_L3LoadCAPK(capk, mode);
+	}
+
+	return APP_SUCC;
+
+}
+
+int TxnL3LoadTerminalConfig(L3_CARD_INTERFACE cardinterface, unsigned char tlv_list[], int *tlv_len, L3_CONFIG_OP mode)
+{
+	if (GetVarIsPinpadReadCard() == YES)
+	{
+		return PinPad_L3LoadTerminalConfig(cardinterface, tlv_list, tlv_len, mode);
+	}
+	else
+	{
+		return NAPI_L3LoadTerminalConfig(cardinterface, tlv_list, tlv_len, mode);
+	}
+}
+
+int TxnL3EnumEmvConfig(L3_CARD_INTERFACE cardinterface, L3_AID_ENTRY * aidEntry, int maxCount)
+{
+	if (GetVarIsPinpadReadCard() == YES)
+	{
+		return PinPad_L3EnumEmvConfig(cardinterface, aidEntry, maxCount);
+	}
+	else
+	{
+		return NAPI_L3EnumEmvConfig(cardinterface, aidEntry, maxCount);
+	}
+}
+
+int TxnL3EnumCapk(int start, int end, char capk[][6])
+{
+	if (GetVarIsPinpadReadCard() == YES)
+	{
+		return PinPad_L3EnumCapk(start, end, capk);
+	}
+	else
+	{
+		return NAPI_L3EnumCapk(start, end, capk);
+	}
+
+}
+
+/**
+** brief: init l3 module and load xml config
+** param: 
+** return: init success - app_succ
+*/
+int TxnL3Init()
+{
+	char szCfg[8+1] = {0};
+	int nRet;
+
+	SetupCallbackFunc();
+	L3_CFG_UNSET(szCfg, L3_CFG_SUPPORT_EC);
+	L3_CFG_UNSET(szCfg, L3_CFG_SUPPORT_SM);
+
+	nRet = TxnL3ModuleInit(CONFIG_PATH, szCfg);
+	if (nRet != APP_SUCC)
+	{
+		TRACE("NAPI_L3Init,nRet=%d", nRet);
+		return nRet;
+	}
+
+	if(PubFsExist(XML_CONFIG) == NAPI_OK && GetIsLoadXMLConfig())
+	{
+		if(APP_SUCC != LoadXMLConfig())
+		{
+			PubMsgDlg(NULL, "BAD PARSE XML", 0, 60);
+			return APP_FAIL;
+		}
+	}
+
+	if (PubGetHardwareSuppot(HARDWARE_SUPPORT_PINPAD, NULL) != APP_SUCC)
+	{
+		PubFsDel(XML_CONFIG);
+		return APP_SUCC;
+	}
+
+	if (GetVarIsPinpadReadCard() == YES)
+	{
+		SetL3initStatus(L3INIT_PINPAD);
+	}
+	else
+	{
+		SetL3initStatus(L3INIT_INSIDE);
+	}
 
 	return APP_SUCC;
 }

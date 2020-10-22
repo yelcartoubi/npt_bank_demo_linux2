@@ -166,6 +166,7 @@ int InitPosDefaultParam()
 	gstAppPosParam.cKeySystemType = '0';
 	gstAppPosParam.cLanguage = LANG_EN_US;
 	gstAppPosParam.cFontSize = 24;
+	gstAppPosParam.cPinPadUsage = PINPADMODE_CARD | PINPADMODE_PIN;
 	gstAppPosParam.cTmsAutoUpdate = NO;
 	InitPosParamFile(gstAppPosParam);
 
@@ -1470,7 +1471,7 @@ int SetFunctionMerchantAddr(void)
 	int nLen = 0;
 	int i, nTagId;
 	int nRet;
-	char szContent[16+1] = {0};
+	char szContent[32+1] = {0};
 
 	for (i = 1; i <= 3; i++)
 	{
@@ -1676,7 +1677,6 @@ YESORNO GetControlChkRF(void)
 	}
 }
 
-
 /**
 * @brief Set is check pinpad
 * @return
@@ -1699,9 +1699,13 @@ int SetFunctionIsPinPad(void)
 	}
 	if (gstAppPosParam.cIsPinPad == YES)
 	{
-		SetFunctionPinpadTimeOut();
+		ASSERT_FAIL(SetFunctionPinpadType());
+		ASSERT_FAIL(SetFunctionPinpadTimeOut());
+		ASSERT_FAIL(SetFunctionPinpadUsage());
+		ASSERT_FAIL(SetFunctionPinpadPort());
+		ASSERT_FAIL(SetFuncPinpadCallBack());
 	}
-	ChkPinpad();
+	TRACE("GetVarIsPinpadReadCard() = %d", GetVarIsPinpadReadCard());
 
 	return APP_SUCC;
 }
@@ -1879,6 +1883,12 @@ int SetFunctionIsTipFlag(void)
 	}
 	ASSERT_RETURNCODE(PubSelectYesOrNo(tr("OTHER CONTROL"), tr("TIP ENABLE"), NULL, &gstAppPosParam.cIsTipFlag));
 	ASSERT_FAIL(UpdateTagParam(FILE_APPPOSPARAM, TAG_TIPFLAG, 1, &gstAppPosParam.cIsTipFlag));
+
+	if (gstAppPosParam.cIsTipFlag == NO)
+	{
+		SetTransSwitchOnoff(TRANS_ADJUST, NO);
+		ASSERT_FAIL(UpdateTagParam(FILE_APPPOSPARAM, TAG_TRANSSWITCH, 4, gstAppPosParam.sTransSwitch));
+	}
 
 	return APP_SUCC;
 }
@@ -2616,7 +2626,6 @@ YESORNO GetVarIsExRF(void)
 		return NO;
 	}
 }
-
 
 /**
 * @brief Set is use extern RF
@@ -3466,6 +3475,10 @@ int SetFunctionKeySystemType(void)
 
 	ASSERT_RETURNCODE(PubSelectYesOrNo(tr("KEY SYSTEM TYPE"),tr("KEY SYSTEM TYPE"), SelMenu, &gstAppPosParam.cKeySystemType));
 	ASSERT_FAIL(UpdateTagParam(FILE_APPPOSPARAM, TAG_KEYSYSTEMTYPE, 1, &gstAppPosParam.cKeySystemType));
+	if (gstAppPosParam.cKeySystemType == KS_DUKPT)
+	{
+		SetVarIsLogin(YES);
+	}
 
 	PubSetKeySystemType(gstAppPosParam.cKeySystemType == KS_MSK ? SECRITY_KEYSYSTEM_MSKEY : SECRITY_KEYSYSTEM_DUKPT);
 	return APP_SUCC;
@@ -3982,4 +3995,257 @@ void GetTransName(char cTransType, char *pszTransName)
 	}
 }
 
+int SetFuncPinpadCallBack(void)
+{
+	ASSERT_QUIT(PubSelectYesOrNo(tr("PINPAD L3"),tr("Callback to upper computer?"), NULL, &gstAppPosParam.cPinPadCallbackFlag));
+	ASSERT_FAIL(UpdateTagParam(FILE_APPPOSPARAM, TAG_PINPADCALLBACKFLAG, 1, &gstAppPosParam.cPinPadCallbackFlag));
+
+	return APP_SUCC;
+}
+
+YESORNO GetFuncPinpadCallBackFlag()
+{
+	if (gstAppPosParam.cPinPadCallbackFlag == YES)
+	{
+		return YES;
+	}
+	return NO;
+}
+
+/**
+* @brief Set ME51P Mode
+* @param void
+* @return
+* @li APP_SUCC
+* @li APP_QUIT
+* @li APP_FAIL
+* @author
+* @date
+*/
+int SetFunctionPinpadUsage(void)
+{
+	char *pszItems[] = {
+		tr("1.Only PIN"),
+		tr("2.Card And PIN"),
+	}; 
+	int nSelcItem = 1, nStartItem = 1;
+
+	while(1)
+	{
+		if (gstAppPosParam.cPinPadUsage == 3)
+		{
+			nSelcItem = 2;
+		}
+		else if ((gstAppPosParam.cPinPadUsage & PINPADMODE_PIN) == PINPADMODE_PIN)
+		{
+			nSelcItem = 1;
+		}
+		ASSERT_QUIT(PubShowMenuItems(tr("PINPAD USAGE"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 0));
+		switch(nSelcItem)
+		{
+		case 1:
+			gstAppPosParam.cPinPadUsage = PINPADMODE_PIN;
+			break;
+		case 2:
+			gstAppPosParam.cPinPadUsage |= PINPADMODE_PIN;
+			gstAppPosParam.cPinPadUsage |= PINPADMODE_CARD;
+			break;
+		default:
+			break;
+		}
+		break;
+	}
+	ASSERT_FAIL(UpdateTagParam(FILE_APPPOSPARAM, TAG_PINPADUSAGE, 1, &gstAppPosParam.cPinPadUsage));
+	return APP_SUCC;
+}
+
+/**
+* @brief Set Pinpad Mode
+* @param void
+* @return
+* @li APP_SUCC
+* @li APP_QUIT
+* @li APP_FAIL
+* @author
+* @date
+*/
+int SetFunctionPinpadPort(void)
+{
+	char *pszItems[] = {
+		tr("1.PINPAD"),
+		tr("2.USB"),
+		tr("3.RS232"),
+	}; 
+	int nSelcItem = 1, nStartItem = 1, nOldPort;
+	
+	while(1)
+	{
+		nOldPort = gstAppPosParam.cPinPadAuxNo;
+		if (gstAppPosParam.cPinPadAuxNo == PINPAD)
+		{
+			nSelcItem = 1;
+		}
+		else if (gstAppPosParam.cPinPadAuxNo == USB_HOST)
+		{
+			nSelcItem = 2;
+		}
+		else
+		{
+			nSelcItem = 3;
+		}
+		ASSERT_QUIT(PubShowMenuItems(tr("PINPAD PORT"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 0));
+		switch(nSelcItem)
+		{
+		case 1:
+			gstAppPosParam.cPinPadAuxNo = PINPAD;
+			break;
+		case 2:
+			gstAppPosParam.cPinPadAuxNo = USB_HOST;
+			break;
+		case 3:
+			gstAppPosParam.cPinPadAuxNo = RS232;
+			break;
+		default:
+			break;
+		}
+		break;
+	}
+	if (nOldPort != gstAppPosParam.cPinPadAuxNo)
+	{
+		SetControlChkPinpad(YES);
+	}
+	ASSERT_FAIL(UpdateTagParam(FILE_APPPOSPARAM, TAG_PINPADAUXNO, 1, &gstAppPosParam.cPinPadAuxNo));
+	return APP_SUCC;
+}
+
+/**
+* @brief Get pinpad usage
+* @param void
+* @return
+* @li 
+* @li 
+* @author
+* @date
+*/
+int GetVarPinPadUsage(void)
+{
+	return gstAppPosParam.cPinPadUsage;
+}
+
+/**
+* @brief Set Pinpad type
+* @param void
+* @return
+* @li APP_SUCC
+* @li APP_QUIT
+* @li APP_FAIL
+* @author
+* @date
+*/
+int SetFunctionPinpadType(void)
+{
+	char *pszItems[] = {
+		tr("1.ME51P"),
+		tr("2.SP100"),
+	}; 
+	int nSelcItem = 1, nStartItem = 1, nOldType;
+
+	nOldType = gstAppPosParam.cPinpadType;
+	while(1)
+	{
+		nSelcItem = gstAppPosParam.cPinpadType;
+		TRACE("nSelcItem = %d", nSelcItem);
+		if (nSelcItem == PINPAD_ME51)
+		{
+			nSelcItem = 1;
+		}
+		else if (nSelcItem == PINPAD_SP100)
+		{
+			nSelcItem = 2;
+		}
+		ASSERT_QUIT(PubShowMenuItems(tr("PINPAD TYPE"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 0));
+		switch(nSelcItem)
+		{
+		case 1:
+			gstAppPosParam.cPinpadType = PINPAD_ME51;
+			break;
+		case 2:
+			gstAppPosParam.cPinpadType = PINPAD_SP100;
+			gstAppPosParam.cPinPadCallbackFlag = NO;
+			ASSERT_FAIL(UpdateTagParam(FILE_APPPOSPARAM, TAG_PINPADCALLBACKFLAG, 1, &gstAppPosParam.cPinPadCallbackFlag));
+			break;
+		default:
+			break;
+		}
+		break;
+	}
+	if (nOldType != gstAppPosParam.cPinpadType)
+	{
+		SetControlChkPinpad(YES);
+	}
+	ASSERT_FAIL(UpdateTagParam(FILE_APPPOSPARAM, TAG_PINPADTYPE, 1, &gstAppPosParam.cPinpadType));
+	return APP_SUCC;
+}
+
+/**
+* @brief Get pinpad type
+* @param void
+* @return
+* @li 
+* @li 
+* @author
+* @date
+*/
+int GetVarPinPadType(void)
+{
+	return gstAppPosParam.cPinpadType;
+}
+
+YESORNO GetVarIsPinpadReadCard()
+{
+	if (GetVarIsPinpad() == YES && (GetVarPinPadUsage() & PINPADMODE_CARD) == PINPADMODE_CARD)
+	{
+		return YES;
+	}
+	return NO;
+}
+
+void SetL3initStatus(char cStatus)
+{
+	if (cStatus != L3INIT_INSIDE && cStatus != L3INIT_PINPAD)
+	{
+		if (cStatus == L3INIT_NONE)
+		{
+			gstAppPosParam.cL3initStatus = L3INIT_NONE;
+			UpdateTagParam(FILE_APPPOSPARAM, TAG_L3INITSTATUS, 1, &gstAppPosParam.cL3initStatus);
+		}
+		TRACE("cStatus = %d", cStatus);
+		return;
+	}
+	gstAppPosParam.cL3initStatus |= cStatus;
+	UpdateTagParam(FILE_APPPOSPARAM, TAG_L3INITSTATUS, 1, &gstAppPosParam.cL3initStatus);
+}
+
+char GetL3initStatus()
+{
+	return gstAppPosParam.cL3initStatus;
+}
+
+int GetIsLoadXMLConfig()
+{
+	if (GetVarIsPinpadReadCard() == YES)
+	{
+		if ((GetL3initStatus() & L3INIT_PINPAD) == L3INIT_PINPAD)
+		{
+			return false;
+		}
+		return true;
+	}
+
+	if ((GetL3initStatus() & L3INIT_INSIDE) == L3INIT_INSIDE)
+	{
+		return false;
+	}
+	return true;
+}
 

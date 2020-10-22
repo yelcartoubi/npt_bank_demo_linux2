@@ -278,7 +278,7 @@ int Reader_SendRecv(uchar *psSend, uint nSendLen, uchar *psRecv, uint *pnRecvLen
 		{
 			if (memcmp(psSend, "32", 2) == 0)
 			{		
-				PubCancelPIN_SP100();
+				PubCancelPIN_PINPAD();
 			}
 			return APP_QUIT;
 		}

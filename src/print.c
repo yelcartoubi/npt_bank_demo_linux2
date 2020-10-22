@@ -290,7 +290,7 @@ int PrintRecord_TP(const STTRANSRECORD *pstTransRecord, int nReprintFlag, const 
 	PubHexToAsc((uchar *)pstTransRecord->sTrace, 6, 0,  (uchar *)szTrace);
 	PubPrePrinter(tr("REF. NO:%12s"), pstTransRecord->szRefnum);
 	PubPrePrinter(tr("APPR.CODE:%s"), pstTransRecord->szAuthCode);
-	PubPrePrinter(tr("BATCH NO:%.6s  TRACE NO:%.6s\r"), szBatch, szTrace);
+	PubPrePrinter(tr("BATCH NO:%.6s  TRACE NO:%.6s"), szBatch, szTrace);
 
 	//Date time
 	memset(szPosYear, 0, sizeof(szPosYear));
@@ -347,7 +347,7 @@ int PrintRecord_TP(const STTRANSRECORD *pstTransRecord, int nReprintFlag, const 
 		PubClearAll();
 		if (cPinAndSigFlag & CVM_SIG)
 		{
-			PubDisplayGen(2, tr("I HEREBY VERIFY"));
+			PubDisplayGen(2, tr("SIGNATURE VERIFY"));
 			PubDisplayGen(3, tr("SIGNATURE"));
 		}
 		else
@@ -1063,6 +1063,9 @@ int DealPrinterPaper()
 	char szContent[100] = {0};
 	char szErrorInfo[32] = {0};
 
+	if (PubIsSupportPrint() == NO) {
+		return APP_SUCC;
+	}
 	while(1)
 	{
 		nStatus = PubGetPrintStatus();
@@ -1267,7 +1270,7 @@ static int HandleEmvParamPrt(L3_CARD_INTERFACE interface)
 	int nCount, nTlvLen, i, nRet, nFlag = 0;
 
 	memset(lstAidEntry, 0, sizeof(lstAidEntry));
-	nCount = NAPI_L3EnumEmvConfig(interface, lstAidEntry, 50);
+	nCount = TxnL3EnumEmvConfig(interface, lstAidEntry, 50);
 	if(interface == L3_CONTACT)
 	{
 		ASSERT_FAIL(PubPrePrinter("CONTACT"));
@@ -1285,12 +1288,12 @@ static int HandleEmvParamPrt(L3_CARD_INTERFACE interface)
 			nTlvLen = 0;
 			if(memcmp(lstAidEntry[i].aid, "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 16) != 0)
 			{
-				nRet = NAPI_L3LoadAIDConfig(interface, &lstAidEntry[i], tlv_list, &nTlvLen, CONFIG_GET);
+				nRet = TxnL3LoadAIDConfig(interface, &lstAidEntry[i], tlv_list, &nTlvLen, CONFIG_GET);
 				nFlag = 1;
 			}
 			else
 			{
-				nRet = NAPI_L3LoadTerminalConfig(interface, tlv_list, &nTlvLen, CONFIG_GET);
+				nRet = TxnL3LoadTerminalConfig(interface, tlv_list, &nTlvLen, CONFIG_GET);
 				nFlag = 0;
 			}
 			if(nRet == APP_SUCC)
@@ -1325,7 +1328,7 @@ int  _printemvparam()
 
 	//Print capk 
 	memset(lstrCapk, 0, sizeof(lstrCapk));
-	nCount = NAPI_L3EnumCapk(0, 50, lstrCapk);
+	nCount = TxnL3EnumCapk(0, 50, lstrCapk);
 	ASSERT_FAIL(PubPrePrinter("EnumCAPK=%d", nCount));
 	if(nCount > 0)
 	{
@@ -1334,7 +1337,7 @@ int  _printemvparam()
 			memset(&stCapk, 0, sizeof(L3_CAPK_ENTRY));
 			memcpy(stCapk.rid, lstrCapk[i], 5);
 			stCapk.index = lstrCapk[i][5];
-			nRet = NAPI_L3LoadCAPK(&stCapk, CONFIG_GET);
+			nRet = TxnL3LoadCAPK(&stCapk, CONFIG_GET);
 			if(nRet == APP_SUCC)
 			{
 				ASSERT_FAIL(PubPrePrinter(tr("Index:%02x "), stCapk.index));

@@ -87,5 +87,4 @@ TCP_ERR_CODE _TcpRead(uint unFd, void *pvOutBuf, uint unLen, uint unTimeout, uin
 */
 TCP_ERR_CODE _TcpReset(uint unFd);
 
-
 #endif /* _LINUXSOCKET_H_ */

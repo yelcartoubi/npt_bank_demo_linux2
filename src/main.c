@@ -18,7 +18,6 @@
 #include <locale.h>
 #include <langinfo.h>
 
-
 /**
 * internal function statement
 */
@@ -43,12 +42,11 @@ int main(void)
 	PubSetUiStyle(stUiFunStyle);
 	PubClearAll();
 	PubKbHit();					/*Clear key cache*/
-	
+
 	/**
 	* First launch check. If it's lauched for the fisrt time, many files are created in 'FirstRunChk'.
 	*/
 	FirstRunChk();
-
 	/**
 	* module initialize , important !!!
 	*/
@@ -63,11 +61,6 @@ int main(void)
 	*/
 	while(1)
 	{
-		/**
-		* device checking
-		*/
-		ChkPdAndRF();
-
 		/**
 		* Communication Initialize
 		*/
@@ -132,7 +125,7 @@ static int FirstRunChk(void)
 	{
 		PubMsgDlg("WARNING", "GET TAG_LANGUAGE FAIL", 0, 1);
 	}
-	
+
 	GetTag(FILE_APPPOSPARAM, TAG_VERSION, &nLen, szVersion);
 	if (memcmp(szVersion, APP_VERSION, strlen(APP_VERSION)) != 0)
 	{
@@ -194,7 +187,10 @@ static void EnableDispDefault(void)
 			strcpy(szShowInfo, tr("INSERT"));
 		}
 	}
-
+	if (GetVarIsPinpadReadCard() == YES)
+	{
+		strcpy(szShowInfo, "");
+	}
 	PubClearAll();
 	PubDisplayLogo("DispLogo.png", 36, 26);
 	PubDisplayGen(nMaxLine - 1, szShowInfo);
@@ -218,7 +214,6 @@ static void EnableDispDefault(void)
 static int AppInit(void)
 {
 	int nRet = 0;
-	char szCfg[8+1] = {0};
 
 	PubClearAll();
 	PubDisplayStrInline(0, 2, tr("Loading..."));
@@ -236,25 +231,17 @@ static int AppInit(void)
 	{
 		PubMsgDlg("Warning", "POS param loses", 3, 10);
 	}
-	SetupCallbackFunc();//You'd better setup 'callback' in the first place
-
-	L3_CFG_UNSET(szCfg, L3_CFG_SUPPORT_EC);
-	L3_CFG_UNSET(szCfg, L3_CFG_SUPPORT_SM);
-	
-	nRet = NAPI_L3Init(CONFIG_PATH, szCfg);
-	TRACE("NAPI_L3Init,nRet=%d", nRet);
 
 	SetParamFromIni();
-	if(PubFsExist(XML_CONFIG) == NAPI_OK)
-	{
-		if(APP_SUCC != LoadXMLConfig())
-		{
-			PubMsgDlg(NULL, "BAD PARSE XML", 0, 60);
-		}
-		PubFsDel(XML_CONFIG);
-	}
 
-	return nRet;
+	nRet = ChkPdAndRF();
+	if (nRet != APP_SUCC)
+	{
+		TRACE("nRet = %d", nRet);
+	}
+	TxnL3Init();
+
+	return APP_SUCC;
 }
 
 /**
@@ -357,7 +344,8 @@ static int DebugMenu(void)
 	switch(nSelect)
 	{
 	case 1:
-		PubSetDebugMode(DEBUG_NONE);	
+		PubSetDebugMode(DEBUG_NONE);
+		TxnL3SetDebugMode(LV_CLOSE);
 		GetAppCommParam(&stAppCommParam);
 		if (stAppCommParam.cCommType == COMM_RS232)
 		{
@@ -577,7 +565,7 @@ static int PreauthMenu()
 	default:
 		break;
 	}
-	NAPI_L3TerminateTransaction();
+	TxnL3TerminateTransaction();
 
 	return APP_SUCC;
 	
@@ -623,7 +611,7 @@ static int MenuFuncSel(void)
 		{ 
 		case 1:
 			TxnCommonEntry(TRANS_VOID, &nInputMode);
-			NAPI_L3TerminateTransaction();
+			TxnL3TerminateTransaction();
 			DISP_OUT_ICC;
 			break;
 		case 2:
@@ -647,22 +635,22 @@ static int MenuFuncSel(void)
 			break;
 		case 8:
 			TxnCommonEntry(TRANS_BALANCE, &nInputMode);
-			NAPI_L3TerminateTransaction();
+			TxnL3TerminateTransaction();
 			DISP_OUT_ICC;
 			break;
 		case 9:
 			TxnCommonEntry(TRANS_ADJUST, &nInputMode);
-			NAPI_L3TerminateTransaction();
+			TxnL3TerminateTransaction();
 			DISP_OUT_ICC;
 			break;
 		case 10:
 			TxnCommonEntry(TRANS_CASHBACK, &nInputMode);
-			NAPI_L3TerminateTransaction();
+			TxnL3TerminateTransaction();
 			DISP_OUT_ICC;
 			break;
 		case 11:
 			TxnCommonEntry(TRANS_REFUND, &nInputMode);
-			NAPI_L3TerminateTransaction();
+			TxnL3TerminateTransaction();
 			DISP_OUT_ICC;
 			break;
 		case 12:
@@ -715,6 +703,10 @@ static int MenuDefault(void)
 		}
 	#endif
 		EnableDispDefault();
+		if (GetVarIsPinpadReadCard() == YES)
+		{
+			nFirstsInput = L3_CARD_OTHER_EVENT;
+		}
 		nRet = NAPI_L3DetectCard(nFirstsInput, 0, &nInputMode);
 		if(nRet == L3_ERR_SWIPE_CHIP)
 		{
@@ -736,13 +728,12 @@ static int MenuDefault(void)
 			// Todo Light up the screen
 			//NAPI_ScrBackLight
 		}
-		
 		switch(nRet)
 		{
 		case KEY_1:
 			nInputMode = INPUT_NO;
 			TxnCommonEntry(TRANS_VOID, &nInputMode);
-			NAPI_L3TerminateTransaction();
+			TxnL3TerminateTransaction();
 			DISP_OUT_ICC;
 			break;
 		case KEY_2:
@@ -783,13 +774,13 @@ static int MenuDefault(void)
 		case KEY_6:
 			nInputMode = INPUT_NO;
 			TxnCommonEntry(TRANS_PREAUTH, &nInputMode);
-			NAPI_L3TerminateTransaction();
+			TxnL3TerminateTransaction();
 			DISP_OUT_ICC;
 			break;
 		case KEY_7:
 			nInputMode = INPUT_NO;
 			TxnCommonEntry(TRANS_SALE, &nInputMode);
-			NAPI_L3TerminateTransaction();
+			TxnL3TerminateTransaction();
 			DISP_OUT_ICC;
 			break;
 		case KEY_8:
@@ -808,7 +799,7 @@ static int MenuDefault(void)
 		case KEY_ENTER:
 			nInputMode = INPUT_NO;
 			TxnCommonEntry(TRANS_SALE, &nInputMode);
-			NAPI_L3TerminateTransaction();
+			TxnL3TerminateTransaction();
 			DISP_OUT_ICC;
 			break;
 		case KEY_MENU:
@@ -830,7 +821,7 @@ static int MenuDefault(void)
 			{
 				TxnCommonEntry(TRANS_PREAUTH, &nInputMode);
 			}
-			NAPI_L3TerminateTransaction();
+			TxnL3TerminateTransaction();
 			DISP_OUT_ICC;
 		}
 	}
@@ -847,16 +838,10 @@ static int MenuDefault(void)
 */
 static int ChkPdAndRF(void)
 {
+	ChkRF();
 	/**
 	* Check pinpad: initialize the secure module
 	*/
-	ChkPinpad();
-
-	/**
-	* check rf reader
-	*/
-	ChkRF();	//L3 process
-
-	return APP_SUCC;
+	return ChkPinpad();
 }
 

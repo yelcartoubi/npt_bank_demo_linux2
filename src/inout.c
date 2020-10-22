@@ -41,12 +41,13 @@ int GetPin(const char *pszPan, const char *pszAmount, char *psPin)
 		if (NULL != pszAmount)
 		{
 			/*<Amount for display*/
-			PubDisplayStrInline(DISPLAY_MODE_TAIL, 2, "%s", szDispAmt);
+			PubAllTrim(szDispAmt);
+			PubDisplayStrInline(DISPLAY_MODE_NORMAL, 1, "%s", szDispAmt);
 		}
-		PubDispPinPad("Please Input Pin", NULL, NULL, NULL);
-		PubDisplayStrInline(0, 3, tr("Please Input Pin"));
+		PubDisplayStrInline(0, 3, tr("Please Enter PIN On Pinpad"));
 		PubUpdateWindow();
 	}
+
 	nRet = PubGetPin(psPin, &nPinLen, nMode, pszPan, pszAmount, PIN_MAX_LEN, PIN_MIN_LEN);
 	if (nRet != APP_SUCC)
 	{
@@ -62,7 +63,7 @@ int GetPin(const char *pszPan, const char *pszAmount, char *psPin)
 			return APP_QUIT;
 		}
 		//Get PIN error message
-		PubDispErr(tr("Get Pin"));
+		PubDispErr(tr("Get PIN"));
 		return APP_FAIL;
 	}
 	return APP_SUCC;

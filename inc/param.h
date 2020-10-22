@@ -20,6 +20,13 @@
 #define APPCHECKVALUE		APP_NAME"001"	/**<If check value changes, need to initialize*/
 #define APPCHKLEN			7
 
+#define PINPADMODE_CARD          0x01
+#define PINPADMODE_PIN           0x02
+
+#define L3INIT_NONE              0X00
+#define L3INIT_INSIDE            0X01
+#define L3INIT_PINPAD            0X02
+
 /**
 * @struct STREVERSALPARAM 
 */
@@ -56,6 +63,11 @@ enum CardAttribute
 	CREDITCARD,
 	QUACREDEITCARD
 };
+
+typedef enum {
+	PINPAD_ME51, 
+	PINPAD_SP100, 
+}EM_PINPADTYPE;
 
 /**
 * @struct pos
@@ -110,6 +122,10 @@ typedef struct
 	char cFontSize;
 	char szVerChkValue[8+1];
 	char szVersion[8+1];
+	char cPinPadUsage; // read card/Enter pin on Pinpad
+	char cPinPadCallbackFlag;  // This data item used to control callback to upper computer.
+	char cPinpadType;
+	char cL3initStatus;
 }STAPPPOSPARAM;
 
 /**
@@ -409,6 +425,17 @@ extern int UpdateAppParamByTms(void);
 extern YESORNO GetVarTmsAutoUpdate();
 extern int SetFunctionTmsAutoUpdate(void);
 #endif
+extern int SetFunctionPinpadUsage(void);
+extern int GetVarPinPadUsage(void);
+extern int SetFunctionPinpadPort(void);
+extern int SetFuncPinpadCallBack(void);
+extern YESORNO GetFuncPinpadCallBackFlag();
+extern int GetVarPinPadType(void);
+extern int SetFunctionPinpadType(void);
+extern YESORNO GetVarIsPinpadReadCard();
+extern void SetL3initStatus(char cStatus);
+extern char GetL3initStatus();
+extern int GetIsLoadXMLConfig();
 
 #endif
 

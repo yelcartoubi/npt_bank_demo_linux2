@@ -48,7 +48,7 @@ static void GetEntryMode(STSYSTEM *pstSystem)
 {
     uchar usInputMode[2+1] = {0};
 
-    NAPI_L3GetData(L3_DATA_POS_ENTRY_MODE, usInputMode, sizeof(usInputMode)-1);
+    TxnL3GetData(L3_DATA_POS_ENTRY_MODE, usInputMode, sizeof(usInputMode)-1);
 
     switch(usInputMode[0])
     {
@@ -78,17 +78,18 @@ static void ObtainIccData(STSYSTEM *pstSystem)
 	}
 	else
 	{
-		NAPI_L3GetData(L3_DATA_PAN, pstSystem->szPan, 19);
+		TxnL3GetData(L3_DATA_PAN, pstSystem->szPan, 19);
 	}
-    NAPI_L3GetData(L3_DATA_TRACK2, pstSystem->szTrack2, 37);
-    NAPI_L3GetData(L3_DATA_TRACK3, pstSystem->szTrack3, 104);
+	TRACE("pstSystem->szPan = %s", pstSystem->szPan);
+    TxnL3GetData(L3_DATA_TRACK2, pstSystem->szTrack2, 37);
+    TxnL3GetData(L3_DATA_TRACK3, pstSystem->szTrack3, 104);
 
-    if(NAPI_L3GetData(L3_DATA_CARDHOLDER_NAME, pstSystem->szHolderName, 26) > 0)
+    if(TxnL3GetData(L3_DATA_CARDHOLDER_NAME, pstSystem->szHolderName, 26) > 0)
     {
         PubAllTrim(pstSystem->szHolderName);
     }
 
-    if(NAPI_L3GetData(_EMV_TAG_5F34_IC_PANSN, szTmp, 1) > 0)
+    if(TxnL3GetData(_EMV_TAG_5F34_IC_PANSN, szTmp, 1) > 0)
     {
 		sprintf(pstSystem->szCardSerialNo, "0%02x", szTmp[0]);
 	}
@@ -97,18 +98,18 @@ static void ObtainIccData(STSYSTEM *pstSystem)
 		memcpy(pstSystem->szCardSerialNo, "\x00\x00\x00", 3);
 	}
 
-    if(NAPI_L3GetData(L3_DATA_EXPIRE_DATE, szTmp, sizeof(szTmp)) > 0)
+    if(TxnL3GetData(L3_DATA_EXPIRE_DATE, szTmp, sizeof(szTmp)) > 0)
     {
-		sprintf(pstSystem->szExpDate, "%02x%02x", (szTmp[0]) , (szTmp[1]));
+		memcpy(pstSystem->szExpDate, szTmp, 4);
     }
 
-	if (NAPI_L3GetData(L3_DATA_SIGNATURE, szTmp, 1) > 0)
+	if (TxnL3GetData(L3_DATA_SIGNATURE, szTmp, 1) > 0)
 	{
 		if(szTmp[0] == 1)
 		{
 			pstSystem->cPinAndSigFlag |= CVM_SIG;
 		}
-	}
+	}	
 }
 
 static void ShowFailInfo(int nErrorCode)
@@ -130,7 +131,7 @@ static void ShowFailInfo(int nErrorCode)
         break;
     default:
         DispOutICC(NULL, tr("TERMINATE"), EmvErrMsg(nErrorCode));
-        break; 
+        break;
     }
 }
 
@@ -145,12 +146,12 @@ static void EmvDispTvrTsi(void)
 		return ;
 	}
 
-	nRet = NAPI_L3GetData(_EMV_TAG_95_TM_TVR, sTVR ,sizeof(sTVR));
+	nRet = TxnL3GetData(_EMV_TAG_95_TM_TVR, sTVR ,sizeof(sTVR));
 	if (nRet != 5)
 	{
 		return ;
 	}
-	nRet = NAPI_L3GetData(_EMV_TAG_9B_TM_TSI, sTSI, sizeof(sTSI));
+	nRet = TxnL3GetData(_EMV_TAG_9B_TM_TSI, sTSI, sizeof(sTSI));
 	if (nRet != 2)
 	{
 		return ;
@@ -185,7 +186,7 @@ int PerformTransaction(char *pszTitle, STSYSTEM *pstSystem, int *pnInputMode)
         }	
         if (YES == GetVarIsCardInput())
         {
-            cInputMode |= L3_CARD_MANUAL;   
+            cInputMode |= L3_CARD_MANUAL;
         }
 		if (YES == GetVarIsSupportContact())
 		{
@@ -203,7 +204,6 @@ int PerformTransaction(char *pszTitle, STSYSTEM *pstSystem, int *pnInputMode)
     nTlvLen += 4;
 
     TlvAdd(0x1F8121, 1, (char* )pnInputMode, szTlvList, &nTlvLen);
-    
     if(strlen(pstSystem->szAmount) > 0)
     {
 		if (pstSystem->cTransType == TRANS_CASHBACK)
@@ -224,7 +224,7 @@ int PerformTransaction(char *pszTitle, STSYSTEM *pstSystem, int *pnInputMode)
     {
         InitInputAMT();
     }
-    
+
     //To be done 9F03 (Cash back)
     AddTransType(pstSystem, szTlvList, &nTlvLen);
 
@@ -239,7 +239,7 @@ int PerformTransaction(char *pszTitle, STSYSTEM *pstSystem, int *pnInputMode)
     //Force Online Authorization
     if(pstSystem->cTransType == TRANS_PREAUTH || pstSystem->cTransType == TRANS_BALANCE)
     {
-        szTmpData[0] = 0x01;    
+        szTmpData[0] = 0x01;
         TlvAdd(0x1F8126, 1, szTmpData, szTlvList, &nTlvLen);
     }
 
@@ -251,13 +251,20 @@ int PerformTransaction(char *pszTitle, STSYSTEM *pstSystem, int *pnInputMode)
     }
 
     ShowLightDeal();
-    nErrcode = NAPI_L3PerformTransaction(szTlvList, nTlvLen, &res);
+
+	nErrcode = TxnL3PerformTransaction(szTlvList, nTlvLen, &res, pstSystem);
 	TRACE("NAPI_L3PerformTransaction, nErrcode=%d, res=%d", nErrcode, res);
-    
+	if (nErrcode == APP_QUIT)
+	{
+		return APP_QUIT;
+	}
+	/* for pinpad mode, it will get the icc data from pinpad response */
+	if (pstSystem->cGetPerformDataFlag != YES)
+	{
+		ObtainIccData(pstSystem);
+	}
 	PubClearAll();
 	EmvDispTvrTsi();
-	
-    ObtainIccData(pstSystem);
     switch(res)
     {
     case L3_TXN_DECLINE:
@@ -330,8 +337,12 @@ int CompleteTransaction(char* pszTitle, int nOnlineResult, STSYSTEM* pstSystem, 
 #endif
 	}
 
-    nErrcode = NAPI_L3CompleteTransaction(szTlvList, nTlvLen, &res);
+	nErrcode = TxnL3CompleteTransaction(szTlvList, nTlvLen, &res);
 	TRACE("NAPI_L3CompleteTransaction, nErrcode=%d, res=%d", nErrcode, res);
+	if (nErrcode == APP_QUIT)
+	{
+		return APP_FAIL;
+	}
 	if (nErrcode == L3_ERR_REMOVE_INTERRUPT)
 	{
 		char szContent[64+1] = {0};

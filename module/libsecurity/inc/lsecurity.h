@@ -15,8 +15,8 @@
 #ifndef _LSECRITY_H_
 #define _LSECRITY_H_
 
-//#include "napi_crypto.h"
 #include "emvl3.h"
+
 /** @addtogroup Security
 * @{
 */
@@ -329,7 +329,7 @@ int PubClrPinPad(void);
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 */
-int PubPinpadBeep(int nDuration, int nType);
+int PinPad_Beep(int nDuration, int nType);
 
 /**
 * @brief show QR Code
@@ -339,10 +339,10 @@ int PubPinpadBeep(int nDuration, int nType);
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 */
-int PubGenAndShowQr(int nVersion, char *pszBuffer);
+int PinPad_GenAndShowQr(int nVersion, char *pszBuffer);
 
 /**
-* @brief show QR Code
+* @brief signature
 * @param [in]  pszCharaterCode	feature code
 * @param [in]  name of signature
 * @param [in]  nTimeOut
@@ -350,7 +350,7 @@ int PubGenAndShowQr(int nVersion, char *pszBuffer);
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 */
-int PubDoSignatureByPinpad(char *pszCharaterCode, char *pszSignName, int nTimeOut);
+int PinPad_DoSignature(char *pszCharaterCode, char *pszSignName, int nTimeOut);
 
 /**
 * @brief Scan the code through the Pinpad
@@ -359,7 +359,184 @@ int PubDoSignatureByPinpad(char *pszCharaterCode, char *pszSignName, int nTimeOu
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 */
-int PubDoScanByPinpad(char *pszBuffer);
+int PinPad_DoScan(char *pszBuffer);
+
+/**
+* @brief swipe card on Pinpad
+* @param [in] STREADCARD_IN
+* @param [out] STREADCARD_OUT
+* @return 
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_SwipeCard(char *pIn ,char *pOut);
+
+/**
+* @brief  Initialize newland Level3 module		
+*         Initialization and configuration need only be performed once at module startup 
+*         and whilst configuration remains the same during processing.
+* @param  [in] pszConfig:	According to configuration bitmap definitions.
+* @param [in] nConfigLen 
+* @return 
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_L3init(char *pszConfig, int nConfigLen);
+
+/**
+* @brief CAPK management(Update/Get/Remove/Flush)
+* @param [IN] capk: ca publick key
+* @param [IN] mode:  Update/Get/Remove/Flush
+* @return 
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_L3LoadCapk(L3_CAPK_ENTRY *capk, L3_CONFIG_OP mode);
+
+/**
+* @brief AID configuration management(Update/Get/Remove/Flush)
+* @param [in] interface: Contact / Contactless
+* @param [in] aidEntry:  Aid indicator(Get/Remove) or NULL(Update/Flush)
+* @param [IN/OUT] tlv_list: Tlv AID configuration string
+* @param [IN/OUT] tlv_len:  the length of tlv string
+* @param [IN] mode: Update/Get/Remove/Flush, if Flush, will delete all of the configuration(Terminal and AID)
+* @return 
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_L3LoadAIDConfig(L3_CARD_INTERFACE cardInterface, L3_AID_ENTRY *aidEntry, unsigned char tlv_list[], int *tlv_len, L3_CONFIG_OP mode);
+
+/**
+* @brief Terminal configuration management(Update/Get)
+* @param [IN] interface: Contact / Contactless
+* @param [IN/OUT] tlv_list: Tlv terminal configuration string
+* @param [IN/OUT] tlv_len:  the length of tlv string
+* @param [IN] mode: Update/Get/Remove/Flush, if Flush, will delete all of the configuration(Terminal and AID)
+* @return 
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_L3LoadTerminalConfig(L3_CARD_INTERFACE cardInterface, unsigned char tlv_list[], int *tlv_len, L3_CONFIG_OP mode);
+
+/**
+* @brief Complete the transaction. 
+*		 When PinPad_L3PerformTransaction return a status of Online Authorization Required.
+*		 the terminal must send the transaction online for authorization.
+*		 The back-end host may respond back with a result or there may be a timeout or a network error.
+*		 In any case, the terminal should use this API conveying the result of the Online Authorization Request to complete the transaction.
+* @param [IN] nResult online result
+* @param [IN] pszInput: transaction data
+* @param [IN] nInPutLen: the length of data
+* @param [OUT] res: the transaction result
+* @param [OUT] pszResPonseCode: the cmd response
+
+* @return 
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_L3CompleteTransaction(int nResult, char *pszInput, int nInPutLen, L3_TXN_RES *res, char *pszResPonseCode);
+
+/**
+*@brief Terminate transaction and release resource.
+* @return 
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_L3TerminateTransaction();
+
+/**
+* @brief Get the EMVL3 data 
+* @param [IN]  type: ,L3_DATA or L2 TAG.
+* @param [OUT] data: The data buffer.
+* @param [IN]  maxLen: The buffer length of data.
+* @return description
+* @retval 0    tag value does not exist
+* @retval >0   The length of the Value
+* @retval -1   Data length exceeds length limit
+*/
+int PinPad_L3GetData(int nTag, char *pszOut, int nMaxLen);
+
+/**
+*@brief Perform transactions on the MSR, contact and contactless card interfaces. 
+*			A transaction may have a simple flow that can be completed via this API, 
+*			in which case the result returned will be Offline Approved, Offline Declined, Failed or some other error status. 
+*			A transaction may also have a more complex flow that may require going online for authorization. 
+*			For such flows the transaction will have to be completed by using multiple API. 
+*			In this case this API will return a status of Online Authorization Required.
+*			When this happens, the terminal must send the transaction online for authorization.
+* @param [IN] pszInput: transaction data
+* @param [IN] nInPutLen: the length of data
+* @param [OUT] pszOut: the cmd result
+* @param [OUT] pnOutLen: the cmd result data length
+* @return 
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_L3PerformTransaction(char *pszInput, int nInPutLen, char *pszOut, int *pnOutLen);
+
+/**
+* @brief Get the TLV format data from current kernel.
+* @param [IN] tagList: The tag list which will be packed to tlvData.
+* @param [IN] tagNum: The number of tag list.
+* @param [OUT] tlvData: Out tlv data
+* @param [IN] maxLen: The size of tlvData.
+* @param [IN] ctl: Control code.
+             bit0: 1: ignore the zero length tag.
+* @return description
+* @retval < 0 Fail
+*         > 0 the length of out data(tlvData)
+*/
+int PinPad_L3GetTlvData(unsigned int *tagList, unsigned int tagNum, unsigned char *tlvData, unsigned int maxLen,int ctl);
+
+/**
+* @brief Setup kernel data.
+* @param [IN]  tag: Tag.
+* @param [IN]  data: The setting data buffer.
+* @param [IN]  len: The length of data.
+* @return
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_L3SetData(unsigned int tag, void *data, unsigned int len);
+
+/**
+* @brief Setup Debug Mode
+* @param [IN]debugLV   LV_CLOSE / LV_DEBUG / LV_ALL
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_L3SetDebugMode(int nDebugLv);
+
+/**
+* @brief Enumerate CAPK
+* @param in  start        ---Start index
+* @param in  end          ---End index
+* @param out capk        ---CAPK Lists
+* @return
+* @li        >0            Number of public key
+* @li        <= 0          FAIL
+*/
+int PinPad_L3EnumCapk(int start, int end, char capk[][6]);
+
+/**
+* @brief  Enumerate all AID, include terminal config 
+* @param [IN] interface: Contact/Contactless
+* @param [OUT] aidEntry: AID Lists
+* @param [IN]maxCount:   Max size of aidEntry
+* @return
+* @li >0  Number of AID(<= maxCount)
+* @li <= 0 FAIL
+*/
+int PinPad_L3EnumEmvConfig(L3_CARD_INTERFACE interface, L3_AID_ENTRY * aidEntry, int maxCount);
+
+/*
+* @brief set font size
+* @param [in] nSize 1 - normal 2- small 3- large
+* @return 
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_SetFontSize(char cSize);
 
 /** @}*/ // End of Security
 #endif

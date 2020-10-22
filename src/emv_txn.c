@@ -207,7 +207,7 @@ int EmvOrgSheet(const char *pRid, char *pOrg)
 int SaveData9F26RQ()
 {
 	memset(gs9F26_RQ, 0, sizeof(gs9F26_RQ));
-	NAPI_L3GetData(_EMV_TAG_9F26_IC_AC, (uchar *)gs9F26_RQ, sizeof(gs9F26_RQ));
+	TxnL3GetData(_EMV_TAG_9F26_IC_AC, (uchar *)gs9F26_RQ, sizeof(gs9F26_RQ));
 	return APP_SUCC;
 }
 
@@ -273,7 +273,8 @@ int EmvPackField55(const char cTransType, char *pszOutField55, int *pnOutField55
 	default:
 		break;
 	}
-	nLen = NAPI_L3GetTlvData(nTagList, nLen, (uchar *)pszOutField55, 255, 0);
+
+	nLen = TxnL3GetTlvData(nTagList, nLen, (uchar *)pszOutField55, 255, 0);
 	TRACE("nLen = %d", nLen);
 	TRACE_HEX(pszOutField55, nLen, "pszOutField55");
 	if (nLen <= 0)
@@ -346,13 +347,13 @@ int EmvSaveRecord(int nRecordFlag, const STSYSTEM *pstSystem)
 	PubAscToHex((uchar *)pstSystem->szBatchNum, 6, 0, (uchar *)stEmvRecord.sBatchNo);
 	stEmvRecord.cTransType = pstSystem->cTransType;
 	
-	NAPI_L3GetData(_EMV_TAG_8A_TM_ARC, (uchar *)szBuff, sizeof(szBuff));
+	TxnL3GetData(_EMV_TAG_8A_TM_ARC, (uchar *)szBuff, sizeof(szBuff));
 	memcpy(stEmvRecord.sAuthResp, szBuff, 2);
 
-	NAPI_L3GetData(_EMV_TAG_95_TM_TVR, (uchar *)szBuff, sizeof(szBuff));
+	TxnL3GetData(_EMV_TAG_95_TM_TVR, (uchar *)szBuff, sizeof(szBuff));
 	memcpy(stEmvRecord.sTVR, szBuff, 5);
 
-	nLen = NAPI_L3GetData(_EMV_TAG_9B_TM_TSI, (uchar *)szBuff, sizeof(szBuff));
+	nLen = TxnL3GetData(_EMV_TAG_9B_TM_TSI, (uchar *)szBuff, sizeof(szBuff));
 	memcpy(stEmvRecord.sTSI, szBuff, 2);
 
 	EmvPackField55(TRANS_SALE, stEmvRecord.szField55+2, &nLen);
@@ -372,7 +373,7 @@ int EmvSaveRecord(int nRecordFlag, const STSYSTEM *pstSystem)
 	}
 	
 	//deal script
-	if((nLen = NAPI_L3GetData(_EMV_TAG_DF31_IC_IISSCRIRES, (uchar *)szBuff, sizeof(szBuff))) > 0)
+	if((nLen = TxnL3GetData(_EMV_TAG_DF31_IC_IISSCRIRES, (uchar *)szBuff, sizeof(szBuff))) > 0)
 	{
 		stEmvRecord.nIssuerScriptResultLen = nLen;
 		memcpy(stEmvRecord.szIssuerScriptResult, szBuff, nLen);
@@ -455,19 +456,19 @@ int EmvAddtionRecord(STTRANSRECORD *pstTransRecord)
 	STEMVADDTIONRECORDINFO *pstEMVAddtionRecordInfo = (STEMVADDTIONRECORDINFO *)pstTransRecord->sAddition;
 
 	memset(sBuff, 0, sizeof(sBuff));
-	nLen = NAPI_L3GetData(_EMV_TAG_9F26_IC_AC, sBuff, sizeof(sBuff));
+	nLen = TxnL3GetData(_EMV_TAG_9F26_IC_AC, sBuff, sizeof(sBuff));
 	memcpy(pstEMVAddtionRecordInfo->sTC, sBuff, 8);
 
 	memset(sBuff, 0, sizeof(sBuff));
-	nLen = NAPI_L3GetData(_EMV_TAG_95_TM_TVR, sBuff, sizeof(sBuff));
+	nLen = TxnL3GetData(_EMV_TAG_95_TM_TVR, sBuff, sizeof(sBuff));
 	memcpy(pstEMVAddtionRecordInfo->sTVR, sBuff, 5);
 
 	memset(sBuff, 0, sizeof(sBuff));
-	nLen = NAPI_L3GetData(_EMV_TAG_9B_TM_TSI, sBuff, sizeof(sBuff));
+	nLen = TxnL3GetData(_EMV_TAG_9B_TM_TSI, sBuff, sizeof(sBuff));
 	memcpy(pstEMVAddtionRecordInfo->sTSI, sBuff, 2);
 
 	memset(sBuff, 0, sizeof(sBuff));
-	nLen = NAPI_L3GetData(_EMV_TAG_84_IC_DFNAME, sBuff, sizeof(sBuff));
+	nLen = TxnL3GetData(_EMV_TAG_84_IC_DFNAME, sBuff, sizeof(sBuff));
 	if (nLen > 0)
 	{
 		memcpy(pstEMVAddtionRecordInfo->sAID, sBuff, nLen);
@@ -475,7 +476,7 @@ int EmvAddtionRecord(STTRANSRECORD *pstTransRecord)
 	}
 	else
 	{
-		if((nLen = NAPI_L3GetData(_EMV_TAG_9F06_TM_AID, sBuff, sizeof(sBuff))) > 0 )
+		if((nLen = TxnL3GetData(_EMV_TAG_9F06_TM_AID, sBuff, sizeof(sBuff))) > 0 )
 		{
 			memcpy(pstEMVAddtionRecordInfo->sAID, sBuff, nLen);
 			pstEMVAddtionRecordInfo->cAIDLen =(char)nLen;
@@ -483,18 +484,18 @@ int EmvAddtionRecord(STTRANSRECORD *pstTransRecord)
 	}
 
 	memset(sBuff, 0, sizeof(sBuff));
-	nLen = NAPI_L3GetData(_EMV_TAG_9F36_IC_ATC, sBuff, sizeof(sBuff));
+	nLen = TxnL3GetData(_EMV_TAG_9F36_IC_ATC, sBuff, sizeof(sBuff));
 	memcpy(pstEMVAddtionRecordInfo->sATC, sBuff, 2);
 
 	memset(sBuff, 0, sizeof(sBuff));
-	if((nLen = NAPI_L3GetData(_EMV_TAG_50_IC_APPLABEL, sBuff, sizeof(sBuff))) > 0)
+	if((nLen = TxnL3GetData(_EMV_TAG_50_IC_APPLABEL, sBuff, sizeof(sBuff))) > 0)
 	{
 		memcpy(pstEMVAddtionRecordInfo->szAIDLable, sBuff, nLen);
 		pstEMVAddtionRecordInfo->szAIDLable[nLen] = 0;
 	}
 
 	memset(sBuff, 0, sizeof(sBuff));
-	nLen = NAPI_L3GetData(_EMV_TAG_9F12_IC_APNAME, sBuff, sizeof(sBuff));
+	nLen = TxnL3GetData(_EMV_TAG_9F12_IC_APNAME, sBuff, sizeof(sBuff));
 	if(nLen >= 16)
 	{
 		nLen = 16;
@@ -506,27 +507,27 @@ int EmvAddtionRecord(STTRANSRECORD *pstTransRecord)
 	}
 
 	memset(sBuff, 0, sizeof(sBuff));
-	nLen = NAPI_L3GetData(0xdf42, sBuff, sizeof(sBuff));
+	nLen = TxnL3GetData(0xdf42, sBuff, sizeof(sBuff));
 	pstEMVAddtionRecordInfo->cSignatureFlag = sBuff[0];
 
 	memset(sBuff, 0, sizeof(sBuff));
-	nLen = NAPI_L3GetData(0xdf41, sBuff, sizeof(sBuff));
+	nLen = TxnL3GetData(0xdf41, sBuff, sizeof(sBuff));
 	pstEMVAddtionRecordInfo->cForceAcceptFlag = sBuff[0];
 
 	memset(sBuff, 0, sizeof(sBuff));
-	nLen = NAPI_L3GetData(_EMV_TAG_9F37_TM_UNPNUM, sBuff, sizeof(sBuff));
+	nLen = TxnL3GetData(_EMV_TAG_9F37_TM_UNPNUM, sBuff, sizeof(sBuff));
 	memcpy(pstEMVAddtionRecordInfo->sUnpNum, sBuff, 4);
 
 	memset(sBuff, 0, sizeof(sBuff));
-	nLen = NAPI_L3GetData(_EMV_TAG_82_IC_AIP, sBuff, sizeof(sBuff));
+	nLen = TxnL3GetData(_EMV_TAG_82_IC_AIP, sBuff, sizeof(sBuff));
 	memcpy(pstEMVAddtionRecordInfo->sAIP, sBuff, 2);
 
 	memset(sBuff, 0, sizeof(sBuff));
-	nLen = NAPI_L3GetData(_EMV_TAG_9F34_TM_CVMRESULT, sBuff, sizeof(sBuff));
+	nLen = TxnL3GetData(_EMV_TAG_9F34_TM_CVMRESULT, sBuff, sizeof(sBuff));
 	memcpy(pstEMVAddtionRecordInfo->sCVM, sBuff, 3);
 
 	memset(sBuff, 0, sizeof(sBuff));
-	nLen = NAPI_L3GetData(_EMV_TAG_9F10_IC_ISSAPPDATA, sBuff, sizeof(sBuff));
+	nLen = TxnL3GetData(_EMV_TAG_9F10_IC_ISSAPPDATA, sBuff, sizeof(sBuff));
 	if(nLen <= 32 && nLen > 0)
 	{
 		memcpy(pstEMVAddtionRecordInfo->sIAD, sBuff, nLen);
@@ -538,7 +539,7 @@ int EmvAddtionRecord(STTRANSRECORD *pstTransRecord)
 	pstEMVAddtionRecordInfo->cIADlen = (char)nLen;
 
 	memset(sBuff, 0, sizeof(sBuff));
-	nLen = NAPI_L3GetData(_EMV_TAG_9F33_TM_CAP, sBuff, sizeof(sBuff));
+	nLen = TxnL3GetData(_EMV_TAG_9F33_TM_CAP, sBuff, sizeof(sBuff));
 	memcpy(pstEMVAddtionRecordInfo->sTermCap, sBuff, 3);
 
 	memset(sBuff, 0, sizeof(sBuff));
@@ -547,7 +548,7 @@ int EmvAddtionRecord(STTRANSRECORD *pstTransRecord)
 
 	//Result of Issuing bank script
 	memset(szBuff,0,sizeof(szBuff));
-	if((nLen = NAPI_L3GetData(_EMV_TAG_DF31_IC_IISSCRIRES, (uchar *)szBuff, sizeof(szBuff))) > 0 )
+	if((nLen = TxnL3GetData(_EMV_TAG_DF31_IC_IISSCRIRES, (uchar *)szBuff, sizeof(szBuff))) > 0 )
 	{
 		pstEMVAddtionRecordInfo->nIssuerScriptResultLen = nLen ;
 		memcpy(pstEMVAddtionRecordInfo->szIssuerScriptResult, szBuff, nLen) ;
@@ -555,7 +556,7 @@ int EmvAddtionRecord(STTRANSRECORD *pstTransRecord)
 	}
 	
 	memset(szBuff,0,sizeof(szBuff));
-	nLen = NAPI_L3GetData(_EMV_TAG_9F27_IC_CID, (uchar *)szBuff, sizeof(szBuff));
+	nLen = TxnL3GetData(_EMV_TAG_9F27_IC_CID, (uchar *)szBuff, sizeof(szBuff));
 	pstEMVAddtionRecordInfo->cCrmInfoData = szBuff[0] ;
 	TRACE_HEX((char *)szBuff, nLen,"_EMV_TAG_9F27_IC_CID[%d]:", nLen);
 
@@ -583,7 +584,7 @@ void EmvOfflineAccept(char *pszTitle, STSYSTEM *pstSystem)
 	EmvPackField55(TRANS_SALE, pstSystem->psAddField, &pstSystem->nAddFieldLen);
 	SaveData9F26RQ();
 
-	NAPI_L3GetData(_EMV_TAG_9F06_TM_AID, (uchar *)szAid, sizeof(szAid));
+	TxnL3GetData(_EMV_TAG_9F06_TM_AID, (uchar *)szAid, sizeof(szAid));
 	EmvOrgSheet(szAid, pstSystem->szInterOrg);
 	pstSystem->cEMV_Status = EMV_STATUS_OFFLINE_SUCC;
 	IncVarTraceNo();
@@ -607,7 +608,7 @@ void EmvOfflineDenial(char *pszTitle, STSYSTEM* pstSystem)
 
 	IncVarTraceNo();
 
-	NAPI_L3GetData(_EMV_TAG_9F06_TM_AID, (uchar *)szAid, sizeof(szAid));
+	TxnL3GetData(_EMV_TAG_9F06_TM_AID, (uchar *)szAid, sizeof(szAid));
 	EmvOrgSheet(szAid, pstSystem->szInterOrg);
 	pstSystem->cEMV_Status = EMV_STATUS_OFFLINE_FAIL;
 	pstSystem->psAddField = szField55;

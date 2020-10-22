@@ -181,18 +181,19 @@ int SynDialConnect(const STSERVERADDRESS * pstServerAddress,int *pnConnectIndex,
 int SynDialGetConnectState()
 {
 	int nRet;
-	int nModemStatus;
+//	int nModemStatus;
+	EM_MDMSTATUS emModemStatus;
 	PubDebugSelectly(2, "SynDialGetConnectState start....");
 
-	nRet = NAPI_MdmCheck((EM_MDMSTATUS*)&nModemStatus);//modem
-	PubDebugSelectly(2, "[nRet:%d][nModemStatus:%d]", nRet, nModemStatus);
+	nRet = NAPI_MdmCheck(&emModemStatus);//modem
+	PubDebugSelectly(2, "[nRet:%d][nModemStatus:%d]", nRet, emModemStatus);
 	if (nRet != NAPI_OK)
 	{
 		SetCommError(FAIL_SYN_DIAL_CHECK, nRet);
-		PubDebugSelectly(3, "NAPI_MdmCheck error---[nModemStatus:%d]", nModemStatus);
+		PubDebugSelectly(3, "NAPI_MdmCheck error---[nModemStatus:%d]", emModemStatus);
 		return APP_FAIL;
 	}
-	if (nModemStatus != MDMSTATUS_CONNECT_AFTERPREDIAL)
+	if (emModemStatus != MDMSTATUS_CONNECT_AFTERPREDIAL)
 	{
 		PubDebugSelectly(2, "SynDialGetConnectState Fail...");
 		return APP_FAIL;
@@ -249,12 +250,13 @@ int SynDialWrite(const char *psData,int nDataLen)
 int SynDialRead(int nIsNonBlock, int nLen,int nTimeOut,char *psOutData)
 {
 	int nRet;
+	EM_MDMSTATUS emMdmStatus;
     int nReadBufLen = 0;
 	uint unOverTime = 0;
 
 	PubDebugSelectly(2, "SynDialRead start.---[nLen:%d][nTimeOut:%d]", nLen, nTimeOut);
 
-	if(NAPI_MdmCheck((EM_MDMSTATUS *)&nRet) == NAPI_OK && nRet < 0)
+	if(NAPI_MdmCheck(&emMdmStatus) == NAPI_OK && emMdmStatus < 0)
 	{
 		PubDebug("SynDialRead Dial Break");
 		return APP_FAIL;
@@ -491,12 +493,12 @@ static int ProGetSynModemStatus(uint unOverTime)
 static int ProSynDial(char *pszNum, int nIsPreConnect)
 {
 	int nRet = -1;
-	int nModemStatus = -1;
+	EM_MDMSTATUS emModemStatus;
 
 	if (nIsPreConnect == EM_CONNECT)//
 	{
-		nRet = NAPI_MdmCheck((EM_MDMSTATUS *)&nModemStatus);//modem
-		if (nRet == 0 && nModemStatus >= 0)//
+		nRet = NAPI_MdmCheck((EM_MDMSTATUS *)&emModemStatus);//modem
+		if (nRet == 0 && emModemStatus >= 0)//
 		{
 			return APP_SUCC;
 		}

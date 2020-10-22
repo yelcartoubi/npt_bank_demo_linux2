@@ -175,6 +175,8 @@ typedef struct
 	char cPrintFlag;
 	char szHolderName[26+1];
 	char cPinAndSigFlag;		/**<PIN and SIGN flag */
+	char cCvmStatus;
+	char cGetPerformDataFlag;
 }STSYSTEM;
 
 /**
@@ -216,5 +218,19 @@ extern int TxnReversal(void);
 extern int TxnCommonEntry(char cTransType, int *pnInputMode);
 extern int TxnLoadConfig(char cTransType, STTRANSCFG *pstTransConfig);
 extern int CheckTip(STSYSTEM *pstSystem);
+extern int TxnL3PerformTransaction(char *pszTlvLise, int nTlvLen, L3_TXN_RES *res, STSYSTEM *pstSystem);
+extern int TxnL3CompleteTransaction(char *pszTlvList, int nTlvLen, L3_TXN_RES *res);
+extern void TxnL3TerminateTransaction();
+extern int TxnL3GetData(unsigned int type, void *data, int maxLen);
+extern int TxnL3GetTlvData(unsigned int *tagList, unsigned int tagNum, unsigned char *tlvData, unsigned int maxLen,int ctl);
+extern int TxnL3SetData(unsigned int tag, void *data, unsigned int len);
+extern int TxnL3SetDebugMode(int debugLV);
+extern int TxnL3ModuleInit(char *filePath, char *config);
+extern int TxnL3LoadAIDConfig(L3_CARD_INTERFACE interface, L3_AID_ENTRY *aidEntry, unsigned char tlv_list[], int *tlv_len, L3_CONFIG_OP mode);
+extern int TxnL3LoadCAPK(L3_CAPK_ENTRY *capk, L3_CONFIG_OP mode);
+extern int TxnL3LoadTerminalConfig(L3_CARD_INTERFACE cardinterface, unsigned char tlv_list[], int *tlv_len, L3_CONFIG_OP mode);
+extern int TxnL3EnumEmvConfig(L3_CARD_INTERFACE cardinterface, L3_AID_ENTRY * aidEntry, int maxCount);
+extern int TxnL3EnumCapk(int start, int end, char capk[][6]);
+extern int TxnL3Init();
 #endif
 

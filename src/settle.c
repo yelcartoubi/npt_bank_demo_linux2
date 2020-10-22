@@ -46,7 +46,6 @@ int Settle(char cFlag)
 	STSYSTEM stSystem;
 	STAMT_NUM_SETTLE stAmtNumSettle;
 	STAMT_NUM_INFO_SETTLE stAmtNumInfo;
-	int nTcNum = 0;
 	char cTailFlag = 0;
 	int nRet = 0;
 	int nRecordNum;
@@ -145,8 +144,6 @@ SETTLE_TAIL:
 		PubHexToAsc(stAmtNumInfo.sDebitAmount, 12, 0,(uchar*)stAmtNumSettle.sDebitAmt);
 		sprintf(stAmtNumSettle.sCreditNum, "%03d", stAmtNumInfo.nCreditNum);
 		PubHexToAsc(stAmtNumInfo.sCreditAmount, 12, 0, (uchar*)stAmtNumSettle.sCreditAmt);
-		GetTcNum(&nTcNum);
-		sprintf(stAmtNumSettle.sEmvTcCount, "%03d", nTcNum);
 
 		/**
 		* Begin to pack

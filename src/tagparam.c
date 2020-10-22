@@ -19,7 +19,10 @@
 // for adding new tag 
 static STTAGINFO stExPosParam[] = 
 {
-
+	{FILE_APPPOSPARAM, TAG_PINPADUSAGE, 1, "\x03"},
+	{FILE_APPPOSPARAM, TAG_PINPADCALLBACKFLAG, 1, "1"},
+	{FILE_APPPOSPARAM, TAG_PINPADTYPE, 1, "\x00"},
+	{FILE_APPPOSPARAM, TAG_L3INITSTATUS, 1, "\x00"},
 };
 
 /**
@@ -326,160 +329,172 @@ static int TlvTransferToStr(int nTagId, int nValueLen, const char *pszTagValue, 
 static void AssignToPosParam(int nTagid, int nValueLen, char *pszTagValue, STAPPPOSPARAM *pstAppPosParam)
 {
 	switch (nTagid)
-	 {
-	 case TAG_MERCHANTID:
-		 memcpy(pstAppPosParam->szMerchantId, pszTagValue, nValueLen);
-		 break;
-	 case TAG_TERMINALID:
-		 memcpy(pstAppPosParam->szTerminalId, pszTagValue, nValueLen);
-		 break;
-	 case TAG_MERCHANTNAMEEN:
-		 memcpy(pstAppPosParam->szMerchantNameEn, pszTagValue, nValueLen);
-		 break;
-	 case TAG_MERCHANTADDR1:
-		 memcpy(pstAppPosParam->szMerchantAddr[0], pszTagValue, nValueLen);
-		 break;
-	 case TAG_MERCHANTADDR2:
-		 memcpy(pstAppPosParam->szMerchantAddr[1], pszTagValue, nValueLen);
-		 break;
-	 case TAG_MERCHANTADDR3:
-		 memcpy(pstAppPosParam->szMerchantAddr[2], pszTagValue, nValueLen);
-		 break;
-	 case TAG_ADMINPWD:
-		 memcpy(pstAppPosParam->szAdminPwd, pszTagValue, nValueLen);
-		 break;
-	 case TAG_USRWD:
-		 memcpy(pstAppPosParam->szUsrPwd, pszTagValue, nValueLen);
-		 break;
-	 case TAG_FUNCPWD:
-		 memcpy(pstAppPosParam->szFuncPwd, pszTagValue, nValueLen);
-		 break;
-	 case TAG_TRANSSWITCH:
-		 memcpy(pstAppPosParam->sTransSwitch, pszTagValue, nValueLen);
-		 break;
-	 case TAG_ACQNAME:
-		 memcpy(pstAppPosParam->szAcqName, pszTagValue, nValueLen);
-		 break;
-	 case TAG_ISSUERNAME:
-		 memcpy(pstAppPosParam->szIssuerName, pszTagValue, nValueLen);
-		 break;
-	 case TAG_CURRENCYNAME:
-		 memcpy(pstAppPosParam->szCurrencyName, pszTagValue, nValueLen);
-		 break;
-	 case TAG_PNTPAGECNT:
-		 pstAppPosParam->cPrintPageCount = pszTagValue[0];
-		 break;
-	 case TAG_PNTDETAIL:
-		 pstAppPosParam->cIsPntDetail = pszTagValue[0];
-		 break;
-	 case TAG_TMSAUTOUPDATE:
-		 pstAppPosParam->cTmsAutoUpdate = pszTagValue[0];
-		 break;
-     case TAG_CVV2:
-		 pstAppPosParam->cIsNeedCVV2 = pszTagValue[0];
-		 break;
-	 case TAG_TIPFLAG:
-		 pstAppPosParam->cIsTipFlag = pszTagValue[0];
-		 break;
-	 case TAG_TIPRATE:
-		 memcpy(pstAppPosParam->szTipRate, pszTagValue, nValueLen);
-		 break;
-	 case TAG_CARDINPUTMODE:
-		 pstAppPosParam->cIsCardInput = pszTagValue[0];
-		 break;
-	 case TAG_ISSALEVOIDSTRIP:
-		 pstAppPosParam->cIsVoidStrip = pszTagValue[0];
-		 break;
-	 case TAG_ISVOIDPIN:
-		 pstAppPosParam->cIsVoidPin = pszTagValue[0];
-		 break;
-	 case TAG_ISSUPPORTRF:
-		 pstAppPosParam->cIsSupportRF = pszTagValue[0];
-		 break;
-	 case TAG_ISEXRF:
-		 pstAppPosParam->cIsExRF = pszTagValue[0];
-		 break;
-	 case TAG_ISPINPAD:
-		 pstAppPosParam->cIsPinPad = pszTagValue[0];
-		 break;
-	 case TAG_PINPADAUXNO:
-		 pstAppPosParam->cPinPadAuxNo = pszTagValue[0];
-		 break;
-	 case TAG_PINPADTIMEOUT:
-		 memcpy(pstAppPosParam->szPinPadTimeOut, pszTagValue, nValueLen);
-		 break;
-	 case TAG_MAINKEYNO:
-		 memcpy(pstAppPosParam->szMainKeyNo, pszTagValue, nValueLen);
-		 break;
-	 case TAG_ENCRYMODE:
-		 pstAppPosParam->cEncyptMode = pszTagValue[0];
-		 break;
-	 case TAG_PINENCRYMODE:
-		 pstAppPosParam->cPinEncyptMode = pszTagValue[0];
-		 break;
-	 case TAG_MAXTRANSCNT:
-		 memcpy(pstAppPosParam->szMaxTransCount, pszTagValue, nValueLen);
-		 break;
-	 case TAG_ISPRINTERRREPORT:
-		 pstAppPosParam->cIsPrintErrReport = pszTagValue[0];
-		 break;
-	 case TAG_SUPPORTCONTACT:
-		 pstAppPosParam->cIsSupportContact = pszTagValue[0];
-		 break;
-	 case TAG_DEFAULTTRANS:
-		 pstAppPosParam->cDefaultTransType = pszTagValue[0];
-		 break;
-	 case TAG_ISSHOWTVRTSI:
-		 pstAppPosParam->cIsDispEMV_TVRTSI = pszTagValue[0];
-		 break;
-	 case TAG_ISSHIELDPAN:
-		 pstAppPosParam->cIsShieldPan = pszTagValue[0];
-		 break;
-	 case TAG_PNTTITLEMODE:
-		 pstAppPosParam->cPntTitleMode = pszTagValue[0];
-		 break;
-	 case TAG_PNTTITLEEN:
-		 memcpy(pstAppPosParam->szPntTitleEn, pszTagValue, nValueLen);
-		 break;
-	 case TAG_SHOWAPPNAME:
-		 memcpy(pstAppPosParam->szAppDispname, pszTagValue, nValueLen);
-		 break;
-	 case TAG_ISADMINPWD:
-		 pstAppPosParam->cIsAdminPwd = pszTagValue[0];
-		 break;
-	 case TAG_PNTMINUS:
-		 pstAppPosParam->cIsPrintMinus = pszTagValue[0];
-		 break;
-	 case TAG_ISPREAUTHSHIELDPAN:
-		 pstAppPosParam->cIsPreauthShieldPan = pszTagValue[0];
-		 break;
-	 case TAG_ISREPNTSETTLE:
-		 pstAppPosParam->cIsReprintSettle = pszTagValue[0];
-		 break;
-	 case TAG_SUPPOTRSWIPE:
-		 pstAppPosParam->cIsSupportSwipe = pszTagValue[0];
-		 break;
-	 case TAG_ISPNTISO:
-		 pstAppPosParam->cIsPrintIso = pszTagValue[0];
-		 break;
-	 case TAG_KEYSYSTEMTYPE:
-		 pstAppPosParam->cKeySystemType = pszTagValue[0];
-		 break;
-	 case TAG_LANGUAGE:
-		 pstAppPosParam->cLanguage = pszTagValue[0];
-		 break;
-	 case TAG_FONTSIZE:
-		 pstAppPosParam->cFontSize = pszTagValue[0];
-		 break;
-	 case TAG_APPCHKVALUE:
-		 memcpy(pstAppPosParam->szVerChkValue, pszTagValue, nValueLen);
-		 break;
-	 case TAG_VERSION:
-		 memcpy(pstAppPosParam->szVersion, pszTagValue, nValueLen);
-		 break;
-	 default:
-	 	break;
-	 }
+	{
+	case TAG_MERCHANTID:
+		memcpy(pstAppPosParam->szMerchantId, pszTagValue, nValueLen);
+		break;
+	case TAG_TERMINALID:
+		memcpy(pstAppPosParam->szTerminalId, pszTagValue, nValueLen);
+		break;
+	case TAG_MERCHANTNAMEEN:
+		memcpy(pstAppPosParam->szMerchantNameEn, pszTagValue, nValueLen);
+		break;
+	case TAG_MERCHANTADDR1:
+		memcpy(pstAppPosParam->szMerchantAddr[0], pszTagValue, nValueLen);
+		break;
+	case TAG_MERCHANTADDR2:
+		memcpy(pstAppPosParam->szMerchantAddr[1], pszTagValue, nValueLen);
+		break;
+	case TAG_MERCHANTADDR3:
+		memcpy(pstAppPosParam->szMerchantAddr[2], pszTagValue, nValueLen);
+		break;
+	case TAG_ADMINPWD:
+		memcpy(pstAppPosParam->szAdminPwd, pszTagValue, nValueLen);
+		break;
+	case TAG_USRWD:
+		memcpy(pstAppPosParam->szUsrPwd, pszTagValue, nValueLen);
+		break;
+	case TAG_FUNCPWD:
+		memcpy(pstAppPosParam->szFuncPwd, pszTagValue, nValueLen);
+		break;
+	case TAG_TRANSSWITCH:
+		memcpy(pstAppPosParam->sTransSwitch, pszTagValue, nValueLen);
+		break;
+	case TAG_ACQNAME:
+		memcpy(pstAppPosParam->szAcqName, pszTagValue, nValueLen);
+		break;
+	case TAG_ISSUERNAME:
+		memcpy(pstAppPosParam->szIssuerName, pszTagValue, nValueLen);
+		break;
+	case TAG_CURRENCYNAME:
+		memcpy(pstAppPosParam->szCurrencyName, pszTagValue, nValueLen);
+		break;
+	case TAG_PNTPAGECNT:
+		pstAppPosParam->cPrintPageCount = pszTagValue[0];
+		break;
+	case TAG_PNTDETAIL:
+		pstAppPosParam->cIsPntDetail = pszTagValue[0];
+		break;
+	case TAG_TMSAUTOUPDATE:
+		pstAppPosParam->cTmsAutoUpdate = pszTagValue[0];
+		break;
+	case TAG_CVV2:
+		pstAppPosParam->cIsNeedCVV2 = pszTagValue[0];
+		break;
+	case TAG_TIPFLAG:
+		pstAppPosParam->cIsTipFlag = pszTagValue[0];
+		break;
+	case TAG_TIPRATE:
+		memcpy(pstAppPosParam->szTipRate, pszTagValue, nValueLen);
+		break;
+	case TAG_CARDINPUTMODE:
+		pstAppPosParam->cIsCardInput = pszTagValue[0];
+		break;
+	case TAG_ISSALEVOIDSTRIP:
+		pstAppPosParam->cIsVoidStrip = pszTagValue[0];
+		break;
+	case TAG_ISVOIDPIN:
+		pstAppPosParam->cIsVoidPin = pszTagValue[0];
+		break;
+	case TAG_ISSUPPORTRF:
+		pstAppPosParam->cIsSupportRF = pszTagValue[0];
+		break;
+	case TAG_ISEXRF:
+		pstAppPosParam->cIsExRF = pszTagValue[0];
+		break;
+	case TAG_ISPINPAD:
+		pstAppPosParam->cIsPinPad = pszTagValue[0];
+		break;
+	case TAG_PINPADAUXNO:
+		pstAppPosParam->cPinPadAuxNo = pszTagValue[0];
+		break;
+	case TAG_PINPADTIMEOUT:
+		memcpy(pstAppPosParam->szPinPadTimeOut, pszTagValue, nValueLen);
+		break;
+	case TAG_MAINKEYNO:
+		memcpy(pstAppPosParam->szMainKeyNo, pszTagValue, nValueLen);
+		break;
+	case TAG_ENCRYMODE:
+		pstAppPosParam->cEncyptMode = pszTagValue[0];
+		break;
+	case TAG_PINENCRYMODE:
+		pstAppPosParam->cPinEncyptMode = pszTagValue[0];
+		break;
+	case TAG_MAXTRANSCNT:
+		memcpy(pstAppPosParam->szMaxTransCount, pszTagValue, nValueLen);
+		break;
+	case TAG_ISPRINTERRREPORT:
+		pstAppPosParam->cIsPrintErrReport = pszTagValue[0];
+		break;
+	case TAG_SUPPORTCONTACT:
+		pstAppPosParam->cIsSupportContact = pszTagValue[0];
+		break;
+	case TAG_DEFAULTTRANS:
+		pstAppPosParam->cDefaultTransType = pszTagValue[0];
+		break;
+	case TAG_ISSHOWTVRTSI:
+		pstAppPosParam->cIsDispEMV_TVRTSI = pszTagValue[0];
+		break;
+	case TAG_ISSHIELDPAN:
+		pstAppPosParam->cIsShieldPan = pszTagValue[0];
+		break;
+	case TAG_PNTTITLEMODE:
+		pstAppPosParam->cPntTitleMode = pszTagValue[0];
+		break;
+	case TAG_PNTTITLEEN:
+		memcpy(pstAppPosParam->szPntTitleEn, pszTagValue, nValueLen);
+		break;
+	case TAG_SHOWAPPNAME:
+		memcpy(pstAppPosParam->szAppDispname, pszTagValue, nValueLen);
+		break;
+	case TAG_ISADMINPWD:
+		pstAppPosParam->cIsAdminPwd = pszTagValue[0];
+		break;
+	case TAG_PNTMINUS:
+		pstAppPosParam->cIsPrintMinus = pszTagValue[0];
+		break;
+	case TAG_ISPREAUTHSHIELDPAN:
+		pstAppPosParam->cIsPreauthShieldPan = pszTagValue[0];
+		break;
+	case TAG_ISREPNTSETTLE:
+		pstAppPosParam->cIsReprintSettle = pszTagValue[0];
+		break;
+	case TAG_SUPPOTRSWIPE:
+		pstAppPosParam->cIsSupportSwipe = pszTagValue[0];
+		break;
+	case TAG_ISPNTISO:
+		pstAppPosParam->cIsPrintIso = pszTagValue[0];
+		break;
+	case TAG_KEYSYSTEMTYPE:
+		pstAppPosParam->cKeySystemType = pszTagValue[0];
+		break;
+	case TAG_LANGUAGE:
+		pstAppPosParam->cLanguage = pszTagValue[0];
+		break;
+	case TAG_FONTSIZE:
+		pstAppPosParam->cFontSize = pszTagValue[0];
+		break;
+	case TAG_APPCHKVALUE:
+		memcpy(pstAppPosParam->szVerChkValue, pszTagValue, nValueLen);
+		break;
+	case TAG_VERSION:
+		memcpy(pstAppPosParam->szVersion, pszTagValue, nValueLen);
+		break;
+	case TAG_PINPADUSAGE:
+		pstAppPosParam->cPinPadUsage = pszTagValue[0];
+		break;
+	case TAG_PINPADCALLBACKFLAG:
+		pstAppPosParam->cPinPadCallbackFlag = pszTagValue[0];
+		break;
+	case TAG_PINPADTYPE:
+		pstAppPosParam->cPinpadType = pszTagValue[0];
+		break;
+	case TAG_L3INITSTATUS:
+		pstAppPosParam->cL3initStatus = pszTagValue[0];
+		break;
+	default:
+	break;
+	} 
 
 	return;
 }
@@ -985,6 +1000,11 @@ static int AddTagParam(const char *pszFileName, int nTagId, int nValueLen, char 
 		return APP_FAIL;
 	}
 
+	if (nValueLen > MAX_VALUE_LEN - 6) // MAX_VALUE_LEN - TLV_LENGTHLEN - TLV_TAGLEN
+	{
+		TRACE("add value fail nValueLen = %d", nValueLen);
+		return APP_FAIL;
+	}
 	nLen = TlvTransferToStr(nTagId, nValueLen, pszTagValue, szBuf);
 	ASSERT_FILE_FAIL(PubFsSeek(nFd, 0L, SEEK_END), nFd);
 	nRet = PubFsWrite(nFd, szBuf, nLen);
@@ -1280,7 +1300,6 @@ int InitPosParamFile(STAPPPOSPARAM stAppPosParam)
 {
 	char *pszFileName = FILE_APPPOSPARAM;
 	char szChkValue[APPCHKLEN + 1];
-	char szVersion[8+1] = {0};
 
 	if (PubFsExist(pszFileName) == NAPI_OK)
 	{
@@ -1337,9 +1356,6 @@ int InitPosParamFile(STAPPPOSPARAM stAppPosParam)
 	ASSERT_FAIL(AddTagParam(pszFileName, TAG_FONTSIZE, 1, &stAppPosParam.cFontSize));
 	GenerateAppChkValue(szChkValue);
 	ASSERT_FAIL(AddTagParam(pszFileName, TAG_APPCHKVALUE, APPCHKLEN + 1, szChkValue));
-
-	GetVarSoftVer(szVersion);
-	ASSERT_FAIL(AddTagParam(pszFileName, TAG_VERSION, strlen(szVersion), szVersion));
 
 	return APP_SUCC;
 }
@@ -1832,7 +1848,7 @@ int InitExPosParam()
 
 int ExportFileContent(char *pszFileName)
 {
-	int nRet, nFd;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+	int nRet, nFd;
 	uint nFileSize;
 	char szBuf[4096] = {0};
 

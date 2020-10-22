@@ -13,8 +13,8 @@
 #include "libapiinc.h"
 #include "appinc.h"
 
-#define YES 1
-#define NO 0
+#define YES '1'
+#define NO '0'
 
 
 #define NODE_CONFIG "config"
@@ -190,6 +190,32 @@ static int GetAttribute(char *attr, char *out, char *lineStr)
 	
 }
 
+static void DispLoadCfgInfo(char cCardInterface, char cType)
+{
+	char szContent[32] = {0};
+
+	PubClearAll();
+	if (cType == 2) // capk
+	{
+		sprintf(szContent, "%s", tr("LOAD CAPK"));
+	}
+	else
+	{
+		if (cCardInterface == L3_CONTACT)
+		{
+			sprintf(szContent, "%s", tr("LOAD CT AID"));
+		}
+		else
+		{
+			sprintf(szContent, "%s", tr("LOAD CTL AID"));
+		}
+	}
+
+	PubDisplayStrInline(0, 2, szContent);
+	PubDisplayStrInline(0, 4, tr("PLEASE WAIT..."));
+	PubUpdateWindow();
+}
+
 /**
 * @brief Load configuration from XML file
 * @param NONE
@@ -201,9 +227,8 @@ static int GetAttribute(char *attr, char *out, char *lineStr)
 */
 int LoadXMLConfig(void)
 {
-//    FILE *fp = NULL;
 	char szLineBuf[1000] = {0};
-	int nAidInterface = 0;
+	L3_CARD_INTERFACE cardInterface = 0;
 	int nIsTerminalConfig = NO;
 	int nConfigType = 0;
 	int nRet = 0;
@@ -225,10 +250,9 @@ int LoadXMLConfig(void)
 	PubDisplayStrInline(0, 4, tr("PLEASE WAIT..."));
 	PubUpdateWindow();
 
-
-	NAPI_L3LoadAIDConfig(L3_CONTACT, NULL, NULL, NULL, CONFIG_FLUSH);
-	NAPI_L3LoadAIDConfig(L3_CONTACTLESS, NULL, NULL, NULL, CONFIG_FLUSH);
-	NAPI_L3LoadCAPK(NULL, CONFIG_FLUSH);
+	TxnL3LoadAIDConfig(L3_CONTACT, NULL, NULL, NULL, CONFIG_FLUSH);
+	TxnL3LoadAIDConfig(L3_CONTACTLESS, NULL, NULL, NULL, CONFIG_FLUSH);
+	TxnL3LoadCAPK(NULL, CONFIG_FLUSH);
 
 	nTlvLen = 0;
 	memset(szAidTlv, 0, sizeof(szAidTlv));
@@ -258,20 +282,23 @@ int LoadXMLConfig(void)
 		if (YES == IsNode(NODE_CONFIG, "CONTACT", szLineBuf))
 		{
 			nConfigType = 1;
-			nAidInterface = L3_CONTACT;
+			cardInterface = L3_CONTACT;
+			DispLoadCfgInfo(cardInterface, nConfigType);
 			continue;
 		}
 
 		if (YES == IsNode(NODE_CONFIG, "CONTACTLESS", szLineBuf))
 		{
 			nConfigType = 1;
-			nAidInterface = L3_CONTACTLESS;
+			cardInterface = L3_CONTACTLESS;
+			DispLoadCfgInfo(cardInterface, nConfigType);
 			continue;
 		}
 
 		if (YES == IsNode(NODE_CONFIG, "PublicKeys", szLineBuf))
 		{
 			nConfigType = 2;
+			DispLoadCfgInfo(cardInterface, nConfigType);
 			continue;
 		}
 
@@ -285,7 +312,6 @@ int LoadXMLConfig(void)
 		if (YES == IsElement(szLineBuf))
 		{
 //			TRACE("nConfigType=%d", nConfigType);
-
 			if (nConfigType == 1) //AID
 			{
 				nRet = ParseAID(szLineBuf, szAidTlv, &nTlvLen);
@@ -307,25 +333,16 @@ int LoadXMLConfig(void)
 
 		if (YES == IsNodeEnd(NODE_ENTRY, szLineBuf))
 		{
-//			TRACE("nConfigType=%d", nConfigType);
 			if (nConfigType == 1) //AID
 			{
-//				TRACE("nAidInterface=%d", nAidInterface);
-//				TRACE("nIsTerminalConfig=%d", nIsTerminalConfig);
-
-				TRACE_HEX(szAidTlv, nTlvLen, "TLV CONFIG:");
-				
 				if (YES == nIsTerminalConfig)
 				{
-				   nRet = NAPI_L3LoadTerminalConfig(nAidInterface, (uchar *)szAidTlv, &nTlvLen, CONFIG_UPT);
-//				   TRACE("NAPI_L3LoadTerminalConfig->CONFIG_UPT, nRet=%d", nRet);
-
-				   nIsTerminalConfig = NO;
+					nRet = TxnL3LoadTerminalConfig(cardInterface, (uchar *)szAidTlv, &nTlvLen, CONFIG_UPT);
+					nIsTerminalConfig = NO;
 				}
 				else
 				{
-				   nRet = NAPI_L3LoadAIDConfig(nAidInterface, NULL, (uchar *)szAidTlv, &nTlvLen, CONFIG_UPT);
-//				   TRACE("NAPI_L3LoadAIDConfig->CONFIG_UPT, nRet=%d", nRet);
+					nRet = TxnL3LoadAIDConfig(cardInterface, NULL, (uchar *)szAidTlv, &nTlvLen, CONFIG_UPT);
 				}
 				memset(szAidTlv, 0, sizeof(szAidTlv));
 				nTlvLen = 0;
@@ -333,12 +350,9 @@ int LoadXMLConfig(void)
 			}
 			else //CAPK
 			{
-				nRet = NAPI_L3LoadCAPK(&stCapk, CONFIG_UPT);
-//				TRACE("NAPI_L3LoadCAPK->CONFIG_UPT, nRet=%d", nRet);
-				
-			    memset(&stCapk, 0, sizeof(stCapk));
+				nRet = TxnL3LoadCAPK(&stCapk, CONFIG_UPT);
+		 		memset(&stCapk, 0, sizeof(stCapk));
 			}
-			
 			continue;
 		}
 
@@ -382,7 +396,6 @@ static int ParseAID(char *szLineBuf, char *szAidTlv, int *nTlvLen)
 	return 0;
 	
 }
-
 
 static int ParseCapk(char *szLineBuf, L3_CAPK_ENTRY *stCapk)
 {

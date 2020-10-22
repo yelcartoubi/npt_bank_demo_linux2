@@ -9,7 +9,6 @@
 #include "napi.h"
 #include "napi_app.h"
 #include "napi_crypto.h"
-#include "emvl3.h"
 #include "napi_sysinfo.h"
 #include "napi_display.h"
 #include "napi_smartcard.h"
@@ -51,6 +50,9 @@ typedef struct {
 	int (*pPinpadQR)(int, char*);
 	int (*pPinpadDoScan)(char *);
 	int (*pEsignature)(char *, char *, int );
+	int (*pSwipeCard)(char *, char *);
+	int (*pL3OrderSet)(char *, char *, int *);
+	int (*pSetFontSize)(char );
 }STPINPAD;
 
 static STPINPAD gstPinpad;					/**< structure for callback funtions*/
@@ -58,22 +60,26 @@ static STPINPAD gstPinpad;					/**< structure for callback funtions*/
 
 static int ProInitPinpadParam(const STPINPADPARAM stPinpadParam)
 {
-	if(PubResetPinpad_SP100(stPinpadParam.cAux, stPinpadParam.cTimeout) != APP_SUCC)
+	if(PubResetPinpad_PINPAD(stPinpadParam.cAux, stPinpadParam.cTimeout) != APP_SUCC)
 	{
 		return APP_FAIL;
 	}
 	memset(&gstPinpad, 0, sizeof(STPINPAD));
-	gstPinpad.pLoadKey = PubLoadKey_SP100;
-	gstPinpad.pGetPinBlock = PubGetPinBlock_SP100;
-	gstPinpad.pCalMac = PubCalcMac_SP100;
-	gstPinpad.pClrPinpad = PubClrPinPad_SP100;
-	gstPinpad.pDispPinpad = PubDispPinPad_SP100;
-	gstPinpad.pDespinpad = PubDesPinpad_SP100;
-	gstPinpad.pClrKey = PubClearKey_SP100;
-	gstPinpad.pPinpadBeep = PubPinpadBeep_SP100;
-	gstPinpad.pPinpadQR = PubGenAndShowQr_SP100;
-	gstPinpad.pPinpadDoScan = PubDoScan_SP100;
-	gstPinpad.pEsignature = PubEsignature_SP100;
+	gstPinpad.pLoadKey = PubLoadKey_PINPAD;
+	gstPinpad.pGetPinBlock = PubGetPinBlock_PINPAD;
+	gstPinpad.pCalMac = PubCalcMac_PINPAD;
+	gstPinpad.pClrPinpad = PubClrPinPad_PINPAD;
+	gstPinpad.pDispPinpad = PubDispPinPad_PINPAD;
+	gstPinpad.pDespinpad = PubDesPinpad_PINPAD;
+	gstPinpad.pClrKey = PubClearKey_PINPAD;
+	gstPinpad.pPinpadBeep = PubPinpadBeep_PINPAD;
+	gstPinpad.pPinpadQR = PubGenAndShowQr_PINPAD;
+	gstPinpad.pPinpadDoScan = PubDoScan_PINPAD;
+	gstPinpad.pEsignature = PubEsignature_PINPAD;
+	gstPinpad.pSwipeCard = PubSwipeCard_PINPAD;
+	gstPinpad.pL3OrderSet = PubL3OrderSet_PINPAD;
+	gstPinpad.pSetFontSize = PubSetFontSize_PINPAD;
+
 	return APP_SUCC;
 }
 
@@ -468,7 +474,7 @@ int PubLoadWorkKey(int nKeyType,const char* psKey, int nKeyLen,const char* psChe
 		ProSetSecurityErrCode(ERR_PINPAD_PARAM,0);
 		return APP_FAIL;
 	}
-	if(nKeyType != KEY_TYPE_MAC && nKeyType != KEY_TYPE_PIN && nKeyType != KEY_TYPE_DATA)
+	if(nKeyType != KEY_TYPE_MAC && nKeyType != KEY_TYPE_PIN && nKeyType != KEY_TYPE_DATA && nKeyType != KEY_TYPE_TMK)
 	{
 		PINPAD_TRACE_SECU("nKeyType error");
 		ProSetSecurityErrCode(ERR_PINPAD_PARAM,0);
@@ -496,6 +502,9 @@ int PubLoadWorkKey(int nKeyType,const char* psKey, int nKeyLen,const char* psChe
 		case KEY_TYPE_DATA:
 			stKGData.KeyUsage = KEY_USE_DATA;
 			break;
+		case KEY_TYPE_TMK:
+			stKGData.KeyUsage = KEY_USE_KEK;
+			break;
 		default:
 			ProSetSecurityErrCode(ERR_PINPAD_PARAM,0);
             PINPAD_TRACE_SECU("nKeyType[%d] is invalid ", nKeyType);
@@ -510,8 +519,8 @@ int PubLoadWorkKey(int nKeyType,const char* psKey, int nKeyLen,const char* psChe
 		if (psCheckValue != NULL)
 		{
 			stKcvData.nCheckMode = NAPI_SEC_KCV_ZERO;
-			stKcvData.nLen = 0x04;
-			memcpy(stKcvData.sCheckBuf, psCheckValue, 4);
+			stKcvData.nLen = 3;
+			memcpy(stKcvData.sCheckBuf, psCheckValue, stKcvData.nLen);
 		}
 		nRet = NAPI_SecGenerateKey(SEC_KIM_CIPHER, &stKGData, &stKcvData);
 		if (nRet != NAPI_OK)
@@ -525,7 +534,16 @@ int PubLoadWorkKey(int nKeyType,const char* psKey, int nKeyLen,const char* psChe
 	}
 	else
 	{
-		return gstPinpad.pLoadKey(nKeyType, gnMainKeyIndex, psKey, nKeyLen,(char *)psCheckValue);
+		int nInDex;
+		if (nKeyType == KEY_TYPE_DATA)
+		{
+			nInDex = 128 + gnMainKeyIndex;
+		}
+		else
+		{
+			nInDex = gnMainKeyIndex;
+		}
+		return gstPinpad.pLoadKey(nKeyType, nInDex, psKey, nKeyLen,(char *)psCheckValue);
 	}
 }
 
@@ -1375,7 +1393,7 @@ void PubGetSecrityVerion(char *pszVer)
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 */
-int PubPinpadBeep(int nDuration, int nType)
+int PinPad_Beep(int nDuration, int nType)
 {
 	if(ProCheckInit() != APP_SUCC)
 		return APP_FAIL;
@@ -1398,7 +1416,7 @@ int PubPinpadBeep(int nDuration, int nType)
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 */
-int PubGenAndShowQr(int nVersion, char *pszBuffer)
+int PinPad_GenAndShowQr(int nVersion, char *pszBuffer)
 {
 	if(ProCheckInit() != APP_SUCC)
 		return APP_FAIL;
@@ -1420,7 +1438,7 @@ int PubGenAndShowQr(int nVersion, char *pszBuffer)
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 */
-int PubDoScanByPinpad(char *pszBuffer)
+int PinPad_DoScan(char *pszBuffer)
 {
 	if(ProCheckInit() != APP_SUCC)
 		return APP_FAIL;
@@ -1436,7 +1454,7 @@ int PubDoScanByPinpad(char *pszBuffer)
 }
 
 /**
-* @brief show QR Code
+* @brief signature
 * @param [in]  pszCharaterCode	feature code
 * @param [in]  name of signature
 * @param [in]  nTimeOut
@@ -1444,7 +1462,7 @@ int PubDoScanByPinpad(char *pszBuffer)
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 */
-int PubDoSignatureByPinpad(char *pszCharaterCode, char *pszSignName, int nTimeOut)
+int PinPad_DoSignature(char *pszCharaterCode, char *pszSignName, int nTimeOut)
 {
 	if(ProCheckInit() != APP_SUCC)
 		return APP_FAIL;
@@ -1456,6 +1474,734 @@ int PubDoSignatureByPinpad(char *pszCharaterCode, char *pszSignName, int nTimeOu
 	else
 	{
 		return gstPinpad.pEsignature(pszCharaterCode, pszSignName, nTimeOut);
+	}
+}
+
+/**
+* @brief swipe card on Pinpad
+* @param [in] STREADCARD_IN
+* @param [out] STREADCARD_OUT
+* @return 
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_SwipeCard(char *pIn ,char *pOut)
+{
+	if(ProCheckInit() != APP_SUCC)
+		return APP_FAIL;
+	if (gnSecurityMode == SECRITY_MODE_INSIDE)
+	{
+		PINPAD_TRACE_SECU("NOT support");
+		return APP_QUIT;
+	}
+	else
+	{
+		return gstPinpad.pSwipeCard(pIn, pOut);
+	}
+}
+
+/**
+* @brief  Initialize newland Level3 module		
+*         Initialization and configuration need only be performed once at module startup 
+*         and whilst configuration remains the same during processing.
+* @param  [in] pszConfig:	According to configuration bitmap definitions.
+* @param [in] nConfigLen 
+* @return 
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_L3init(char *pszConfig, int nConfigLen)
+{
+	STPINPADL3_IN stL3Param;
+
+	memset(&stL3Param, 0, sizeof(STPINPADL3_IN));
+	if(ProCheckInit() != APP_SUCC)
+		return APP_FAIL;
+	if (gnSecurityMode == SECRITY_MODE_INSIDE)
+	{
+		PINPAD_TRACE_SECU("NOT support");
+		return APP_QUIT;
+	}
+	else
+	{
+		stL3Param.cMsgType = PINPAD_INITL3;
+		stL3Param.pszInputData = pszConfig;
+		stL3Param.nInputDataLen = nConfigLen;
+		return gstPinpad.pL3OrderSet((char *)&stL3Param, NULL, NULL);
+	}
+}
+
+/**
+* @brief CAPK management(Update/Get/Remove/Flush)
+* @param [IN] capk: ca publick key
+* @param [IN] mode:  Update/Get/Remove/Flush
+* @return 
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_L3LoadCapk(L3_CAPK_ENTRY *capk, L3_CONFIG_OP mode)
+{
+	char cMsgType;
+	char szData[16] = {0};
+	STPINPADL3_IN stL3Param;
+	char *pszInput = NULL;
+	int nInPutLen = 0;
+
+	memset(&stL3Param, 0, sizeof(STPINPADL3_IN));
+	if(ProCheckInit() != APP_SUCC)
+		return APP_FAIL;
+	if (gnSecurityMode == SECRITY_MODE_INSIDE)
+	{
+		PINPAD_TRACE_SECU("NOT support");
+		return APP_QUIT;
+	}
+	else
+	{
+		switch (mode)
+		{
+		case CONFIG_UPT:
+			cMsgType = PINPAD_UPDATECAPK;
+			pszInput = (char *)capk;
+			nInPutLen = sizeof(L3_CAPK_ENTRY) - 4;
+			break;
+		case CONFIG_GET:
+			cMsgType = PINPAD_GETCAPK;
+			memcpy(szData, capk->rid, 5);
+			szData[5] = capk->index;
+			pszInput = szData;
+			nInPutLen = 6;
+			break;
+		case CONFIG_RMV:
+			cMsgType = PINPAD_RMSPECCAPK;
+			memcpy(szData, capk->rid, 5);
+			szData[5] = capk->index;
+			pszInput = szData;
+			nInPutLen = 6;
+			break;
+		case CONFIG_FLUSH:
+			cMsgType = PINPAD_RMALLCAPK;
+			break;
+		default:
+			return APP_FAIL;
+		}
+		stL3Param.cMsgType = cMsgType;
+		stL3Param.pszInputData = pszInput;
+		stL3Param.nInputDataLen = nInPutLen;
+		return gstPinpad.pL3OrderSet((char *)&stL3Param, (char *)capk, NULL);
+	}
+}
+
+/**
+* @brief AID configuration management(Update/Get/Remove/Flush)
+* @param [in] interface: Contact / Contactless
+* @param [in] aidEntry:  Aid indicator(Get/Remove) or NULL(Update/Flush)
+* @param [IN/OUT] tlv_list: Tlv AID configuration string
+* @param [IN/OUT] tlv_len:  the length of tlv string
+* @param [IN] mode: Update/Get/Remove/Flush, if Flush, will delete all of the configuration(Terminal and AID)
+* @return 
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_L3LoadAIDConfig(L3_CARD_INTERFACE cardInterface, L3_AID_ENTRY *aidEntry, unsigned char tlv_list[], int *tlv_len, L3_CONFIG_OP mode)
+{
+	char cMsgType;
+	STPINPADL3_IN stL3Param;
+	char *pszInput = NULL;
+	char szOutTlv[1500] = {0};
+	int nInPutLen = 0;
+	int nRet, nOff;
+
+	memset(&stL3Param, 0, sizeof(STPINPADL3_IN));
+	if(ProCheckInit() != APP_SUCC)
+		return APP_FAIL;
+	if (gnSecurityMode == SECRITY_MODE_INSIDE)
+	{
+		PINPAD_TRACE_SECU("NOT support");
+		return APP_QUIT;
+	}
+	else
+	{
+		switch (mode)
+		{
+		case CONFIG_UPT:
+			cMsgType = PINPAD_UPDATEAID;
+			pszInput = (char *)tlv_list;
+			nInPutLen = *tlv_len;
+			break;
+		case CONFIG_GET:
+			cMsgType = PINPAD_GETAIDCFG;
+			pszInput = (char *)aidEntry;
+			nInPutLen = 27; // except externString and len
+			break;
+		case CONFIG_RMV:
+			cMsgType = PINPAD_RMSPECAID;
+			pszInput = (char *)aidEntry;
+			nInPutLen = 27; // except externString and len
+			break;
+		case CONFIG_FLUSH:
+			cMsgType = PINPAD_RMALLAID;
+			break;
+		default:
+			return APP_FAIL;
+		}
+		stL3Param.cMsgType = cMsgType;
+		stL3Param.cCardInteface = cardInterface;
+		stL3Param.pszInputData = pszInput;
+		stL3Param.nInputDataLen = nInPutLen;
+		nRet = gstPinpad.pL3OrderSet((char *)&stL3Param, szOutTlv, NULL);
+		if (nRet != APP_SUCC)
+		{
+			return nRet;
+		}
+
+		if (mode == CONFIG_GET)
+		{
+			nOff = 0;
+			PubC2ToInt((uint *)tlv_len, (uchar *)szOutTlv + nOff);
+			nOff += 2;
+			memcpy(tlv_list, szOutTlv + nOff, *tlv_len);
+		}
+		return APP_SUCC; 
+	}
+}
+
+/**
+* @brief Terminal configuration management(Update/Get)
+* @param [IN] interface: Contact / Contactless
+* @param [IN/OUT] tlv_list: Tlv terminal configuration string
+* @param [IN/OUT] tlv_len:  the length of tlv string
+* @param [IN] mode: Update/Get/Remove/Flush, if Flush, will delete all of the configuration(Terminal and AID)
+* @return 
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_L3LoadTerminalConfig(L3_CARD_INTERFACE cardInterface, unsigned char tlv_list[], int *tlv_len, L3_CONFIG_OP mode)
+{
+	char cMsgType = PINPAD_SETTERMINALCFG;
+	STPINPADL3_IN stL3Param;
+	char *pszInput = (char *)tlv_list;
+	char szOutTlv[1500] = {0};
+	int nOutTlvLen;
+	int nInPutLen = 0, nRet, nOff;
+
+	if (tlv_len)
+	{
+		nInPutLen = *tlv_len;
+	}
+	memset(&stL3Param, 0, sizeof(STPINPADL3_IN));
+	if(ProCheckInit() != APP_SUCC)
+		return APP_FAIL;
+	if (gnSecurityMode == SECRITY_MODE_INSIDE)
+	{
+		PINPAD_TRACE_SECU("NOT support");
+		return APP_QUIT;
+	}
+	else
+	{
+		switch (mode)
+		{
+		case CONFIG_UPT:
+			cMsgType = PINPAD_SETTERMINALCFG;
+			break;
+		case CONFIG_GET:
+			cMsgType = PINPAD_GETTERMINALCFG;
+			break;
+		default:
+			PINPAD_TRACE_SECU("mode = %d", mode);
+			return APP_FAIL;
+		}
+		stL3Param.cMsgType = cMsgType;
+		stL3Param.cCardInteface = cardInterface;
+		stL3Param.pszInputData = pszInput;
+		stL3Param.nInputDataLen = nInPutLen;
+		nRet = gstPinpad.pL3OrderSet((char *)&stL3Param, szOutTlv, &nOutTlvLen);
+		if (mode == CONFIG_UPT || nRet != APP_SUCC)
+		{
+			return nRet;
+		}
+		nOff = 0;
+		PubC2ToInt((uint *)tlv_len, (uchar *)szOutTlv + nOff);
+		nOff += 2;
+		memcpy(tlv_list, szOutTlv + nOff, *tlv_len);
+		return APP_SUCC;
+	}
+}
+
+/**
+*@brief Perform transactions on the MSR, contact and contactless card interfaces. 
+*			A transaction may have a simple flow that can be completed via this API, 
+*			in which case the result returned will be Offline Approved, Offline Declined, Failed or some other error status. 
+*			A transaction may also have a more complex flow that may require going online for authorization. 
+*			For such flows the transaction will have to be completed by using multiple API. 
+*			In this case this API will return a status of Online Authorization Required.
+*			When this happens, the terminal must send the transaction online for authorization.
+* @param [IN] pszInput: transaction data
+* @param [IN] nInPutLen: the length of data
+* @param [OUT] pszOut: the cmd result
+* @param [OUT] pnOutLen: the cmd result data length
+* @return 
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_L3PerformTransaction(char *pszInput, int nInPutLen, char *pszOut, int *pnOutLen)
+{
+	char cMsgType = PINPAD_PERFORMTRANS;
+	int nRet;
+	STPINPADL3_IN stL3Param;
+
+	memset(&stL3Param, 0, sizeof(STPINPADL3_IN));
+	if(ProCheckInit() != APP_SUCC)
+		return APP_FAIL;
+	if (gnSecurityMode == SECRITY_MODE_INSIDE)
+	{
+		PINPAD_TRACE_SECU("NOT support");
+		return APP_QUIT;
+	}
+	else
+	{
+		stL3Param.cMsgType = cMsgType;
+		stL3Param.pszInputData = pszInput + 1;
+		stL3Param.cCardInteface = pszInput[0];
+		stL3Param.nInputDataLen = nInPutLen - 1;
+		nRet = gstPinpad.pL3OrderSet((char *)&stL3Param, pszOut, pnOutLen);
+		if (nRet != APP_SUCC)
+		{
+			return nRet;
+		}
+		return APP_SUCC;
+	}
+}
+
+/**
+* @brief Complete the transaction. 
+*		 When PinPad_L3PerformTransaction return a status of Online Authorization Required.
+*		 the terminal must send the transaction online for authorization.
+*		 The back-end host may respond back with a result or there may be a timeout or a network error.
+*		 In any case, the terminal should use this API conveying the result of the Online Authorization Request to complete the transaction.
+* @param [IN] nResult online result
+* @param [IN] pszInput: transaction data
+* @param [IN] nInPutLen: the length of data
+* @param [OUT] res: the transaction result
+* @param [OUT] pszResPonseCode: the cmd response
+* @return 
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_L3CompleteTransaction(int nResult, char *pszInput, int nInPutLen, L3_TXN_RES *res, char *pszResPonseCode)
+{
+	char cMsgType = PINPAD_COMPLETETRANS;
+	int nRet;
+	int nOff;
+	int nErrCode;
+	char szInputData[32] = {0};
+	STPINPADL3_IN stL3Param;
+	char szOutPut[256+1] = {0};
+
+	memset(&stL3Param, 0, sizeof(STPINPADL3_IN));
+	if(ProCheckInit() != APP_SUCC)
+		return APP_FAIL;
+	if (gnSecurityMode == SECRITY_MODE_INSIDE)
+	{
+		PINPAD_TRACE_SECU("NOT support");
+		return APP_QUIT;
+	}
+	else
+	{
+		nOff = 0;
+		szInputData[nOff] = nResult;
+		nOff += 1;
+		PubIntToC2((uchar *)szInputData + nOff, nInPutLen);
+		nOff += 2;
+		memcpy(szInputData + nOff, pszInput, nInPutLen);
+		nOff += nInPutLen;
+		stL3Param.cMsgType = cMsgType;
+		stL3Param.pszInputData = szInputData;
+		stL3Param.nInputDataLen = nOff;
+		nRet = gstPinpad.pL3OrderSet((char *)&stL3Param, szOutPut, NULL);
+		if (nRet != APP_SUCC)
+		{
+			return nRet;
+		}
+		memcpy(pszResPonseCode, "00", 2);
+		nOff = 0;
+		*res = szOutPut[nOff];
+		nOff += 1;
+		PubC4ToInt((uint *)&nErrCode, (uchar *)szOutPut + nOff);
+		return nErrCode;
+	}
+}
+
+/**
+* @brief Terminate transaction and release resource.
+* @return 
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_L3TerminateTransaction()
+{
+	char cMsgType = PINPAD_TERMINATE;
+	STPINPADL3_IN stL3Param;
+
+	memset(&stL3Param, 0, sizeof(STPINPADL3_IN));
+	if(ProCheckInit() != APP_SUCC)
+		return APP_FAIL;
+	if (gnSecurityMode == SECRITY_MODE_INSIDE)
+	{
+		PINPAD_TRACE_SECU("NOT support");
+		return APP_QUIT;
+	}
+	else
+	{
+		stL3Param.cMsgType = cMsgType;
+		stL3Param.pszInputData = NULL;
+		stL3Param.nInputDataLen = 0;
+		return gstPinpad.pL3OrderSet((char *)&stL3Param, NULL, NULL);
+	}
+}
+
+/**
+* @brief Get the EMVL3 data 
+* @param [IN]  type: ,L3_DATA or L2 TAG.
+* @param [OUT] data: The data buffer.
+* @param [IN]  maxLen: The buffer length of data.
+* @return description
+* @retval 0    tag value does not exist
+* @retval >0   The length of the Value
+* @retval -1   Data length exceeds length limit
+*/
+int PinPad_L3GetData(int nTag, char *pszOut, int nMaxLen)
+{
+	char cMsgType = PINPAD_GETL3DATA;
+	char szInPut[16] = {0};
+	char szOut[256] = {0};
+	int nOff, nRet;
+	int nLen;
+	STPINPADL3_IN stL3Param;
+
+	memset(&stL3Param, 0, sizeof(STPINPADL3_IN));
+	if(ProCheckInit() != APP_SUCC)
+		return APP_FAIL;
+	if (gnSecurityMode == SECRITY_MODE_INSIDE)
+	{
+		PINPAD_TRACE_SECU("NOT support");
+		return APP_QUIT;
+	}
+	else
+	{
+		nOff = 0;
+		szInPut[0] = 0; // index
+		nOff += 1;
+		PubIntToC4((uchar *)szInPut + nOff, (uint)nTag);
+		nOff += 4;
+		PubIntToC2((uchar *)szInPut + nOff, (uint)nMaxLen);
+		nOff += 2;
+		stL3Param.cMsgType = cMsgType;
+		stL3Param.pszInputData = szInPut;
+		stL3Param.nInputDataLen = nOff;
+		nRet = gstPinpad.pL3OrderSet((char *)&stL3Param, szOut, &nLen);
+		if (nRet != APP_SUCC)
+		{
+			return nRet;
+		}
+		nOff = 0;
+		if (szOut[nOff] != 0) // tlv data status
+		{
+			return APP_QUIT;
+		}
+		nOff += 1;
+		if (szInPut[0] != 0)
+		{
+			nOff += 2; //actual data len
+		}
+		PubC2ToInt((uint *)&nLen, (uchar *)szOut + nOff);
+		nOff += 2;
+		memcpy(pszOut, szOut + nOff, nLen);
+
+		return nLen;
+	}
+}
+
+/**
+* @brief Setup kernel data.
+* @param [IN]  tag: Tag.
+* @param [IN]  data: The setting data buffer.
+* @param [IN]  len: The length of data.
+* @return
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_L3SetData(unsigned int tag, void *data, unsigned int len)
+{
+	char cMsgType = PINPAD_SETTLVDATA;
+	char szInPut[64] = {0};
+	int nOff;
+	STPINPADL3_IN stL3Param;
+
+	memset(&stL3Param, 0, sizeof(STPINPADL3_IN));
+	if(ProCheckInit() != APP_SUCC)
+		return APP_FAIL;
+	if (gnSecurityMode == SECRITY_MODE_INSIDE)
+	{
+		PINPAD_TRACE_SECU("NOT support");
+		return APP_QUIT;
+	}
+	else
+	{
+		nOff = 0;
+		PubIntToC4((uchar *)szInPut + nOff, (uint)tag);
+		nOff += 4;
+		PubIntToC2((uchar *)szInPut + nOff, (uint)len);
+		nOff += 2;
+		memcpy(szInPut + nOff, data, len);
+		nOff += len;
+		stL3Param.cMsgType = cMsgType;
+		stL3Param.pszInputData = szInPut;
+		stL3Param.nInputDataLen = nOff;
+		return gstPinpad.pL3OrderSet((char *)&stL3Param, NULL, NULL);
+	}
+}
+
+/**
+* @brief Get the TLV format data from current kernel.
+* @param [IN] tagList: The tag list which will be packed to tlvData.
+* @param [IN] tagNum: The number of tag list.
+* @param [OUT] tlvData: Out tlv data
+* @param [IN] maxLen: The size of tlvData.
+* @param [IN] ctl: Control code.
+             bit0: 1: ignore the zero length tag.
+* @return description
+* @retval < 0 Fail
+*         > 0 the length of out data(tlvData)
+*/
+int PinPad_L3GetTlvData(unsigned int *tagList, unsigned int tagNum, unsigned char *tlvData, unsigned int maxLen,int ctl)
+{
+	char cMsgType = PINPAD_GETTLVLIST;
+	char szInPut[256] = {0};
+	char szOut[256] = {0};
+	int nOff, nRet;
+	int nLen;
+	STPINPADL3_IN stL3Param;
+	char szTagList[256] = {0};
+	char szTagTmp[16] = {0};
+	int nTagListLength = 0, i;
+
+	memset(&stL3Param, 0, sizeof(STPINPADL3_IN));
+	if(ProCheckInit() != APP_SUCC)
+		return APP_FAIL;
+	if (gnSecurityMode == SECRITY_MODE_INSIDE)
+	{
+		PINPAD_TRACE_SECU("NOT support");
+		return APP_QUIT;
+	}
+	else
+	{
+		nOff = 0;
+		szInPut[nOff] = 0;
+		nOff += 1;
+		// tag num
+		szInPut[nOff] = tagNum;
+		nOff += 1;
+		//max length
+		PubIntToC2((uchar *)szInPut + nOff, (uint)maxLen);
+		nOff += 2;
+		// control code
+		szInPut[nOff] = ctl;
+		nOff += 1;
+		// tag list length
+		for (i = 0; i < tagNum; i++)
+		{
+			memset(szTagTmp, 0, sizeof(szTagTmp));
+			sprintf(szTagTmp, "%x", tagList[i]);
+			PubAscToHex((uchar *)szTagTmp, strlen(szTagTmp), 0, (uchar *)szTagList + nTagListLength);
+			nTagListLength += (strlen(szTagTmp) / 2);
+		}
+		PubIntToC2((uchar *)szInPut + nOff, (uint)nTagListLength);
+		nOff += 2;
+		memcpy(szInPut + nOff, szTagList, nTagListLength);
+		nOff += nTagListLength;
+
+		stL3Param.cMsgType = cMsgType;
+		stL3Param.pszInputData = szInPut;
+		stL3Param.nInputDataLen = nOff;
+
+		PINPAD_TRACEHEX_SECU(szInPut, nOff, "szInput");
+		nRet = gstPinpad.pL3OrderSet((char *)&stL3Param, szOut, &nLen);
+		if (nRet != APP_SUCC)
+		{
+			return nRet;
+		}
+		nOff = 0;
+		PINPAD_TRACE_SECU("nLen = %d", nLen);
+		PINPAD_TRACEHEX_SECU(szOut, nLen, "szOut");
+		if (szOut[nOff] != 0) // tlv data status
+		{
+			return APP_QUIT;
+		}
+		nOff += 1;
+		if (szInPut[0] != 0)
+		{
+			nOff += 2; //actual data len
+		}
+		PubC2ToInt((uint *)&nLen, (uchar *)szOut + nOff);
+		nOff += 2;
+		memcpy(tlvData, szOut + nOff, nLen);
+
+		return nLen;
+	}
+}
+
+/**
+* @brief Setup Debug Mode
+* @param [IN]debugLV   LV_CLOSE / LV_DEBUG / LV_ALL
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_L3SetDebugMode(int nDebugLv)
+{
+	STPINPADL3_IN stL3Param;
+	char szOutPut[64] = {0};
+	char szInput[2+1] = {0};
+
+	memset(&stL3Param, 0, sizeof(STPINPADL3_IN));
+	if(ProCheckInit() != APP_SUCC)
+		return APP_FAIL;
+	if (gnSecurityMode == SECRITY_MODE_INSIDE)
+	{
+		PINPAD_TRACE_SECU("NOT support");
+		return APP_QUIT;
+	}
+	else
+	{
+		szInput[0] = nDebugLv;
+		stL3Param.cMsgType = PINPAD_SETDEBUGMODE;
+		stL3Param.pszInputData = szInput;
+		stL3Param.nInputDataLen = 1;
+		return gstPinpad.pL3OrderSet((char *)&stL3Param, szOutPut, NULL);
+	}
+}
+
+/**
+* @brief  Enumerate all AID, include terminal config 
+* @param [IN] interface: Contact/Contactless
+* @param [OUT] aidEntry: AID Lists
+* @param [IN]maxCount:   Max size of aidEntry
+* @return
+* @li >0  Number of AID(<= maxCount)
+* @li <= 0 FAIL
+*/
+int PinPad_L3EnumEmvConfig(L3_CARD_INTERFACE interface, L3_AID_ENTRY * aidEntry, int maxCount)
+{
+	STPINPADL3_IN stL3Param;
+	char szOutPut[1024+1] = {0};
+	char szInput[2+1] = {0};
+	int nRet, nNum, nOff, nAidLen, i;
+
+	memset(&stL3Param, 0, sizeof(STPINPADL3_IN));
+	if(ProCheckInit() != APP_SUCC)
+		return APP_FAIL;
+	if (gnSecurityMode == SECRITY_MODE_INSIDE)
+	{
+		PINPAD_TRACE_SECU("NOT support");
+		return APP_QUIT;
+	}
+	else
+	{
+		szInput[0] = interface;
+		stL3Param.cMsgType = PINPAD_GETAIDNUM;
+		stL3Param.cCardInteface = interface;
+		stL3Param.pszInputData = szInput;
+		stL3Param.nInputDataLen = 0;
+		nRet = gstPinpad.pL3OrderSet((char *)&stL3Param, szOutPut, NULL);
+		if (nRet != APP_SUCC)
+		{
+			return nRet;
+		}
+		nOff = 0;
+		PubC2ToInt((uint*)&nNum, (uchar *)szOutPut + nOff);
+		nOff += 2; // aid Num
+		for (i = 0; i < nNum; i++)
+		{
+			PubC2ToInt((uint *)&nAidLen, (uchar *)szOutPut + nOff);
+			nOff += 2; // aid len
+			nOff += 3; // 9F06 + len
+			nAidLen -= 3;
+			aidEntry[i].aidLen = nAidLen;
+			memcpy((char *)aidEntry[i].aid, szOutPut + nOff, nAidLen);
+			nOff += nAidLen;
+			//PINPAD_TRACEHEX_SECU(aidEntry[i].aid, nAidLen, "aid");
+		}
+		return nNum;
+	}
+
+}
+
+/**
+* @brief Enumerate CAPK
+* @param in  start        ---Start index
+* @param in  end          ---End index
+* @param out capk        ---CAPK Lists
+* @return
+* @li        >0            Number of public key
+* @li        <= 0          FAIL
+*/
+int PinPad_L3EnumCapk(int start, int end, char capk[][6])
+{
+	STPINPADL3_IN stL3Param;
+	char szOutPut[1024] = {0};
+	int nRet, nNum, nOff, nOutPutLen, i;
+
+	memset(&stL3Param, 0, sizeof(STPINPADL3_IN));
+	if(ProCheckInit() != APP_SUCC)
+		return APP_FAIL;
+	if (gnSecurityMode == SECRITY_MODE_INSIDE)
+	{
+		PINPAD_TRACE_SECU("NOT support");
+		return APP_QUIT;
+	}
+	else
+	{
+		stL3Param.cMsgType = PINPAD_GETCAPKNUM;
+		stL3Param.pszInputData = NULL;
+		stL3Param.nInputDataLen = 0;
+		nRet = gstPinpad.pL3OrderSet((char *)&stL3Param, szOutPut, &nOutPutLen);
+		if (nRet != APP_SUCC)
+		{
+			return nRet;
+		}
+		nOff = 0;
+		PubC2ToInt((uint*)&nNum, (uchar *)szOutPut + nOff);
+		nOff += 2;
+		PINPAD_TRACE_SECU("Num = %d", nNum);
+		for (i = 0; i < nNum; i++)
+		{
+			memcpy((char *)capk[i], szOutPut + nOff, 6);
+			nOff += 6;
+		//	PINPAD_TRACEHEX_SECU(capk[i], 6, "RID");
+		}
+		
+		return nNum;
+	}
+}
+
+/**
+* @brief set font size
+* @param [in] nSize 1 - normal 2- small 3- large
+* @return 
+* @li APP_FAIL Fail
+* @li APP_SUCC Success
+*/
+int PinPad_SetFontSize(char cSize)
+{
+	if(ProCheckInit() != APP_SUCC)
+		return APP_FAIL;
+	if (gnSecurityMode == SECRITY_MODE_INSIDE)
+	{
+		PINPAD_TRACE_SECU("NOT support");
+		return APP_QUIT;
+	}
+	else
+	{
+		return gstPinpad.pSetFontSize(cSize);
 	}
 }
 
