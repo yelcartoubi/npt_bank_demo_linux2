@@ -36,6 +36,8 @@ static char gcSslFlag;//ssl flag
 int EthInit(STETHPARAM *pstEthParam, char cSsl)
 {
 	int nRet = 0;
+    STETHPARAM stTmpEthParam;
+    char szDNS[50];
 
 	nRet = NAPI_EthOpen();
 	if (nRet != NAPI_OK)
@@ -84,6 +86,13 @@ int EthInit(STETHPARAM *pstEthParam, char cSsl)
 			PubDebugSelectly(3, "NAPI_NetDHCP error[%d]",nRet);
 			return APP_FAIL;
 		}
+        memset(&stTmpEthParam, 0, sizeof(stTmpEthParam));
+        nRet = NAPI_NetGetContext(ETH, stTmpEthParam.szIP, stTmpEthParam.szMask,  stTmpEthParam.szGateway, szDNS);
+        if (nRet != NAPI_OK)
+        {
+            PubDebugSelectly(3, "NAPI_NetGetContext fail!!!");
+            return APP_FAIL;
+        }
     }
 	gnHandle = 0;
 	gcSslFlag = cSsl;
