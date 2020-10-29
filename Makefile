@@ -29,21 +29,21 @@ COMMSRCDIR = module/libcomm/src
 TMSINCDIR = module/libtms/inc
 TMSSRCDIR = module/libtms/src
 
-
 # SDK directory definition
-SDKDIR = C:\\NPT_SDK\\Linux
-SDKAPIDIR = $(SDKDIR)\\Core\\api\\legacy_ndk
+SDKDIR = C:\\NPT_SDK
+SDKAPIDIR = $(SDKDIR)\\Linux\\Core\\api\\legacy_ndk
 SDKAPILIB = $(SDKAPIDIR)\\lib\\gcc_4.9.4
 
 # NAPI
-SDKNAPIDIR = $(SDKDIR)\\Core\\api\\napi
+SDKNAPIDIR = $(SDKDIR)\\Linux\\Core\\api\\napi
 SDKNAPIINC = $(SDKNAPIDIR)\\inc
-SDKNAPILIB = $(SDKNAPIDIR)\\lib
+SDKNAPILIB = $(SDKNAPIDIR)\\lib\\gcc_4.9.4
 
 # EMV L2
-LIBL2EMVDIR = $(SDKDIR)\\Core\\EMV\\L2_SDK\\library\\lib\\gcc_4.9.4
+LIBL2EMVDIR = $(SDKDIR)\\Linux\\Core\\EMV\\L2_SDK\\lib\\gcc_4.9.4
 
-SDKSYSLIB = $(SDKDIR)\\Compiler\\4.9.4\\arm-linux-gnueabi\\libc\\usr\\lib
+# Libc
+SDKSYSLIB = $(SDKDIR)\\Linux\\Compiler\\4.9.4\\arm-linux-gnueabi\\libc\\usr\\lib
 
 CFLAGS += -Wall -Werror -DNDEBUG $(CROSS_CFLAGS) -O2 -g $(INCPATH) -D USE_TMS -D DEMO
 CFLAGS += -funwind-tables
@@ -76,7 +76,7 @@ MODEL = SP630
 # Application Name
 PARAMINI_NAME = BANKDEMO
 # Application Version
-PARAMINI_VER = 2020102001
+PARAMINI_VER = 2020102901
 
 # Generated program name
 NAME = main
