@@ -13,6 +13,7 @@
 #define PORT_PINPAD			FILEDIR"PORTPINPAD"
 #define FILEDEBUG			FILEDIR"FLDEBUG.NL"
 #define OLDFILEDEBUG		FILEDIR"FLDEBUGOLD.NL"
+#define OPENDB_CONSOLE		FILEDIR"CONSOLEDBG"
 
 static char gcInitAux = 0;
 static int ProInitDebugPort(int nPortType);
@@ -100,9 +101,14 @@ static void DebugBufToAux(const char *pszBuf, const int nBufLen)
 	int nPortNum;
 
 	nPortNum = PubGetDebugPortNum();
-	if (PubGetDebugMode() == 2)
+	if (PubGetDebugMode() == DEBUG_FILE)
 	{
 		WriteFileLog(pszBuf,nBufLen);
+	}
+	else if(PubGetDebugMode() == DEBUG_CONSOLE)
+	{
+		fwrite(pszBuf, sizeof(char), nBufLen, stdout);
+		fflush(stdout);
 	}
 	else
 	{
@@ -162,7 +168,7 @@ void PubDebugData(const char* pszTitle,const void* pData,int nLen,...)
 	char sBuf[256]={0};
 	struct timeb NowTime;
 
-	if (PubGetDebugMode() == 0 || pData == NULL)
+	if (PubGetDebugMode() == DEBUG_NONE || pData == NULL)
 	{
 		return;
 	}
@@ -206,7 +212,7 @@ void PubDebugData(const char* pszTitle,const void* pData,int nLen,...)
 
 void PubDebug(char* lpszFormat, ...)
 {
-    if (PubGetDebugMode() == 0)
+    if (PubGetDebugMode() == DEBUG_NONE)
 	{
 		return ;
     }
@@ -231,7 +237,7 @@ void PubDebug(char* lpszFormat, ...)
 
 void PubBufToAux(const char *pszBuf, const int nBufLen)
 {
-	if (PubGetDebugMode() == 0)
+	if (PubGetDebugMode() == DEBUG_NONE)
 	{
 		return ;
     }
@@ -255,6 +261,10 @@ int PubGetDebugMode(void)
     {
         return DEBUG_FILE;
     }
+    else if (PubFsExist(OPENDB_CONSOLE) == NAPI_OK)
+    {
+        return DEBUG_CONSOLE;
+    }
 	return DEBUG_NONE;
 }
 
@@ -277,11 +287,13 @@ int PubSetDebugMode(int nMode)
 		PubFsDel(OPENDB_PORT);
 		PubFsDel(FILEDEBUG);
 		PubFsDel(OLDFILEDEBUG);
+		PubFsDel(OPENDB_CONSOLE);
         NAPI_PortClose((PORT_TYPE)PubGetDebugPortNum());
 		return APP_SUCC;
 		break;
 	case DEBUG_PORT:
 		PubFsDel(OPENDB_FILE);
+		PubFsDel(OPENDB_CONSOLE);
 		if((nFileHandle = PubFsOpen(OPENDB_PORT, "w")) <= 0)
 		{
 			return APP_FAIL;
@@ -290,6 +302,7 @@ int PubSetDebugMode(int nMode)
 		break;
 	case DEBUG_FILE:
 		PubFsDel(OPENDB_PORT);
+		PubFsDel(OPENDB_CONSOLE);
 		if((nFileHandle = PubFsOpen(OPENDB_FILE, "w")) <= 0)
 		{
 			return APP_FAIL;
@@ -305,6 +318,16 @@ int PubSetDebugMode(int nMode)
 			PubSetDebugPort(RS232);
 		}
 		break;
+	case DEBUG_CONSOLE:
+        PubFsDel(OPENDB_FILE);
+		PubFsDel(OPENDB_PORT);
+		if((nFileHandle = PubFsOpen(OPENDB_CONSOLE, "w")) <= 0)
+		{
+			return APP_FAIL;
+		}
+		PubFsClose(nFileHandle);
+		break;
+		
 	default:
 		return APP_FAIL;
 		break;
@@ -337,6 +360,11 @@ int PubGetDebugLevel(void)
     else if (PubFsExist(OPENDB_FILE) == NAPI_OK)
     {
         if((nFileHandle = PubFsOpen(OPENDB_FILE, "w")) <= 0)
+		   return APP_FAIL;
+    }
+	else if (PubFsExist(OPENDB_CONSOLE) == NAPI_OK)
+    {
+        if((nFileHandle = PubFsOpen(OPENDB_CONSOLE, "w")) <= 0)
 		   return APP_FAIL;
     }
 	else
@@ -381,6 +409,11 @@ int PubSetDebugLevel(int nLevel)
         if((nFileHandle = PubFsOpen(OPENDB_FILE, "w")) <= 0)
 		   return APP_FAIL;
     }
+	else if (PubFsExist(OPENDB_CONSOLE) == NAPI_OK)
+    {
+        if((nFileHandle = PubFsOpen(OPENDB_CONSOLE, "w")) <= 0)
+		   return APP_FAIL;
+    }
 	else
 	{
 		return APP_FAIL;
@@ -414,7 +447,7 @@ int PubDebugSelectly(char cLevel, char* lpszFormat, ...)
 	va_list args;
 	char szBuf[4096];
 
-	if (PubGetDebugMode() == 0)
+	if (PubGetDebugMode() == DEBUG_NONE)
 	{
 		return APP_FAIL;
     }
@@ -469,6 +502,7 @@ int PubGetDebugPortNum(void)
 	{
 		return USB_SERIAL;
 	}
+
 	return APP_FAIL;
 }
 

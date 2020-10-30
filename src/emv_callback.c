@@ -19,7 +19,6 @@
 static char gszLanguageType[2+1] = {0};
 static char gszAmount[12+1] = {0};
 static char gsPINBlock[16+1] = {0};
-static int  gnPortNum = RS232;
 static char gszCardEventData[19+1] = {0};
 static char gszExpriryDate[4+1] = {0};
 static char gszCvv[4+1] = {0};
@@ -907,11 +906,6 @@ void GetManualExpiryDate(char *pszOut)
 void GetManualCVV(char *pszOut)
 {
     memcpy(pszOut, gszCvv, 4);
-}
-
-void SetEmvDebugPort(int nPort)
-{
-	gnPortNum = nPort;
 }
 
 /**

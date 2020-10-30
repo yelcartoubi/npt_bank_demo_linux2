@@ -323,17 +323,20 @@ static int DebugMenu(void)
 		tr("1.Close"),
 		tr("2.COM Mode"),
 		tr("3.FILE Mode"),
-		tr("4.Export Log"),
-		tr("5.EMV Debug"),
+		tr("4.CONSOLE Mode"),
+		tr("5.Export Log"),
+		tr("6.EMV Debug"),
 	};
 	char *pszItems2[] = {
 		tr("1.RS232"), 
 		tr("2.PINPAD"), 
-		tr("3.USB")};
+		tr("3.USB"),
+	};
 	char *pszItems3[] = {
 		tr("1.Normal"), 
 		tr("2.Warning"), 
-		tr("3.All")};
+		tr("3.All")
+	};
 	
 	int nSelect = 1, nStartItem = 1;
 
@@ -404,7 +407,24 @@ static int DebugMenu(void)
 			break;
 		}
 		break;
-	case 4:	
+	case 4:
+		PubSetDebugMode(DEBUG_CONSOLE);
+		nSelect = PubGetDebugLevel() + 1;
+		ASSERT_QUIT(PubShowMenuItems(tr("Debug Level"), pszItems3, sizeof(pszItems3)/sizeof(char *), &nSelect, &nStartItem,60));
+		switch(nSelect)
+		{
+		case 1:
+		    PubSetDebugLevel(DEBUG_LEVEL_NORMAL);
+			break;
+		case 2:
+		    PubSetDebugLevel(DEBUG_LEVEL_WARNING);
+		   break;
+		case 3:
+		    PubSetDebugLevel(DEBUG_LEVEL_ALL);
+			break;
+		}
+		break;
+	case 5:	
 		ASSERT_QUIT(PubShowMenuItems(tr("Port Num"), pszItems2, sizeof(pszItems2)/sizeof(char *), &nSelect, &nStartItem,60));
 		switch(nSelect)
 		{
@@ -422,7 +442,7 @@ static int DebugMenu(void)
 		}
 		PubExportDebugFile();//Even if 'PubExportDebugFile' is not invoked, the log will disappear after rebooting.
 		break;
-	case 5:
+	case 6:
 		MenuEmvSetDebug();
 		break;		
 	default:

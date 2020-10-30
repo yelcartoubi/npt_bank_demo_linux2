@@ -67,6 +67,7 @@ typedef enum
 #define DEBUG_NONE  	0
 #define DEBUG_PORT  	1
 #define DEBUG_FILE		2
+#define DEBUG_CONSOLE	3
 
 #define DEBUG_LEVEL_NORMAL  	0
 #define DEBUG_LEVEL_WARNING  	1

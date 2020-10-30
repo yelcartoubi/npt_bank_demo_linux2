@@ -15,8 +15,6 @@
 #include "libapiinc.h"
 #include "appinc.h"
 
-static YESORNO gcEmvLog = NO;
-
 /**
 ** brief: for debug
 ** param [in]: 
@@ -86,7 +84,6 @@ void DispTraceHex(char* pszHexBuf, int nLen, char* lpszFormat, ...)
 	PubGetKeyCode(0);
 }
 
-
 int MenuEmvSetDebug(void)
 {
 	char *pszItems[] = {
@@ -94,10 +91,9 @@ int MenuEmvSetDebug(void)
 		tr("2.Debug"),
 		tr("3.Debug All"),
 	}; 
-	int nSelcItem = 1, nStartItem = 1, nPortNum;
+	int nSelcItem = 1, nStartItem = 1;
 
-	nPortNum = PubGetDebugPortNum();
-	if(APP_FAIL == nPortNum)
+	if (PubGetDebugMode() == DEBUG_NONE)
 	{
 		PubMsgDlg(tr("EMV DEBUG"), "PLEASE OPEN DEBUG MODE FIRST!", 0, 60);
 		return APP_FAIL;
@@ -108,21 +104,18 @@ int MenuEmvSetDebug(void)
 	{
 		case 1:
 			TxnL3SetDebugMode(LV_CLOSE);
-			gcEmvLog = NO;
 			break;
 		case 2:
-			gcEmvLog = YES;
 			TxnL3SetDebugMode(LV_DEBUG);
 			break;
 		case 3:
 			TxnL3SetDebugMode(LV_ALL);
-			gcEmvLog = YES;
 			break;
 		default :
 			return APP_FAIL;
 			break;
 	}
-	SetEmvDebugPort(nPortNum);
+
 	return APP_SUCC;
 }
 
@@ -131,10 +124,4 @@ int emvDebug(const char *psLog, uint nLen)
 	PubDebug("%*.*s", nLen, nLen, psLog);
 	return 0;
 }
-
-YESORNO GetisOpenEmvLog()
-{
-	return gcEmvLog;
-}
-
 

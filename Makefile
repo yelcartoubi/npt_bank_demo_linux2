@@ -109,6 +109,6 @@ clean:
 	-$(RM) $(BINDIR)/$(NAME)
 	-$(RM) $(OBJDIR)/*.o
 	-$(RM) $(OBJDIR)/*.deps
-	
+
 NLD:$(NAME)
 	$(MKUPT) -h $(BINDIR)/filepath.txt -p $(BINDIR)/param.ini -o $(BINDIR)/$(APPNAME)	
