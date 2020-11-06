@@ -1703,7 +1703,6 @@ int SetFunctionIsPinPad(void)
 		ASSERT_FAIL(SetFunctionPinpadTimeOut());
 		ASSERT_FAIL(SetFunctionPinpadUsage());
 		ASSERT_FAIL(SetFunctionPinpadPort());
-		ASSERT_FAIL(SetFuncPinpadCallBack());
 	}
 	TRACE("GetVarIsPinpadReadCard() = %d", GetVarIsPinpadReadCard());
 
@@ -3995,14 +3994,6 @@ void GetTransName(char cTransType, char *pszTransName)
 	}
 }
 
-int SetFuncPinpadCallBack(void)
-{
-	ASSERT_QUIT(PubSelectYesOrNo(tr("PINPAD L3"),tr("Callback to upper computer?"), NULL, &gstAppPosParam.cPinPadCallbackFlag));
-	ASSERT_FAIL(UpdateTagParam(FILE_APPPOSPARAM, TAG_PINPADCALLBACKFLAG, 1, &gstAppPosParam.cPinPadCallbackFlag));
-
-	return APP_SUCC;
-}
-
 YESORNO GetFuncPinpadCallBackFlag()
 {
 	if (gstAppPosParam.cPinPadCallbackFlag == YES)
@@ -4233,19 +4224,11 @@ char GetL3initStatus()
 
 int GetIsLoadXMLConfig()
 {
-	if (GetVarIsPinpadReadCard() == YES)
+	if (TxnL3EnumCapk(0, 50, NULL) > 0 &&
+		TxnL3EnumEmvConfig(L3_CONTACT, NULL, 50) > 0 && TxnL3EnumEmvConfig(L3_CONTACTLESS, NULL, 50) > 0)
 	{
-		if ((GetL3initStatus() & L3INIT_PINPAD) == L3INIT_PINPAD)
-		{
-			return false;
-		}
-		return true;
+		return FALSE;
 	}
-
-	if ((GetL3initStatus() & L3INIT_INSIDE) == L3INIT_INSIDE)
-	{
-		return false;
-	}
-	return true;
+	return TRUE;
 }
 

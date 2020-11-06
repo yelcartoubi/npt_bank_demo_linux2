@@ -2118,6 +2118,11 @@ int PinPad_L3EnumEmvConfig(L3_CARD_INTERFACE interface, L3_AID_ENTRY * aidEntry,
 		}
 		nOff = 0;
 		PubC2ToInt((uint*)&nNum, (uchar *)szOutPut + nOff);
+		PINPAD_TRACE_SECU("Num = %d", nNum);
+		if (aidEntry == NULL)
+		{
+			return nNum;
+		}
 		nOff += 2; // aid Num
 		for (i = 0; i < nNum; i++)
 		{
@@ -2172,6 +2177,10 @@ int PinPad_L3EnumCapk(int start, int end, char capk[][6])
 		PubC2ToInt((uint*)&nNum, (uchar *)szOutPut + nOff);
 		nOff += 2;
 		PINPAD_TRACE_SECU("Num = %d", nNum);
+		if (capk == NULL)
+		{
+			return nNum;
+		}
 		for (i = 0; i < nNum; i++)
 		{
 			memcpy((char *)capk[i], szOutPut + nOff, 6);

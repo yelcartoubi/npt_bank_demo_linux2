@@ -1136,21 +1136,8 @@ int TxnL3PerformTransaction(char *pszTlvLise, int nTlvLen, L3_TXN_RES *res, STSY
 		char szPinPadResCode[2+1] = {0};
 		char szTmp[8] = {0};
 
-		if (GetFuncPinpadCallBackFlag() == NO)
-		{
-			PubClear2To4();
-			PubDisplayStrInline(DISPLAY_MODE_CENTER, 3, "Processing On PINPAD...");
-			PubUpdateWindow();
-		}
-		if (GetFuncPinpadCallBackFlag() == YES)
-		{
-			TlvAdd(0x1F8139, 3, "\xFF\x00\x00", pszTlvLise, &nTlvLen); // for support pinpad callback
-		}
-		else
-		{
-			TlvAdd(0x1F8139, 3, "\x00\x00\x00", pszTlvLise, &nTlvLen);
-		}
-
+		// pinpad information is synchronized with upper computer.
+		TlvAdd(0x1F8139, 3, "\xFF\x00\x00", pszTlvLise, &nTlvLen);
 		pszTlvLise[0] &= ~L3_CARD_MANUAL;
 		if (GetVarPinPadType() == PINPAD_SP100)
 		{
@@ -1337,7 +1324,6 @@ int TxnL3EnumCapk(int start, int end, char capk[][6])
 	{
 		return NAPI_L3EnumCapk(start, end, capk);
 	}
-
 }
 
 /**
@@ -1368,21 +1354,6 @@ int TxnL3Init()
 			PubMsgDlg(NULL, "BAD PARSE XML", 0, 60);
 			return APP_FAIL;
 		}
-	}
-
-	if (PubGetHardwareSuppot(HARDWARE_SUPPORT_PINPAD, NULL) != APP_SUCC)
-	{
-		PubFsDel(XML_CONFIG);
-		return APP_SUCC;
-	}
-
-	if (GetVarIsPinpadReadCard() == YES)
-	{
-		SetL3initStatus(L3INIT_PINPAD);
-	}
-	else
-	{
-		SetL3initStatus(L3INIT_INSIDE);
 	}
 
 	return APP_SUCC;

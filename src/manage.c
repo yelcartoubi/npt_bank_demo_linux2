@@ -844,18 +844,18 @@ void setFontSize(void)
 	while(1)	
 	{		
 		nRet = PubShowMenuItems(tr("Set Font"), pszStrs, sizeof(pszStrs)/sizeof(char *), &nSelcItem, &nStartItem, 0);		
-		if (nRet==APP_QUIT || nRet==APP_TIMEOUT)		
-		{			
-			return;		
-		}		
-		switch(nSelcItem)		
+		if (nRet==APP_QUIT || nRet==APP_TIMEOUT)
+		{
+			return;
+		}
+		switch(nSelcItem)
 		{			
 		case 1: 
 		case 2: 
 		case 3:	
 			SetVarSystemFontSize((nSelcItem + 1) * 8);
 			PubSetDispForm((nSelcItem + 1) * 8, GetVarSystemFontSize() / 4);
-			break;			
+			break;
 		}	
 	}
 }

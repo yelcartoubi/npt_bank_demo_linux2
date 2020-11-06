@@ -108,7 +108,7 @@ typedef enum {
 	PINPAD_GETTLVLIST,                   /**< get the TLV list data value from current kernel. */
 	PINPAD_SETDEBUGMODE,                 /**< set the L2 kernel Debug mode */
 	PINPAD_GETKERNELVER,                 /**< get the kernel version */
-	PINPAD_CANCELREADCARD,               /**< get the kernel version */
+	PINPAD_CANCELREADCARD,               /**< Cancel read card */
 	PINPAD_PERFORMTRANS,                 /**< performed a transaction */
 	PINPAD_COMPLETETRANS,                /**< Complete the transaction */
 	PINPAD_TERMINATE,                    /**< to stop the transaction, reset the internal transaction status and release resource */
@@ -154,6 +154,7 @@ extern int PubSwipeCard_PINPAD(char *pIn, char *pOut);
 
 extern int PubL3OrderSet_PINPAD(char *pL3Cfg, char *pszOutPut, int *pnOutPutLen);
 extern int PubL3PerformRecv_PINPAD(char *pszOutPut, int *pnOutPutLen);
+extern void PubL3CancalReadCard();
 #endif
 
 /**< End of lpindpad.h */

@@ -1,0 +1,74 @@
+bankdemo by napi
+====================================================
+Date: 2020/11/06 +0800
+improve the processing of emvl3 pinpad.
+changes include:
+1.Load the EMV parameter when the POS device or Pinpad has no EMV parameter
+2.added support for cancel read card instruction
+3.remove a simple setting: SetFuncPinpadCallBack 
+
+====================================================
+commit 18300de49c5ba4cb4cfa5f9f39b153dbfb06fef6
+Date:   Fri Oct 30 11:56:33 2020 +0800
+support for Linux console debug
+changes include:
+1.added support for Linux console debug, so now we can select FILE, PORT or CONSOLE for the debug messages
+
+====================================================
+commit cd19d9aad2a514534e9d10d858ad0db504991898
+Date:   Thu Oct 29 17:06:40 2020 +0800
+Synchronize Core SDK changes, Core SDK version:greater than or equal to 8.0.3
+changes include:
+1.SDK directory structure adjustment, Makefile changes
+
+=====================================================
+commit 69a900f5638b950811b7846fb34111d38fded8e9
+Date:   Thu Oct 29 14:59:48 2020 +0800
+update libtms.so((NAPI_SysGetInfo changed))
+
+=====================================================
+commit 0dedcaadc60f2df233d30e7b79f1f85f1bfb6edc
+Date:   Fri Oct 23 13:54:22 2020 +0800
+fixed the issue: DNS fail when Enable ETH DHCP
+
+=====================================================
+commit 423fc040e550bec13be86677b6b37f62215258fe
+Date:   Thu Oct 22 18:15:16 2020 +0800
+added support for emvl3 pinpad, we can read chip card through Pinpad, and also improve the processing of pinpad instruction
+changes include:
+1.added EMV Command Order Set: init EMV module,  load EMV parameter, perform/complete/terminate transaciton and so on.
+2.improve the processing of pinpad instruction
+
+=====================================================
+commit 7524135272c02d0e70901d07d7fbbc91f7cff072
+Date:   Thu Oct 22 17:12:20 2020 +0800
+imporve Makefile
+
+====================================================
+commit 6f730305f542bce052d6c7c14086f5dfdc979e17
+Date:   Thu Oct 22 17:00:57 2020 +0800
+Synchronize file napi_wlm.h changes(ST_PPP_CFG), correspond to Core SDK version:greater than or equal to 8.0.1
+
+====================================================
+commit 5b8069b0c926c743fd94bb4f3b2a8fc21c1bda48
+Date:   Thu Oct 22 16:25:07 2020 +0800
+fix: ssl reading timeout processing
+
+====================================================
+commit 4dc42c2918655fc6af9e67f0b6ad16f9789349cc
+Date:   Fri Oct 9 17:05:52 2020 +0800
+fix loading reversal data error
+changes include:
+param.c : ExportPosParam-->ASSERT_FAIL(LoadTagParam(FILE_APPREVERSAL, (void *)&gstReversalParam));
+
+====================================================
+commit 3e125b4a3d8ce610ce6dc00c8481aa538b031f20
+Date:   Tue Sep 8 09:21:41 2020 +0800
+change batch file and makefile according to new SDK
+
+====================================================
+commit d412ce6728b1949372bfc262fe13583f3aeb4fff
+Date:   Thu Jul 23 11:41:51 2020 +0800
+
+first commit: the bankdemo support kinds of transactions: SALE/VOID/SETTLEMENT/BALANCE and so on
+

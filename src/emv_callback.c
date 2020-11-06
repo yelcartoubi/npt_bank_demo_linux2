@@ -1079,7 +1079,7 @@ static int Pinpad_UI_Event(char *pszData)
 		PubUpdateWindow();
 		return APP_SUCC;
 	}
-	else if (unEventId == 0x05) // UI pin status
+	else if (unEventId == 0x06) // UI pin status
 	{
 		int nRet;
 		PubC4ToInt((uint *)&nRet, (uchar *)pszData + nOff);
@@ -1403,12 +1403,29 @@ static int Pinpad_CardConfirm(char *pszOutPut, int *pnOutLen)
 
 int PerformCallBack(char cCallbackId, char *pszInput, char *pszOutput, int *pnOutLen)
 {
+	int nRet;
 	switch (cCallbackId)
 	{
 	case L3_CALLBACK_UI_EVENT:
 		ASSERT_FAIL(Pinpad_UI_Event(pszInput));
-		ASSERT_FAIL(PubL3PerformRecv_PINPAD(pszOutput, pnOutLen));
-		break;
+		if (pszInput[0] == UI_PRESENT_CARD)
+		{
+			nRet = PubL3PerformRecv_PINPAD(pszOutput, pnOutLen);
+			if (nRet == APP_QUIT)
+			{
+				PubL3CancalReadCard();
+				return APP_QUIT;
+			}
+			else if (nRet != APP_SUCC)
+			{
+				return nRet;
+			}
+		}
+		else
+		{
+			ASSERT_FAIL(PubL3PerformRecv_PINPAD(pszOutput, pnOutLen));
+		}
+		return APP_SUCC;
 	case L3_CALLBACK_SELECT_CANDIDATE_LIST:
 		return Pinpad_SELECT_CANDIDATE_LIST(pszInput, pszOutput, pnOutLen);
 	case L3_CALLBACK_AFTER_FINAL_SELECT:

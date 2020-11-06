@@ -246,12 +246,18 @@ static int CheckIsStartText(int nRecvResponFlag, int nPort, int nTimeOut)
 	char szBuf[16+1] = {0};
 	int nRet, i;
 	int nReadLen;
-	int nReadTimes = 3;
+	int nReadTimes = 9;
 
 	for (i = 0; i < nReadTimes; i++)
 	{
+		if(GetKbHit() == KEY_ESC)
+		{
+			PINPAD_TRACE_SECU("press cancel");
+			SendAck(nPort);
+			return APP_QUIT;
+		}
 		nReadLen = 1;
-		nRet = NAPI_PortRead(nPort, (uchar *)szBuf, &nReadLen, 3 * 1000);
+		nRet = NAPI_PortRead(nPort, (uchar *)szBuf, &nReadLen, 1 * 1000);
 		if(nRet == NAPI_ERR_TIMEOUT)
 		{
 			continue;
@@ -283,22 +289,15 @@ static int CheckIsStartText(int nRecvResponFlag, int nPort, int nTimeOut)
 			PINPAD_TRACEHEX_SECU(szBuf, nReadLen, "next byte");
 			return APP_FAIL;
 		}
-
-		if(GetKbHit() == KEY_ESC)
-		{
-			PINPAD_TRACE_SECU("press cancel");
-			SendAck(nPort);
-			return APP_FAIL;
-		}
 	}
 
 	if(i == nReadTimes)
 	{
 		gcPortStatus = NO;
-		PINPAD_TRACE_SECU("time out(%d s) and quit ", nReadTimes * 3);
-		nTimeOut -= (nReadTimes * 2);
+		PINPAD_TRACE_SECU("time out(%d s) and quit ", nReadTimes * 1);
+		nTimeOut -= (nReadTimes - 3);
 	}
-
+	nTimeOut += 1; // more than pinpad timeout
 	if (nRecvResponFlag == 0)
 	{
 		return APP_SUCC;
@@ -2910,9 +2909,9 @@ int PubL3PerformRecv_PINPAD(char *pszOutPut, int *pnOutPutLen)
 	nRet = PinPad_Recv(sRecvBuf, (uint *)&nLen, nPinpadPort, nPinpadTimeOut);
 	if (nRet != APP_SUCC)
 	{
-		PINPAD_TRACE_SECU("Update File:PinPad_SendRecv APP_FAIL");
+		PINPAD_TRACE_SECU("PinPad_Recv = %d", nRet);
 		ProSetSecurityErrCode(ERR_PINPAD_SENDEXRF, 0);
-		return APP_FAIL;
+		return nRet;
 	}
 
 	while (1)
@@ -2929,11 +2928,24 @@ int PubL3PerformRecv_PINPAD(char *pszOutPut, int *pnOutPutLen)
 		{
 			PINPAD_TRACE_SECU("Update File:PinPad_SendRecv APP_FAIL");
 			ProSetSecurityErrCode(ERR_PINPAD_SENDEXRF, 0);
-			return APP_FAIL;
+			return nRet;
 		}
 	}
 
 	return APP_SUCC;	
+}
+
+void PubL3CancalReadCard()
+{
+	int nRet;
+	
+	PINPAD_TRACE_SECU("send data :+++CANCEL");
+	nRet = NAPI_PortWrite(nPinpadPort, (uchar *)"+++CANCEL", 9);
+	if (nRet != APP_SUCC)
+	{
+		PINPAD_TRACE_SECU("cancel read card fail = %d",nRet);
+		return;
+	}
 }
 
 /* End of pindpad.c */

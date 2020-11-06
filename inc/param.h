@@ -123,7 +123,7 @@ typedef struct
 	char szVerChkValue[8+1];
 	char szVersion[8+1];
 	char cPinPadUsage; // read card/Enter pin on Pinpad
-	char cPinPadCallbackFlag;  // This data item used to control callback to upper computer.
+	char cPinPadCallbackFlag; // pinpad information is synchronized with upper computer.
 	char cPinpadType;
 	char cL3initStatus;
 }STAPPPOSPARAM;
@@ -428,7 +428,6 @@ extern int SetFunctionTmsAutoUpdate(void);
 extern int SetFunctionPinpadUsage(void);
 extern int GetVarPinPadUsage(void);
 extern int SetFunctionPinpadPort(void);
-extern int SetFuncPinpadCallBack(void);
 extern YESORNO GetFuncPinpadCallBackFlag();
 extern int GetVarPinPadType(void);
 extern int SetFunctionPinpadType(void);
