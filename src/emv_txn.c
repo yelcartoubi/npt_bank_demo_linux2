@@ -229,7 +229,7 @@ int GetData9F26RQ(char *pszInOutStr)
 */
 int EmvPackField55(const char cTransType, char *pszOutField55, int *pnOutField55Len)
 {
-	uint nLen = 0;
+	int nLen = 0;
 	uint nTagList[MAX_TAG_LIST_NUM];
 
 	switch (cTransType)
@@ -274,7 +274,7 @@ int EmvPackField55(const char cTransType, char *pszOutField55, int *pnOutField55
 		break;
 	}
 
-	nLen = TxnL3GetTlvData(nTagList, nLen, (uchar *)pszOutField55, 255, 0);
+	nLen = TxnL3GetTlvData(nTagList, (uint)nLen, (uchar *)pszOutField55, 255, 0);
 	TRACE("nLen = %d", nLen);
 	TRACE_HEX(pszOutField55, nLen, "pszOutField55");
 	if (nLen <= 0)

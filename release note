@@ -1,5 +1,11 @@
 bankdemo by napi
 ====================================================
+Date: 2020/11/20 +0800
+fix error return value for EmvPackField55 when tlvlist is empty(emvl3 pinpad)
+changes include:
+EmvPackField55: uint-->int
+
+====================================================
 Date: 2020/11/06 +0800
 improve the processing of emvl3 pinpad.
 changes include:
