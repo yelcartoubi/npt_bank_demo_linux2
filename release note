@@ -1,5 +1,9 @@
 bankdemo by napi
 ====================================================
+Date: 2020/12/01 +0800
+added MIR and Multibanco AID to file Newland_L3_configuration.xml
+
+====================================================
 Date: 2020/11/20 +0800
 fix error return value for EmvPackField55 when tlvlist is empty(emvl3 pinpad)
 changes include:
