@@ -83,7 +83,7 @@ static void UI_PresentCard(int nUIType)
 {
 	int i;
 	int nLine = 3;
-	char szDispAmt[13+1] = {0};
+	char szDispAmt[DISPAMTLEN] = {0};
 	
 	char *pContent = "Present Card";
 
@@ -198,7 +198,7 @@ static void ProShowStar(int nCount, int nLine)
 // typedef int (*FUNC_GET_PIN)(L3_PIN_TYPE type, unsigned int cnt, PublicKey *pinPK, unsigned char *sw1sw2);
 int Func_GET_PIN(L3_PIN_TYPE type, unsigned int cnt, publicKey *pinPK, unsigned char *sw1sw2)
 {
-	char szDispAmt[13+1] = {0};
+	char szDispAmt[DISPAMTLEN] = {0};
 	int nLine = 1;
 	int nRet = 0;
 	unsigned char sPin[20] = {0};

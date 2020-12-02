@@ -546,7 +546,7 @@ int PrintAllRecord(void)
 void PrintSettleInfo(char *pszType, SETTLE_NUM nSettleNum, uchar *psSettleAmt)
 {
 	char szPrintInfo[128] = {0};
-	char szDispAmt[16] = {0};
+	char szDispAmt[DISPAMTLEN] = {0};
 	char szSpace[64];
 	int nSpace, nOff = 0;
 	uint unScrWidth, unScrHeight, unSpcWidth, unTypeWidth;
@@ -772,7 +772,7 @@ int _printParam(void *ptrPara)
 	
 	int *pnPrintType=(int *)ptrPara	;
 	char szSoftVer[16+1];
-	char szDispAmt[13+1] = {0};
+	char szDispAmt[DISPAMTLEN] = {0};
 	
 
 	PubClearAll();
@@ -1406,12 +1406,11 @@ static int PrintBillHead()
 
 }
 
-
 static int PrintAmt(const STTRANSRECORD *pstTransRecord)
 {
 	char szCurrencyName[3+1] = {0};
 	char szStr[128] = {0}, szTmpStr[128] = {0}, szTmp[256] = {0};
-	char szDispAmt[15] = {0}, szDispTip[15] = {0}, szDispTotal[15] = {0};
+	char szDispAmt[DISPAMTLEN] = {0}, szDispTip[DISPAMTLEN] = {0}, szDispTotal[DISPAMTLEN] = {0};
 	char szTotalAmt[14] = {0};
 	char cTransType = pstTransRecord->cTransType;
 	
@@ -1471,7 +1470,7 @@ static int PrintAmt(const STTRANSRECORD *pstTransRecord)
 static int GetPrintAmt(const STTRANSRECORD *pstTransRecord, char *pszDispAmt)
 {
 	char szStr[128] = {0};
-	char szDispAmt[15] = {0};
+	char szDispAmt[DISPAMTLEN] = {0};
 	
 	memset(szStr, 0, sizeof(szStr));
 	PubHexToAsc((uchar *)pstTransRecord->sAmount, 12, 0,  (uchar *)szStr);

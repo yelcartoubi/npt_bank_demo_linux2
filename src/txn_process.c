@@ -233,7 +233,7 @@ int TxnObtainFromRecord(STTRANSRECORD stTransRecord, STSYSTEM *pstSystem)
 
 static void TxnShowBalance(STSYSTEM stSystem)
 {
-	char szDispAmt[15+1] = {0};
+	char szDispAmt[DISPAMTLEN] = {0};
 
 #ifdef DEMO
 	strcpy(stSystem.szAmount, "999999999");
@@ -815,7 +815,7 @@ int TxnGetAmout(char *pszTitle, STSYSTEM *pstSystem, STTRANSCFG *pstTransCfg)
 {
 	char szContent[256] = {0};
 	int nAmtLen = 12;
-	char szDispAmt[14] = {0};
+	char szDispAmt[DISPAMTLEN] = {0};
 	char cTransType = pstSystem->cTransType;
 	
 	while(1)

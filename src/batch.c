@@ -469,7 +469,7 @@ int DispRecordInfo(const char * pszTitle, const STTRANSRECORD *pstTransRecord)
 {
 	char szDispBuf[30], szAmount[13];
 	char szContent[500];
-	char szDispAmt[13+1] = {0};
+	char szDispAmt[DISPAMTLEN] = {0};
 	int nKey =0;
 	
 	//Card

@@ -1,5 +1,11 @@
 bankdemo by napi
 ====================================================
+Date: 2020/12/02 +0800
+improve the Settlement of statistical.
+changes include:
+settle.c -> DealSettle: move void transaction to credit
+
+====================================================
 Date: 2020/12/01 +0800
 added MIR and Multibanco AID to file Newland_L3_configuration.xml
 

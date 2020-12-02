@@ -27,6 +27,8 @@
 #define L3INIT_INSIDE            0X01
 #define L3INIT_PINPAD            0X02
 
+#define DISPAMTLEN               32
+
 /**
 * @struct STREVERSALPARAM 
 */

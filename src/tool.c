@@ -423,7 +423,7 @@ int CurrencyAmtToDisp(const char *pszCurrency, const char *pszAmt, char *pszOuts
 	};	
 
 	char **p = NULL;	
-	char szDispAmt[13+1] = {0};
+	char szDispAmt[DISPAMTLEN] = {0};
 
 	ProAmtToDispOrPnt(pszAmt, szDispAmt);
 	PubAllTrim(szDispAmt);

@@ -341,7 +341,7 @@ static int DispSettleDataItem(char *pszTransName, SETTLE_NUM nTransNum, SETTLE_A
 	int nRet;
 	char szDispBuf[100] = {0};
 	char szAmt[13] = {0};
-	char szDispAmt[13+1] = {0};
+	char szDispAmt[DISPAMTLEN] = {0};
 	
 	PubGetStrFormat(DISPLAY_ALIGN_BIGFONT, szDispBuf, pszTransName);
 	PubGetStrFormat(DISPLAY_ALIGN_BIGFONT, szDispBuf+strlen(szDispBuf), tr("\nNum:|R%12d"), nTransNum);	
@@ -379,11 +379,6 @@ int DealSettle(STAMT_NUM_INFO_SETTLE *pstInfoSettle, STSETTLE stSettle)
 	PubHexToAsc((uchar *)stSettle._SaleAmount, 12, 0, szAmt);
 	AmtAddAmt(szTotalAmt, szAmt, szTotalAmt);
 
-	// void
-	pstInfoSettle->nDebitNum += stSettle._VoidSaleNum;
-	PubHexToAsc(stSettle._VoidSaleAmount, 12, 0, szAmt);
-	AmtSubAmt(szTotalAmt, szAmt, szTotalAmt);
-
 #if 0
 	// TIP/ADJUST
 	pstInfoSettle->nDebitNum += stSettle._TipsNum;
@@ -407,6 +402,11 @@ int DealSettle(STAMT_NUM_INFO_SETTLE *pstInfoSettle, STSETTLE stSettle)
 	//refund
 	pstInfoSettle->nCreditNum = stSettle._RefundNum;
 	PubHexToAsc(stSettle._RefundAmount, 12, 0, szAmt);
+	AmtAddAmt(szTotalAmt, szAmt, szTotalAmt);
+
+	// void
+	pstInfoSettle->nCreditNum += stSettle._VoidSaleNum;
+	PubHexToAsc(stSettle._VoidSaleAmount, 12, 0, szAmt);
 	AmtAddAmt(szTotalAmt, szAmt, szTotalAmt);
 
 	// void auth sale
