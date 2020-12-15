@@ -385,7 +385,7 @@ static int _printallrecord(void *ptrPara)
 	STTRANSRECORD stTransRecord;
 	int nRecordNum = 0;
 	int i, nSpace, nOff = 0;
-	uint unScrWidth, unScrHeight, unSpcWidth, unTypeWidth;
+	uint unSpcWidth, unTypeWidth;
 	int nStartRecNo;
 	char szTransName[64] = {0}, szAmt[16] = {0}, szCardNo[32] = {0}, szDateTime[14+1] = {0};
 	char szNii[3+1] = {0};
@@ -450,12 +450,11 @@ static int _printallrecord(void *ptrPara)
 		//GetInputMode(stTransRecord.cTransAttr, szInputMode);
 
 		memset(szSpace, ' ', sizeof(szSpace) - 1);
-		NAPI_ScrGetTrueTypeFontSize("\x20", 1, (int *)&unSpcWidth, NULL);
-		NAPI_ScrGetLcdSize(&unScrWidth, &unScrHeight);
-		NAPI_ScrGetTrueTypeFontSize(szTransName, strlen(szTransName), (int *)&unTypeWidth, NULL);
-		if (unTypeWidth < unScrWidth)
+		NAPI_PrnGetTTFStrSize("\x20", 1, (int *)&unSpcWidth, NULL);
+		NAPI_PrnGetTTFStrSize(szTransName, strlen(szTransName), (int *)&unTypeWidth, NULL);
+		if (unTypeWidth < PRINT_PAPER_WIDTH/2)
 		{
-			nSpace = (unScrWidth - unTypeWidth) / unSpcWidth;
+			nSpace = (PRINT_PAPER_WIDTH/2 - unTypeWidth) / unSpcWidth;
 		}
 		else
 		{
@@ -549,28 +548,29 @@ void PrintSettleInfo(char *pszType, SETTLE_NUM nSettleNum, uchar *psSettleAmt)
 	char szDispAmt[DISPAMTLEN] = {0};
 	char szSpace[64];
 	int nSpace, nOff = 0;
-	uint unScrWidth, unScrHeight, unSpcWidth, unTypeWidth;
+	uint unSpcWidth, unTypeWidth;
 
 	memset(szSpace, ' ', sizeof(szSpace) - 1);
-	NAPI_ScrGetTrueTypeFontSize("\x20", 1, (int *)&unSpcWidth, NULL);
-	NAPI_ScrGetLcdSize(&unScrWidth, &unScrHeight);
-	NAPI_ScrGetTrueTypeFontSize(pszType, strlen(pszType), (int *)&unTypeWidth, NULL);
+	NAPI_PrnGetTTFStrSize("\x20", 1, (int *)&unSpcWidth, NULL);
+	NAPI_PrnGetTTFStrSize(pszType, strlen(pszType), (int *)&unTypeWidth, NULL);
+
 	strcpy(szPrintInfo, pszType);
 	nOff += strlen(pszType);
-	if (unTypeWidth >= 300)
+	if (unTypeWidth >= PRINT_PAPER_WIDTH/2-15)
 	{
 		nSpace = 1;
 	}
 	else
 	{
-		nSpace = (320 - unTypeWidth) / unSpcWidth;
+		nSpace = (PRINT_PAPER_WIDTH/2 - 15 - unTypeWidth) / unSpcWidth;
 	}
+
 	memcpy(szPrintInfo + nOff, szSpace, nSpace);
 	nOff += nSpace;
-	sprintf(szPrintInfo + nOff, "%-3d", nSettleNum);
+	sprintf(szPrintInfo + nOff, "%03d", nSettleNum);
 	nOff += 3;
-	memcpy(szPrintInfo + nOff, szSpace, 5);
-	nOff += 3;
+	memcpy(szPrintInfo + nOff, szSpace, 8);
+	nOff += 8;
 	BcdAmtToDisp(psSettleAmt, szDispAmt);
 	strcat(szPrintInfo, szDispAmt);
 
@@ -670,7 +670,7 @@ int _printsettle(void *ptrPara)
 
 	PubPrePrinter(tr("***SUMMARY OF CHARGE***"));
 
-	PubPrePrinter(tr("TYPE                                NUM  AMOUNT"));
+	PubPrePrinter(tr("TYPE                                              NUM      AMOUNT"));
 	
 	PubPrePrinter(" ==========================================");
 	//BASE

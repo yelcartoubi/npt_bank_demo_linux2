@@ -8,9 +8,7 @@
 
 #define PRINT_FEED_BACK  (-65) /**Feed back before print*/ 
 
-#define PRINT_PAPER_WIDTH	384
-
-
+static char gszPrnFontTTFName[128] = {0};
 static int gnPrtBorder = 0;
 
 /**
@@ -332,6 +330,7 @@ int PubPrintCommit(int (*SendPrintData)(void *), void *pvParam,uint unPrintType)
 	int nRet;
 	PRN_STATUS nPrnStatus = NAPI_PRN_STATUS_OK;
 	char szContent[100] = {0};
+	char szFontName[128] = {0};
 
 	if(PubIsSupportPrint() == NO || SendPrintData == NULL)
 	{
@@ -339,10 +338,10 @@ int PubPrintCommit(int (*SendPrintData)(void *), void *pvParam,uint unPrintType)
 	}
 
 	NAPI_ScrPush();
-	
+	PubGetPrnTTFFontFile(szFontName);
 	while(1)
 	{
-		nRet = NAPI_PrnOpen((int)unPrintType, "arial.ttf", 0);
+		nRet = NAPI_PrnOpen((int)unPrintType, szFontName, 0);
 		if(nRet != NAPI_OK)
 		{
 			PubDebug("NAPI_PrnInit fail, nRet=%d, unPrintType=%d\n", nRet, unPrintType);
@@ -545,5 +544,41 @@ YESORNO PubIsSupportPrint()
 
 	return YES;
 }
+
+/**
+* @brief Set print font file
+* @return 
+* @li FilePathName TTF font file name with absolute path
+* @author lingdz
+*/
+int PubSetPrnTTFFontFile(const char *pszFilePathName)
+{
+	if (strlen(pszFilePathName) > sizeof(gszPrnFontTTFName) - 1) {
+		PubDebug("set print ttf name fail");
+		return APP_FAIL;
+	}
+
+	strcpy(gszPrnFontTTFName, pszFilePathName);
+	return APP_SUCC;
+}
+
+/**
+* @brief Get print font file
+* @return 
+* @li FilePathName TTF font file name with absolute path
+* @author lingdz
+*/
+int PubGetPrnTTFFontFile(char *pszFilePathName)
+{
+	if (strlen(gszPrnFontTTFName) == 0) {
+		strcpy(gszPrnFontTTFName, "roboto.ttf");
+		PubDebug("default ttf name = %s", gszPrnFontTTFName);
+		return APP_SUCC;
+	}
+
+	strcpy(pszFilePathName, gszPrnFontTTFName);
+	return APP_SUCC;
+}
+
 /* end of lprint.c */
 

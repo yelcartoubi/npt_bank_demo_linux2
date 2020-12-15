@@ -723,17 +723,15 @@ int SetCustomizedFont(EM_LANG emLang)
 	switch (emLang)
 	{
 	case LANG_EN_US:
-	case LANG_ZH_CN:
-		strcpy((char*)szFontName, "arial.ttf");
+		strcpy((char*)szFontName, "roboto.ttf");
 		break;
+	case LANG_ZH_CN:
 	case LANG_CUSTOMIZED:
 		PubMsgDlg(NULL, "No font file.", 3, 3);
 		return APP_FAIL;
-		break;
 	default:
 		return APP_FAIL;
-		break;
-	} 
+	}
 	
 	NAPI_ScrDestroyTrueTypeFont();
 
@@ -744,7 +742,7 @@ int SetCustomizedFont(EM_LANG emLang)
 		PubMsgDlg("Promt", "TTF file lost!", 3, 10);
 		return APP_FAIL;
 	}
-
+	PubSetPrnTTFFontFile(szFontName);
 	SetTrLang(emLang);
 	if (GetTag(FILE_APPPOSPARAM, TAG_FONTSIZE, &nLen, szSize) == APP_SUCC)
 	{
@@ -757,7 +755,6 @@ int SetCustomizedFont(EM_LANG emLang)
 
 	return APP_SUCC;
 }
-
 
 void DestroyCustomizedFont(void)
 {

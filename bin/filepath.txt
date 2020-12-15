@@ -2,7 +2,7 @@ bin\main
 bin\DispLogo.png
 bin\PrintLogo.bmp
 bin\EMVERRCODE.INI
-bin\arial.ttf
+bin\roboto.ttf
 bin\Newland_L3_configuration.xml
 bin\server.pem
 lib\libemvl3.so

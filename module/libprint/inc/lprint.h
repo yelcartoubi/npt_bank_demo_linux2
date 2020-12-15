@@ -26,6 +26,8 @@
 #define MAX_PRINT_MODULE_NUM  40
 #define MAX_IMAGE_BLOCK   2000   
 
+#define PRINT_PAPER_WIDTH	384
+
 #define PubPrePrinter(p,args...) PubPriPrintStr(0,p,##args)
 
 typedef enum {
@@ -227,6 +229,22 @@ int PubPrtDoubleStrs(const char *pszContent1, const char *pszContent2);
 * @author lingdz
 */
 YESORNO PubIsSupportPrint();
+
+/**
+* @brief Set print font file
+* @return 
+* @li FilePathName TTF font file name with absolute path
+* @author lingdz
+*/
+int PubSetPrnTTFFontFile(const char *pszFilePathName);
+
+/**
+* @brief Get print font file
+* @return 
+* @li FilePathName TTF font file name with absolute path
+* @author lingdz
+*/
+int PubGetPrnTTFFontFile(char *pszFilePathName);
 
 /** @}*/ // End of print
 
