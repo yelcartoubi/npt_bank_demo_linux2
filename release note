@@ -1,5 +1,12 @@
 bankdemo by napi
 ====================================================
+Date: 2020/01/05 +0800
+Adjust text to center display to prevent display from crossing boundaries
+changes include:
+lui.c:
+unSHeight is the height of text.
+gnDispLineSpacing/2  --> (gnDispLineHeight - unSHeight)/2;
+====================================================
 Date: 2020/12/15 +0800
 change font file to roboto.ttf
 changes include:

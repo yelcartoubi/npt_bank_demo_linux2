@@ -239,7 +239,7 @@ void PubDisplayStr(int nMode, int nLineno, int nClumno, char * pFormat,...)
 	char    szDispStr[500] = {0};
 	va_list VarList;
 	int x,y;
-	uint unX, unY, unLHeight, unLWidth ,unSWidth;
+	uint unX, unY, unLHeight, unLWidth ,unSWidth, unSHeight;
 
 	if(nLineno < 1 )
 		nLineno = 1;
@@ -256,7 +256,7 @@ void PubDisplayStr(int nMode, int nLineno, int nClumno, char * pFormat,...)
 	NAPI_ScrGetViewPort(&unX, &unY, &unLWidth, &unLHeight);	
 	
 	if(strlen(szDispStr))
-		NAPI_ScrGetTrueTypeFontSize(szDispStr, strlen(szDispStr), (int *)&unSWidth, NULL);
+		NAPI_ScrGetTrueTypeFontSize(szDispStr, strlen(szDispStr), (int *)&unSWidth, (int *)&unSHeight);
 	else
 		unSWidth = 0;
 	
@@ -289,8 +289,11 @@ void PubDisplayStr(int nMode, int nLineno, int nClumno, char * pFormat,...)
 	{
 		x = (nClumno-1)*gnDispFontSize;
 	}
-
-	y = (nLineno-1)*gnDispLineHeight+ gnDispLineSpacing/2;
+	if (unSHeight > gnDispLineHeight)
+	{
+		unSHeight = gnDispLineHeight;
+	}
+	y = (nLineno-1)*gnDispLineHeight + (gnDispLineHeight - unSHeight)/2;
 	NAPI_ScrDispTrueTypeFontText(x ,y , szDispStr, strlen(szDispStr));
 	
 	if((nMode & DISPLAY_MODE_CENTER))//padding
@@ -360,13 +363,17 @@ void PubDisplayGen(int nLineno, char *pStr)
 	NAPI_ScrGetViewPort(&unX, &unY, &unLWidth, &unLHeight);	
 	NAPI_ScrGetTrueTypeFontSize(pStr, strlen(pStr), (int *)&unSWidth, (int *)&unSHeight);
 
-
 	if(unSWidth < unLWidth)
 		x = (unLWidth - unSWidth)/2;
 	else
 		x = 0;		
 
-	y = (nLineno-1)*gnDispLineHeight + gnDispLineSpacing/2;
+	if (unSHeight > gnDispLineHeight)
+	{
+		unSHeight = gnDispLineHeight;
+	}
+
+	y = (nLineno-1)*gnDispLineHeight + (gnDispLineHeight - unSHeight)/2;
 	NAPI_ScrDispTrueTypeFontText(x ,y , pStr, strlen(pStr)); 
 }	
 
@@ -413,10 +420,14 @@ void PubDisplayInv(int nLineno, char *pStr)
 {
 	int y;
 	uint unX, unY, unLHeight, unLWidth;
+	uint unSWidth, unSHeight;
 	
 	if(pStr == NULL || nLineno < 1)
 	{
 		return;
+	}
+	if(strlen(pStr)) {
+		NAPI_ScrGetTrueTypeFontSize(pStr, strlen(pStr), (int *)&unSWidth, (int *)&unSHeight);
 	}
 
 	PubClearLine(nLineno, nLineno);
@@ -424,7 +435,11 @@ void PubDisplayInv(int nLineno, char *pStr)
 
 	y = (nLineno-1)*gnDispLineHeight;
 	NAPI_ScrRectangle(0, y, unLWidth,gnDispLineHeight, RECT_PATTERNS_SOLID_FILL, DISP_INVBG_COLOUR);//Draw black rectangle
-	y += gnDispLineSpacing/2;
+	if (unSHeight > gnDispLineHeight)
+	{
+		unSHeight = gnDispLineHeight;
+	}
+	y += (gnDispLineHeight - unSHeight)/2;
 	DispBoldFontText(1 ,y , pStr);		
 	
 }
@@ -537,6 +552,7 @@ void PubDispMultLines(int nFont, int nLineno, int nClumno, char * pFormat,...)
 	int		nLeftLen, nTrimedLen ,nTmp;
 	int 	x,y;
 	uint unX, unY, unLHeight, unLWidth;
+	int unSHeight;
 	
 	if(nLineno < 1)
 	{
@@ -559,10 +575,15 @@ void PubDispMultLines(int nFont, int nLineno, int nClumno, char * pFormat,...)
 	}
 	
 	x = (nClumno-1)*gnDispFontSize;
-	y = (nLineno-1)*gnDispLineHeight+ gnDispLineSpacing/2;
+	NAPI_ScrGetTrueTypeFontSize(szDispStr, strlen(szDispStr), NULL, (int *)&unSHeight);
+	if (unSHeight > gnDispLineHeight)
+	{
+		unSHeight = gnDispLineHeight;
+	}
+	y = (nLineno-1)*gnDispLineHeight + (gnDispLineHeight - unSHeight)/2;
 	nLeftLen = strlen(szDispStr);
 	nTrimedLen = 0;
-	
+
 	while(1)
 	{	
 		TrimStrToOneLine(x, szDispStr + nTrimedLen, nLeftLen, &nTmp, NULL);
@@ -846,10 +867,10 @@ int PubConfirmDlg(const char *pszTitle, const char *pszContent, int nBeep, int n
 {
 	int	nKey;
 	uint unX,unY;
-	uint unSWidth1 , unSWidth2,unSHeight, unScrWidth ,unScrHeight;
+	uint unSWidth1 , unSWidth2,unSHeight1, unSHeight2, unScrWidth ,unScrHeight;
 	char * str1 = (char*)("CANCEL");
 	char * str2 = (char*)("ENTER");
-	int 	nMaxLine, x1, x2, y, nTouchline;
+	int 	nMaxLine, x1, x2, y1, y2, nTouchline;
 	ST_PADDATA stPaddata;
 	int 	nTimeCount = 0;
 	
@@ -861,8 +882,8 @@ int PubConfirmDlg(const char *pszTitle, const char *pszContent, int nBeep, int n
 	NAPI_ScrGetViewPort(&unX, &unY, &unScrWidth,&unScrHeight);
 	PubGetDispView(&nMaxLine, NULL);
 	
-	NAPI_ScrGetTrueTypeFontSize(str1, strlen(str1), (int*)&unSWidth1, (int*)&unSHeight);
-	NAPI_ScrGetTrueTypeFontSize(str2, strlen(str2), (int*)&unSWidth2, (int*)&unSHeight);
+	NAPI_ScrGetTrueTypeFontSize(str1, strlen(str1), (int*)&unSWidth1, (int*)&unSHeight1);
+	NAPI_ScrGetTrueTypeFontSize(str2, strlen(str2), (int*)&unSWidth2, (int*)&unSHeight2);
 
 	if (pszTitle!=NULL && strlen(pszTitle)>0)
 	{
@@ -891,9 +912,20 @@ int PubConfirmDlg(const char *pszTitle, const char *pszContent, int nBeep, int n
 	else
 		x2 = unScrWidth/2;	
 
-	y = gnDispLineHeight*(nMaxLine-1) + gnDispLineSpacing/2;
-	DispBoldFontText(x1, y, str1);
-	DispBoldFontText(x2 ,y, str2);
+	if (unSHeight1 > gnDispLineHeight)
+	{
+		unSHeight1 = gnDispLineHeight;
+	}
+
+	if (unSHeight2 > gnDispLineHeight)
+	{
+		unSHeight2 = gnDispLineHeight;
+	}
+
+	y1 = gnDispLineHeight*(nMaxLine-1) + (gnDispLineHeight - unSHeight1)/2;
+	y2 = gnDispLineHeight*(nMaxLine-1) + (gnDispLineHeight - unSHeight2)/2;
+	DispBoldFontText(x1, y1, str1);
+	DispBoldFontText(x2 ,y2, str2);
 
 	NAPI_ScrRefresh();
 	PubBeep(nBeep);
@@ -1845,7 +1877,7 @@ void ProDisplayInvs(int nAlign, int nMode, int nLineno, char *pstr)
 void ProDisplayInv(int nMode, int nLineno, char *pStr)
 {
 	int x, y;
-	uint unLHeight, unLWidth, unSWidth;
+	uint unLHeight, unLWidth, unSWidth, unSHeight;
 	
 	if(pStr == NULL || nLineno < 1)
 	{
@@ -1854,7 +1886,7 @@ void ProDisplayInv(int nMode, int nLineno, char *pStr)
 
 	NAPI_ScrGetLcdSize  (&unLWidth, &unLHeight);
 	if(strlen(pStr))
-		NAPI_ScrGetTrueTypeFontSize(pStr, strlen(pStr), (int *)&unSWidth, NULL);
+		NAPI_ScrGetTrueTypeFontSize(pStr, strlen(pStr), (int *)&unSWidth, (int *)&unSHeight);
 	else
 		unSWidth = 0;
 
@@ -1886,7 +1918,7 @@ void ProDisplayInv(int nMode, int nLineno, char *pStr)
 
 	y = (nLineno-1)*gnDispLineHeight;
 	NAPI_ScrRectangle(0, y, unLWidth,gnDispLineHeight, RECT_PATTERNS_SOLID_FILL, DISP_INVBG_COLOUR);//Draw black rectangle
-	y += gnDispLineSpacing/2;
+	y += (gnDispLineHeight - unSHeight)/2;
 	DispBoldFontText(x ,y , pStr);		
 	
 }
