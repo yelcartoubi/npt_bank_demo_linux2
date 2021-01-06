@@ -3,39 +3,32 @@
 * NAPI 
 * Date	2012-08-17
 */
+
+#ifndef __SSLSOCKETS__H
+#define __SSLSOCKETS__H
+
 #include <stdio.h>
 #include <time.h>
 #include <sys/socket.h>
-#ifndef __SSLSOCKETS__H
-#define __SSLSOCKETS__H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef void *SSL_HANDLE; /**<File descriptor*/
 
-/** @addtogroup
-* @{
-*/
-
-
-/** @} */
-
-/** @addtogroup SslSockets module
-* @{
-*/
 
 typedef enum
 {
-	NAPI_NOWAIT = 0,						///<
-	NAPI_SUSPEND = 0xFFFFFFFF,				///<
+	NAPI_NOWAIT = 0,						
+	NAPI_SUSPEND = 0xFFFFFFFF,
 }EM_BLOCK_OPT;
 
 typedef struct st_socket_addr
 {
-	uint  unAddrType;						///<
-	char *psAddr;							///< IP ASCIIz.
-	ushort usPort;							///< IP .
+	uint  unAddrType;
+	char *psAddr;							// IP ASCIIz
+	ushort usPort;							// IP
 }ST_SOCKET_ADDR;
 
 typedef enum
@@ -50,10 +43,8 @@ typedef enum
 
 typedef enum
 {
-    SSL_AUTH_NONE,			///< :,
-												///< :(),,
-	SSL_AUTH_CLIENT,		  ///< :()
-							          ///< :
+    SSL_AUTH_NONE,					
+	SSL_AUTH_CLIENT,								
 }EM_SSL_AUTH_OPT;
 
 typedef enum
@@ -92,9 +83,9 @@ typedef enum
 
 typedef enum
 {
-    SSL_IS_DISCONNECTED,			/**<*/
-    SSL_CONNECTION_IN_PROGRESS,		/**<*/
-    SSL_IS_CONNECTED				/**<*/
+    SSL_IS_DISCONNECTED,
+    SSL_CONNECTION_IN_PROGRESS,
+    SSL_IS_CONNECTED
 }EM_SSL_CONNECTION_STATE;
 
 typedef enum
@@ -294,8 +285,5 @@ void *_SSLGetPeerCerificate_(SSL_HANDLE handle);
 }
 #endif
 
-/** @} */ // SslSocket
-
 #endif
-/* End of this file */
 

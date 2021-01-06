@@ -1,15 +1,15 @@
 /***************************************************************************
-** Copyright (c) 2019 Newland Payment Technology Co., Ltd All right reserved   
+** Copyright (c) 2019 Newland Payment Technology Co., Ltd All right reserved
 ** File name:  tool.h
-** File indentifier: 
-** Brief:  
+** File indentifier:
+** Brief:
 ** Current Verion:  v1.0
 ** Auther: sunh
 ** Complete date: 2016-9-24
-** Modify record: 
-** Modify date: 
-** Version: 
-** Modify content: 
+** Modify record:
+** Modify date:
+** Version:
+** Modify content:
 ***************************************************************************/
 #ifndef _TOOL_H_
 #define _TOOL_H_
@@ -36,27 +36,27 @@ typedef enum
 	LOGO_RF = 1,
 	LOGO_MAIN_MENU,
 	LOGO_STANDBY,
-	
+
 }EM_LOGO_TYPE;
 
-#define DEFAULT_PIN_INPUT_TIME 60 
+#define DEFAULT_PIN_INPUT_TIME 60
 
 
 
 
 typedef enum EM_STATUSBARTYPE{
-	STATUSBAR_STANDBY_OPEN = 0,   
+	STATUSBAR_STANDBY_OPEN = 0,
 	STATUSBAR_STANDBY_CLOSE,
 	STATUSBAR_OTHER_OPEN,
 	STATUSBAR_OTHER_CLOSE
 }EMSTATUSBARTYPE;
 
 typedef enum{
-	EM_PLUS = 0, 
+	EM_PLUS = 0,
 	EM_SUB = 1,
 }EM_MATH_TYPE;
 
-#define TAGLEN 4		
+#define TAGLEN 4
 
 #define MAX_ITEM 100
 #define MAX_PAGE 100
@@ -91,6 +91,7 @@ extern int ProAddSymbolBtnStrs(char *pszStrA, char *pszStrB, char *pszOut, int n
 extern int CaculateWeekDay(char *pszData);
 extern void ProTrimStr(char *pszString);
 extern int CommSetSuspend(uint unFlag);
+extern int CommHungUp(int nFlag);
 extern YESORNO CheckIsNullOrEmpty(const char *pszStr, const int nLen);
 
 #endif

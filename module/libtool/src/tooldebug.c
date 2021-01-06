@@ -93,7 +93,7 @@ void PubExportDebugFile()
 * @brief Send debug info to aux
 * @param [in] pszBuf
 * @param [in] nBufLen
-* @return 
+* @return
 */
 static void DebugBufToAux(const char *pszBuf, const int nBufLen)
 {
@@ -172,14 +172,14 @@ void PubDebugData(const char* pszTitle,const void* pData,int nLen,...)
 	{
 		return;
 	}
-	
+
 	ftime(&NowTime);
 	strftime(sBuf, sizeof(sBuf)-1, "\r\n[%m-%d %H:%M:%S", localtime(&NowTime.time));
 	sprintf(sBuf+strlen(sBuf), ".%3.3d]", NowTime.millitm);
-	DebugBufToAux(sBuf, strlen(sBuf));  
+	DebugBufToAux(sBuf, strlen(sBuf));
 
 
-	
+
 	if (pszTitle != NULL)
 	{
 		va_list args;
@@ -189,7 +189,7 @@ void PubDebugData(const char* pszTitle,const void* pData,int nLen,...)
 		{
 			return;
 		}
-		va_end(args);	
+		va_end(args);
 		DebugBufToAux(sBuf, strlen(sBuf));
 	}
 
@@ -246,7 +246,7 @@ void PubBufToAux(const char *pszBuf, const int nBufLen)
 
 /**
 * @brief Get debug mode (port or file)
-* @return 
+* @return
 * @li DEBUG_NONE: Debug closed
 * @li DEBUG_PORT: Port mode (including serial and USB)
 * @li DEBUG_FILE: Debug mode: Debug file
@@ -272,14 +272,14 @@ int PubGetDebugMode(void)
 /**
 * @brief Set debug mode
 * @param [in] nMode  debug mode DEBUG_NONE---Close  DEBUG_PORT---PORT DEBUG_FILE---File
-* @return 
-* @li APP_FAIL 
-* @li APP_SUCC 
+* @return
+* @li APP_FAIL
+* @li APP_SUCC
 */
 int PubSetDebugMode(int nMode)
 {
     int nFileHandle = 0;
-	
+
     switch(nMode & 0x0F)
     {
     case DEBUG_NONE:
@@ -341,7 +341,7 @@ int PubSetDebugMode(int nMode)
 
 /**
 * @brief Get debug level
-* @return 
+* @return
 * @li DEBUG_LEVEL_NORMAL:  	Basic debug log
 * @li DEBUG_LEVEL_WARNING:  Basic + Warning log
 * @li DEBUG_LEVEL_ALL:  	All log
@@ -351,7 +351,7 @@ int PubGetDebugLevel(void)
 {
 	int nFileHandle = 0;
 	char cDebugLevel=0;
-	
+
 	if (PubFsExist(OPENDB_PORT) == NAPI_OK)
     {
         if((nFileHandle = PubFsOpen(OPENDB_PORT, "w")) <= 0)
@@ -371,10 +371,10 @@ int PubGetDebugLevel(void)
 	{
 		return APP_FAIL;
 	}
-	
+
 	PubFsRead(nFileHandle, &cDebugLevel, 1);
     PubFsClose(nFileHandle);
-	if(cDebugLevel != DEBUG_LEVEL_NORMAL 
+	if(cDebugLevel != DEBUG_LEVEL_NORMAL
 		&& cDebugLevel != DEBUG_LEVEL_WARNING
 		&& cDebugLevel != DEBUG_LEVEL_ALL)
 	{
@@ -386,19 +386,19 @@ int PubGetDebugLevel(void)
 
 /**
 * @brief Set debug level
-* @param [in] nLevel Debug level	
+* @param [in] nLevel Debug level
 *					DEBUG_LEVEL_NORMAL:	Basic debug log
 *                   DEBUG_LEVEL_WARNING:Basic + Warning log
 *                   DEBUG_LEVEL_ALL:  	All log
-* @return 
-* @li APP_FAIL 
-* @li APP_SUCC 
+* @return
+* @li APP_FAIL
+* @li APP_SUCC
 */
 int PubSetDebugLevel(int nLevel)
 {
 	int nFileHandle = 0;
 	char cDebugLevel=0;
-	
+
 	if (PubFsExist(OPENDB_PORT) == NAPI_OK)
     {
         if((nFileHandle = PubFsOpen(OPENDB_PORT, "w")) <= 0)
@@ -418,7 +418,7 @@ int PubSetDebugLevel(int nLevel)
 	{
 		return APP_FAIL;
 	}
-	if(cDebugLevel == DEBUG_LEVEL_NORMAL 
+	if(cDebugLevel == DEBUG_LEVEL_NORMAL
 		|| cDebugLevel == DEBUG_LEVEL_WARNING
 		|| cDebugLevel == DEBUG_LEVEL_ALL)
 	{
@@ -431,15 +431,15 @@ int PubSetDebugLevel(int nLevel)
 
 }
 
-    
+
 /**
 * @brief Output debug according to debug level
 * @param [in] cLevel 1-3 , 3 is lowest
 * @return
-* @li APP_FAIL 
-* @li APP_SUCC 
+* @li APP_FAIL
+* @li APP_SUCC
 * @author sunh
-* @date 
+* @date
 */
 int PubDebugSelectly(char cLevel, char* lpszFormat, ...)
 {
@@ -451,7 +451,7 @@ int PubDebugSelectly(char cLevel, char* lpszFormat, ...)
 	{
 		return APP_FAIL;
     }
-		
+
 	cDebugLevel = PubGetDebugLevel();
 	va_start(args, lpszFormat);
 	vsprintf(szBuf, lpszFormat, args);
@@ -462,18 +462,18 @@ int PubDebugSelectly(char cLevel, char* lpszFormat, ...)
 	case 1://Print all
 		if ((cDebugLevel == DEBUG_LEVEL_WARNING) ||(cDebugLevel == DEBUG_LEVEL_ALL))
 		{
-			PubDebug("%s", szBuf);	
+			PubDebug("%s", szBuf);
 		}
 		break;
 	case 2: //print partly
 		if (cDebugLevel == DEBUG_LEVEL_ALL)
 		{
-			PubDebug("%s", szBuf);	
+			PubDebug("%s", szBuf);
 		}
 		break;
 	case 3://print basic
 	default:
-		PubDebug("%s", szBuf);	
+		PubDebug("%s", szBuf);
 		break;
 	}
 	return APP_SUCC;
@@ -482,14 +482,14 @@ int PubDebugSelectly(char cLevel, char* lpszFormat, ...)
 
 /**
 * @brief Get debug port number
-* @return 
+* @return
 * @li PORT_NUM_COM1: RS232
 * @li PORT_NUM_PINPAD: PINPAD
 * @li PORT_NUM_USB:  USB
 * @li APP_FAIL:  Not set
 */
 int PubGetDebugPortNum(void)
-{	
+{
 	if (PubFsExist(PORT_RS232) == NAPI_OK)
 	{
 		return RS232;
@@ -502,7 +502,6 @@ int PubGetDebugPortNum(void)
 	{
 		return USB_SERIAL;
 	}
-
 	return APP_FAIL;
 }
 
@@ -513,9 +512,9 @@ int PubGetDebugPortNum(void)
 *					RS232
 *                   PINPAD
 *                   USB
-* @return 
-* @li APP_FAIL 
-* @li APP_SUCC 
+* @return
+* @li APP_FAIL
+* @li APP_SUCC
 */
 void PubSetDebugPort(int nPortType)
 {
@@ -597,4 +596,22 @@ int PubGetDebugPortLevel(void)
 	}
 }
 
+void ProGetLogFileAttr(char *pszFilePath, char *pszLogFileName, char *pszOldLogFileName)
+{
+    if (pszFilePath)
+    {
+        strcpy(pszFilePath, FILEDIR);
+    }
+
+    if (pszLogFileName)
+    {
+        strcpy(pszLogFileName, FILEDEBUG);
+    }
+
+    if (pszOldLogFileName)
+    {
+        strcpy(pszOldLogFileName, OLDFILEDEBUG);
+    }
+
+}
 

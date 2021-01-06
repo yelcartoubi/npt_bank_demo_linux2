@@ -187,7 +187,7 @@ int WirelessInit(STGPRSPARAM *pstGprsParam, STCDMAPARAM *pstCdmaParam, char cSsl
 		WIRELESS_TRACE(WIRELESS_DEBUG_LEVEL, "New NAPI_WlmgetSIMStatus Err");
 		return APP_FAIL;
 	}
-	
+
 #ifdef DEMO
     return APP_SUCC;
 #endif /* DEMO */
@@ -272,7 +272,7 @@ int WirelessInit(STGPRSPARAM *pstGprsParam, STCDMAPARAM *pstCdmaParam, char cSsl
 
 	WIRELESS_TRACE(WIRELESS_DEBUG_LEVEL, "NEW WirelessInit start--[simPin: %s][FlagStatus:%d][Apn:%s][DialNo:%s]", stPPPCfg.szPin, gcIsPppConnected\
 		, stPPPCfg.szApn, stPPPCfg.szDialNum);
-	
+
 
 	nRet = NAPI_WlmSetDialCfg(&stPPPCfg, sizeof(stPPPCfg));
 	if (nRet != NAPI_OK)

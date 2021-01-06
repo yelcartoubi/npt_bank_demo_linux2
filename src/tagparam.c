@@ -1,23 +1,23 @@
 /***************************************************************************
-** Copyright (c) 2019 Newland Payment Technology Co., Ltd All right reserved   
+** Copyright (c) 2019 Newland Payment Technology Co., Ltd All right reserved
 ** File name:tagparam.c
-** File indentifier: 
+** File indentifier:
 ** Brief:  processing tag parameters, (comm/posparam/reversal/settle...)
 ** Current Verion:  v1.0
 ** Auther: lingdz
-** Complete date: 
-** Modify record: 
-** Modify date: 
-** Version: 
-** Modify content: 
+** Complete date:
+** Modify record:
+** Modify date:
+** Version:
+** Modify content:
 ***************************************************************************/
 
 #include "apiinc.h"
 #include "libapiinc.h"
 #include "appinc.h"
 
-// for adding new tag 
-static STTAGINFO stExPosParam[] = 
+// for adding new tag
+static STTAGINFO stExPosParam[] =
 {
 	{FILE_APPPOSPARAM, TAG_PINPADUSAGE, 1, "\x03"},
 	{FILE_APPPOSPARAM, TAG_PINPADCALLBACKFLAG, 1, "1"},
@@ -177,7 +177,7 @@ static int ReadOneTag(int nFd, char *pszOutBuf, int *pnLen)
 	nOff += nLen;
 
 	memcpy(pszOutBuf, szBuf, nOff);
-	
+
 	*pnLen = nOff;
 	//TRACE_HEX(szBuf, nOff, "read tag:");
 
@@ -316,7 +316,7 @@ static int TlvTransferToStr(int nTagId, int nValueLen, const char *pszTagValue, 
 }
 
 /**
-* @brief  assigned the tag to the STAPPPOSPARAM 
+* @brief  assigned the tag to the STAPPPOSPARAM
 * @param [in] pszFileName
 * @param [in] nTagId
 * @param [in] nValueLen -- the len of  the pszTagValue
@@ -375,8 +375,8 @@ static void AssignToPosParam(int nTagid, int nValueLen, char *pszTagValue, STAPP
 	case TAG_PNTDETAIL:
 		pstAppPosParam->cIsPntDetail = pszTagValue[0];
 		break;
-	case TAG_TMSAUTOUPDATE:
-		pstAppPosParam->cTmsAutoUpdate = pszTagValue[0];
+	case TAG_TOMSOBTAINCMD:
+		pstAppPosParam->cTomsObtainCmd = pszTagValue[0];
 		break;
 	case TAG_CVV2:
 		pstAppPosParam->cIsNeedCVV2 = pszTagValue[0];
@@ -492,15 +492,21 @@ static void AssignToPosParam(int nTagid, int nValueLen, char *pszTagValue, STAPP
 	case TAG_L3INITSTATUS:
 		pstAppPosParam->cL3initStatus = pszTagValue[0];
 		break;
+    case TAG_LOCKTERMINAL:
+        pstAppPosParam->cLockTerminal = pszTagValue[0];
+        break;
+    case TAG_LOCKPROMPTINFO:
+        memcpy(pstAppPosParam->szLockPromptInfo, pszTagValue, nValueLen);
+        break;
 	default:
 	break;
-	} 
+	}
 
 	return;
 }
 
 /**
-* @brief  assigned the tag to the pstAppCommParam 
+* @brief  assigned the tag to the pstAppCommParam
 * @param [in] pszFileName
 * @param [in] nTagId
 * @param [in] nValueLen -- the len of  the pszTagValue
@@ -631,18 +637,30 @@ static void AssignToCommParam(int nTagid, int nValueLen, char *pszTagValue, STAP
 	case TAG_COMM_ISSSL:
 		pstAppCommParam->cIsSSL = pszTagValue[0];
 		break;
-	case TAG_COMM_TMSDOMAIN:
-		memcpy(pstAppCommParam->szTMSDomain, pszTagValue, nValueLen);
-		break;
+    case TAG_COMM_TOMSAPPDOMAIN:
+        memcpy(pstAppCommParam->szTOMSAppDomain, pszTagValue, nValueLen);
+        break;
+    case TAG_COMM_TOMSPARAMDOMAIN:
+        memcpy(pstAppCommParam->szTOMSParamDomain, pszTagValue, nValueLen);
+        break;
+    case TAG_COMM_TOMSKEYPOSDOMAIN:
+        memcpy(pstAppCommParam->szTOMSKeyPosDomain, pszTagValue, nValueLen);
+        break;
+    case TAG_COMM_TOMSFILESERDOMAIN:
+        memcpy(pstAppCommParam->szTOMSFileServerDomain, pszTagValue, nValueLen);
+        break;
+    case TAG_COMM_TOMSTDASDOMAIN:
+        memcpy(pstAppCommParam->szTOMSTdasDomain, pszTagValue, nValueLen);
+        break;
 	default:
 		break;
 	}
-	 
+
 	return;
 }
 
 /**
-* @brief  assigned the tag to the pstTransParam 
+* @brief  assigned the tag to the pstTransParam
 * @param [in] pszFileName
 * @param [in] nTagId
 * @param [in] nValueLen -- the len of  the pszTagValue
@@ -686,7 +704,7 @@ static void AssignToTransParam(int nTagid, int nValueLen, char *pszTagValue, STT
 }
 
 /**
-* @brief  assigned the tag to the pstReversalParam 
+* @brief  assigned the tag to the pstReversalParam
 * @param [in] pszFileName
 * @param [in] nTagId
 * @param [in] nValueLen -- the len of  the pszTagValue
@@ -762,7 +780,7 @@ static void AssignToReverseParam(int nTagid, int nValueLen, char *pszTagValue, S
 		break;
 	case TAG_REVERSE_CASHBACKAMT:
 		memcpy(pstReversal->szCashbackAmount, pszTagValue, nValueLen);
-		break;	
+		break;
 	case TAG_REVERSE_OLDAUTHCODE:
 		memcpy(pstReversal->szOldAuthCode, pszTagValue, nValueLen);
 		break;
@@ -772,7 +790,7 @@ static void AssignToReverseParam(int nTagid, int nValueLen, char *pszTagValue, S
 }
 
 /**
-* @brief  assigned the tag to the pstSettleParam 
+* @brief  assigned the tag to the pstSettleParam
 * @param [in] pszFileName
 * @param [in] nTagId
 * @param [in] nValueLen -- the len of  the pszTagValue
@@ -898,7 +916,7 @@ static void AssignToSettleParam(int nTagid, int nValueLen, char *pszTagValue, ST
 /**
 * @brief assigned tag to the pszResult(like STAPPPOSPARAM/STAPPCOMMPARAM ...) from the file(pszFileName)
 * @param [in] pszFileName
-* @param [out] pszParam: the param of  STAPPPOSPARAM/STAPPCOMMPARAM... 
+* @param [out] pszParam: the param of  STAPPPOSPARAM/STAPPCOMMPARAM...
 * @return
 * @li APP_SUCC
 * @li APP_FAIL
@@ -1060,7 +1078,7 @@ int UpdateTagParam(const char *pszFileName, int nTagId, int nValueLen, char *psz
 	nMoveSize = nValueLen - atoi(szOldValueLen);
 	if (nMoveSize != 0)
 	{
-		ASSERT_FILE_FAIL(MoveContent(nFd, ulDistance + nOff, nMoveSize, &nFileSize),  nFd); 
+		ASSERT_FILE_FAIL(MoveContent(nFd, ulDistance + nOff, nMoveSize, &nFileSize),  nFd);
 	}
 
 	memset(szBuf, 0, sizeof(szBuf));
@@ -1085,7 +1103,7 @@ int UpdateTagParam(const char *pszFileName, int nTagId, int nValueLen, char *psz
 
 /**
 * @brief update reversal data
-* @param [in] stReversal 
+* @param [in] stReversal
 * @return
 * @li APP_SUCC
 * @li APP_FAIL
@@ -1117,7 +1135,7 @@ int UpdateReverseData(char *pszFileName, STREVERSAL stReversal)
 
 /**
 * @brief update commparam
-* @param [in] stAppCommParam 
+* @param [in] stAppCommParam
 * @return
 * @li APP_SUCC
 * @li APP_FAIL
@@ -1171,7 +1189,7 @@ int UpdateAppCommParam(char *pszFileName, STAPPCOMMPARAM stAppCommParam)
 
 /**
 * @brief update posparam
-* @param [in] stAppPosParam 
+* @param [in] stAppPosParam
 * @return
 * @li APP_SUCC
 * @li APP_FAIL
@@ -1190,7 +1208,7 @@ int UpdateAppPosParam(char *pszFileName, STAPPPOSPARAM stAppPosParam)
 	ASSERT_FAIL(UpdateTagParam(pszFileName, TAG_CURRENCYNAME, strlen(stAppPosParam.szCurrencyName), stAppPosParam.szCurrencyName));
 	ASSERT_FAIL(UpdateTagParam(pszFileName, TAG_PNTPAGECNT, 1, &stAppPosParam.cPrintPageCount));
 	ASSERT_FAIL(UpdateTagParam(pszFileName, TAG_PNTDETAIL, 1, &stAppPosParam.cIsPntDetail));
-	ASSERT_FAIL(UpdateTagParam(pszFileName, TAG_TMSAUTOUPDATE, 1, &stAppPosParam.cTmsAutoUpdate));
+	ASSERT_FAIL(UpdateTagParam(pszFileName, TAG_TOMSOBTAINCMD, 1, &stAppPosParam.cTomsObtainCmd));
 	ASSERT_FAIL(UpdateTagParam(pszFileName, TAG_CVV2, 1, &stAppPosParam.cIsNeedCVV2));
 	ASSERT_FAIL(UpdateTagParam(pszFileName, TAG_TIPFLAG, 1, &stAppPosParam.cIsTipFlag));
 	ASSERT_FAIL(UpdateTagParam(pszFileName, TAG_TIPRATE, strlen(stAppPosParam.szTipRate), stAppPosParam.szTipRate));
@@ -1231,7 +1249,7 @@ int UpdateAppPosParam(char *pszFileName, STAPPPOSPARAM stAppPosParam)
 
 /**
 * @brief  save the commparam in a file
-* @param [in] stAppCommParam 
+* @param [in] stAppCommParam
 * @return
 * @li APP_SUCC
 * @li APP_FAIL
@@ -1284,18 +1302,23 @@ int InitCommParamFile(STAPPCOMMPARAM stAppCommParam)
 	ASSERT_FAIL(AddTagParam(pszFileName, TAG_COMM_WIFIMODE, 1, &stAppCommParam.cWifiMode));
 	ASSERT_FAIL(AddTagParam(pszFileName, TAG_COMM_NII, strlen(stAppCommParam.szNii), stAppCommParam.szNii));
 	ASSERT_FAIL(AddTagParam(pszFileName, TAG_COMM_ISSSL, 1, &stAppCommParam.cIsSSL));
-	ASSERT_FAIL(AddTagParam(pszFileName, TAG_COMM_TMSDOMAIN, strlen(stAppCommParam.szTMSDomain), stAppCommParam.szTMSDomain));
+
+    ASSERT_FAIL(AddTagParam(pszFileName, TAG_COMM_TOMSAPPDOMAIN, strlen(stAppCommParam.szTOMSAppDomain), stAppCommParam.szTOMSAppDomain));
+    ASSERT_FAIL(AddTagParam(pszFileName, TAG_COMM_TOMSPARAMDOMAIN, strlen(stAppCommParam.szTOMSParamDomain), stAppCommParam.szTOMSParamDomain));
+    ASSERT_FAIL(AddTagParam(pszFileName, TAG_COMM_TOMSKEYPOSDOMAIN, strlen(stAppCommParam.szTOMSKeyPosDomain), stAppCommParam.szTOMSKeyPosDomain));
+    ASSERT_FAIL(AddTagParam(pszFileName, TAG_COMM_TOMSFILESERDOMAIN, strlen(stAppCommParam.szTOMSFileServerDomain), stAppCommParam.szTOMSFileServerDomain));
+    ASSERT_FAIL(AddTagParam(pszFileName, TAG_COMM_TOMSTDASDOMAIN, strlen(stAppCommParam.szTOMSTdasDomain), stAppCommParam.szTOMSTdasDomain));
 
 	return APP_SUCC;
 }
 
 /**
 * @brief  save the posparam in a file
-* @param [in] stAppPosParam 
+* @param [in] stAppPosParam
 * @return
 * @li APP_SUCC
 * @li APP_FAIL
-*/ 
+*/
 int InitPosParamFile(STAPPPOSPARAM stAppPosParam)
 {
 	char *pszFileName = FILE_APPPOSPARAM;
@@ -1321,7 +1344,7 @@ int InitPosParamFile(STAPPPOSPARAM stAppPosParam)
 	ASSERT_FAIL(AddTagParam(pszFileName, TAG_CURRENCYNAME, strlen(stAppPosParam.szCurrencyName), stAppPosParam.szCurrencyName));
 	ASSERT_FAIL(AddTagParam(pszFileName, TAG_PNTPAGECNT, 1, &stAppPosParam.cPrintPageCount));
 	ASSERT_FAIL(AddTagParam(pszFileName, TAG_PNTDETAIL, 1, &stAppPosParam.cIsPntDetail));
-	ASSERT_FAIL(AddTagParam(pszFileName, TAG_TMSAUTOUPDATE, 1, &stAppPosParam.cTmsAutoUpdate));
+	ASSERT_FAIL(AddTagParam(pszFileName, TAG_TOMSOBTAINCMD, 1, &stAppPosParam.cTomsObtainCmd));
 	ASSERT_FAIL(AddTagParam(pszFileName, TAG_CVV2, 1, &stAppPosParam.cIsNeedCVV2));
 	ASSERT_FAIL(AddTagParam(pszFileName, TAG_TIPFLAG, 1, &stAppPosParam.cIsTipFlag));
 	ASSERT_FAIL(AddTagParam(pszFileName, TAG_TIPRATE, strlen(stAppPosParam.szTipRate), stAppPosParam.szTipRate));
@@ -1362,7 +1385,7 @@ int InitPosParamFile(STAPPPOSPARAM stAppPosParam)
 
 /**
 * @brief  save the stTransParam in a file
-* @param [in] stTransParam 
+* @param [in] stTransParam
 * @return
 * @li APP_SUCC
 * @li APP_FAIL
@@ -1391,7 +1414,7 @@ int InitTransParamFile(STTRANSPARAM stTransParam)
 
 /**
 * @brief  save the stReversalParam in a file
-* @param [in] stTransParam 
+* @param [in] stTransParam
 * @return
 * @li APP_SUCC
 * @li APP_FAIL
@@ -1433,7 +1456,7 @@ int InitReversalFile(STREVERSALPARAM stReversalParam)
 
 /**
 * @brief  save the stSettleParam in a file
-* @param [in] stSettleParam 
+* @param [in] stSettleParam
 * @return
 * @li APP_SUCC
 * @li APP_FAIL
@@ -1532,7 +1555,7 @@ static int AddTlvToRecordBuf(char *pszRecordBuf, int *pnRecordBufLen, const int 
 }
 
 /**
-* @brief assigned the tag to the pstTransRecord 
+* @brief assigned the tag to the pstTransRecord
 * @param [in] the len of the pszTagBuf
 * @param [in] nTagId
 * @param [in] nValueLen -- the len of  the pszTagValue
@@ -1729,7 +1752,7 @@ int StRecordToRecordBuf(const STTRANSRECORD *pstTransRecord, char *pszRecordBuf)
 	memcpy(pszRecordBuf + 2, szBuf, nLen);
 	nLen += 2; // len
 	PubIntToC2((uchar *)pszRecordBuf, nLen);
-	
+
 	return APP_SUCC;
 }
 
@@ -1776,7 +1799,7 @@ int RecordBufToStRecord(char *pszRecordBuf, STTRANSRECORD *pstTransRecord)
 * @brief get the tag(id is nTagid) from the tagstr
 * @param [in] pszTagstr
 * @param [in] nTagid
-* @param [out] pnLen   the length of the tagvalue 
+* @param [out] pnLen   the length of the tagvalue
 * @param [out] pszValue
 * @return
 * @li APP_SUCC
@@ -1825,7 +1848,7 @@ int InitExPosParam()
 	int nLen;
 	char szBuf[256+1] = {0};
 	ulong ulDistance;
-	
+
 	nNum = sizeof(stExPosParam) / sizeof(STTAGINFO);
 	for (i = 0; i < nNum; i++)
 	{

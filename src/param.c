@@ -1,5 +1,5 @@
 /***************************************************************************
-** Copyright (c) 2019 Newland Payment Technology Co., Ltd All right reserved   
+** Copyright (c) 2019 Newland Payment Technology Co., Ltd All right reserved
 ** File name:  param.c
 ** File indentifier:
 ** Brief:  Parameter manage module
@@ -167,7 +167,7 @@ int InitPosDefaultParam()
 	gstAppPosParam.cLanguage = LANG_EN_US;
 	gstAppPosParam.cFontSize = 24;
 	gstAppPosParam.cPinPadUsage = PINPADMODE_CARD | PINPADMODE_PIN;
-	gstAppPosParam.cTmsAutoUpdate = NO;
+	gstAppPosParam.cTomsObtainCmd = NO;
 	InitPosParamFile(gstAppPosParam);
 
 	/**<Settle data*/
@@ -192,7 +192,7 @@ int InitPosDefaultParam()
 	return APP_SUCC;
 }
 
-// tms support ini, if fail do nothing
+// support ini, if fail do nothing
 #define ASSERT_PARA_FAIL(e, msg) \
 	if ((e) != APP_SUCC)\
 	{\
@@ -260,8 +260,8 @@ int SetParamFromIni()
 			gstAppPosParam.sTransSwitch[i/8] &= ~(0x01<<(7-i%8));
 		}
 	}
-	ASSERT_PARA_FAIL(PubGetINIItemInt (nIniHandle, "TRANS", "TMSAUTOUPDATE",	&nValue), "Get tms update flag failed");
-		gstAppPosParam.cTmsAutoUpdate = nValue + '0';
+	ASSERT_PARA_FAIL(PubGetINIItemInt (nIniHandle, "TRANS", "TOMSOBTAINCMD",	&nValue), "Get toms obtain cmd flag failed");
+		gstAppPosParam.cTomsObtainCmd = nValue + '0';
 
 	ASSERT_PARA_FAIL(PubGetINIItemInt (nIniHandle, "PIN", "PINPAD",	&nValue), "Get pinpad flag failed");
 		gstAppPosParam.cIsPinPad = nValue + '0';
@@ -772,7 +772,7 @@ YESORNO GetVarIsPinpad()
 */
 int GetVarPinpadAuxNo(int *pnValue)
 {
-	*pnValue = gstAppPosParam.cPinPadAuxNo;	
+	*pnValue = gstAppPosParam.cPinPadAuxNo;
 	return APP_SUCC;
 }
 
@@ -1085,7 +1085,7 @@ int SetVarIsTipFlag(const YESORNO pFlag)
 
 /**
 * @brief Get Tip Rate
-* @param out pcValue 
+* @param out pcValue
 * @return void
 */
 void GetVarTipRate(char *pszValue)
@@ -1193,8 +1193,8 @@ void GetVarDefaultTransType(char *pcValue)
 }
 
 /**
-* @brief Get QPS Limit 
-* @param out pcValue 
+* @brief Get QPS Limit
+* @param out pcValue
 * @return void
 */
 void GetVarQPSLimit(char *pszValue)
@@ -2280,7 +2280,7 @@ YESORNO GetVarPrintSettleHalt()
 int SetVarPrintDetialHalt(const YESORNO cPrintDetialHalt)
 {
 	gstSettleParam.cPrintDetialHalt = cPrintDetialHalt;
-	
+
 	ASSERT_FAIL(UpdateTagParam(FILE_APPSETTLEMENT, TAG_SETTLE_PNTDETAILHALT, 1, &gstSettleParam.cPrintDetialHalt));
 	return APP_SUCC;
 }
@@ -2378,7 +2378,7 @@ YESORNO GetVarClrSettleDataFlag(void)
 int SetVarIsTotalMatch(const char cIsTotalMatch)
 {
 	gstSettleParam.cIsTotalMatch = cIsTotalMatch;
-	
+
 	ASSERT_FAIL(UpdateTagParam(FILE_APPSETTLEMENT, TAG_SETTLE_TOTALMATCHFLAG, 1, &gstSettleParam.cIsTotalMatch));
 	return APP_SUCC;
 }
@@ -2404,7 +2404,7 @@ char GetVarIsTotalMatch(void)
 int SetVarBatchHaltFlag(const YESORNO cBatchHaltFlag)
 {
 	gstSettleParam.cBatchHaltFlag = cBatchHaltFlag;
-	
+
 	ASSERT_FAIL(UpdateTagParam(FILE_APPSETTLEMENT, TAG_SETTLE_BATCHHALT, 1, &gstSettleParam.cBatchHaltFlag));
 	return APP_SUCC;
 }
@@ -2510,7 +2510,7 @@ int GetVarSettleDateTime(char *psSettleDateTime)
 int SetVarSettleDateTime(const char *psSettleDateTime)
 {
 	memcpy( gstSettleParam.sSettleDateTime, psSettleDateTime, 5);
-	
+
 	ASSERT_FAIL(UpdateTagParam(FILE_APPSETTLEMENT, TAG_SETTLE_DATETIME, 5, gstSettleParam.sSettleDateTime));
 	return APP_SUCC;
 }
@@ -3199,7 +3199,7 @@ int SetFunctionTransSwitch(void)
 	 	{TRANS_VOID_PREAUTH, tr("VOID PREAUTH")},
 	 	{TRANS_CASHBACK, tr("CASHBACK")},
 	 };
-		
+
 	for(i = 0; i < sizeof(stTransAction) / sizeof(STTRANSACTION); i++)
 	{
 		cSelect =  (GetTransSwitchOnoff(stTransAction[i].cTransType) == YES) ? 1 : 0;
@@ -3552,31 +3552,31 @@ int GetVarSystemFontSize(void)
 	return gstAppPosParam.cFontSize;
 }
 
-#ifdef USE_TMS
+#ifdef USE_TOMS
 
 /**
-* @brief TMS automatically update
+* @brief TOMS automatically update
 * @return
 * @li APP_SUCC
 * @li APP_QUIT
 * @li APP_FAIL
 */
-int SetFunctionTmsAutoUpdate(void)
+int SetFunctionTomsAutoObtainCmd(void)
 {
-	ASSERT_RETURNCODE(PubSelectYesOrNo(tr("TMS CONTROL"), tr("TMS AUTO UPDATE"), NULL, &gstAppPosParam.cTmsAutoUpdate));
-	ASSERT_FAIL(UpdateTagParam(FILE_APPPOSPARAM, TAG_TMSAUTOUPDATE, 1, &gstAppPosParam.cTmsAutoUpdate));
+	ASSERT_RETURNCODE(PubSelectYesOrNo(tr("TOMS CONTROL"), tr("TOMS AUTO OBTAIN CMD"), NULL, &gstAppPosParam.cTomsObtainCmd));
+	ASSERT_FAIL(UpdateTagParam(FILE_APPPOSPARAM, TAG_TOMSOBTAINCMD, 1, &gstAppPosParam.cTomsObtainCmd));
 	return APP_SUCC;
 }
 
 /**
-* @brief Get flag of tms automatically update
+* @brief Get flag of toms automatically polling
 * @return
 * @li YES
 * @li NO
 */
-YESORNO GetVarTmsAutoUpdate()
+YESORNO GetVarTomsAutoObtainCmd()
 {
-	if (gstAppPosParam.cTmsAutoUpdate == YES)
+	if (gstAppPosParam.cTomsObtainCmd == YES)
 	{
 		return YES;
 	}
@@ -3585,363 +3585,12 @@ YESORNO GetVarTmsAutoUpdate()
 		return NO;
 	}
 }
-
-#define ASSERT_TMSPARAM_FAIL(e, m) \
-	if (e != APP_SUCC) { \
-		PubMsgDlg(tr("TMS PARAM"), m, 1, 3); \
-		return APP_FAIL; \
-	}
-
-static int FindJsonStrElement(cJSON *MainNode, char * pszInStr, char * pszOutStr)
-{
-	cJSON *TmpNode = NULL;
-
-	TmpNode = cJSON_GetObjectItem(MainNode, pszInStr);	
-	if(NULL == TmpNode)
-	{
-		return APP_FAIL;
-	}
-	else
-	{
-		if(cJSON_String != TmpNode->type)
-		{
-			TRACE("type = %d", TmpNode->type);
-			return APP_FAIL;
-		}
-		if(NULL == TmpNode->valuestring)
-		{
-			TRACE("valuestring = NULL");
-			return APP_FAIL;
-		}
-		else
-		{
-			strcpy(pszOutStr, TmpNode->valuestring);
-		}
-	}
-
-	return APP_SUCC;
-}
-
-static int GetCommTypeByFlag(char *pszFlag)
-{
-	if (pszFlag[0] == 'G') {
-		return COMM_GPRS;
-	} else if (pszFlag[0] == 'C') {
-		return COMM_CDMA;
- 	} else if (pszFlag[0] == 'E') {
-		return COMM_ETH;
- 	} else if (pszFlag[0] == 'W') {
-		return COMM_WIFI;
-	} else if (pszFlag[0] == 'S') {
-		return COMM_RS232;
-	} else if (pszFlag[0] == 'D') {
-		return COMM_DIAL;
-	} else {
-		return COMM_NONE;
-	}
-}
-
-int ParseTmsParam(cJSON *MainNode)
-{
-	STAPPCOMMPARAM stAppCommParam;
-	STAPPPOSPARAM stAppPosParam;
-	char szLabelValue[128] = {0};
-	char szInfo[128] = {0};
-
-	GetAppCommParam(&stAppCommParam);
-	GetAppPosParam(&stAppPosParam);
-
-	// basic param
-	FindJsonStrElement(MainNode, TMSTAG_MERCHANTID, stAppPosParam.szMerchantId);
-	FindJsonStrElement(MainNode, TMSTAG_TERMINALID, stAppPosParam.szTerminalId);
-	FindJsonStrElement(MainNode, TMSTAG_MERCHANTNAMEEN, stAppPosParam.szMerchantNameEn);
-	FindJsonStrElement(MainNode, TMSTAG_MERCHANTADDR1, stAppPosParam.szMerchantAddr[0]);
-	FindJsonStrElement(MainNode, TMSTAG_MERCHANTADDR2, stAppPosParam.szMerchantAddr[1]);
-	FindJsonStrElement(MainNode, TMSTAG_MERCHANTADDR3, stAppPosParam.szMerchantAddr[2]);
-
-	// transaction control
-	memset(szLabelValue, 0, sizeof(szLabelValue));
-	if (FindJsonStrElement(MainNode, TMSTAG_SUPPORTSALE, szLabelValue) == APP_SUCC) {
-		(szLabelValue[0] == 'Y') ? SetTransSwitchOnoff(TRANS_SALE, YES) : SetTransSwitchOnoff(TRANS_SALE, NO);
-	}
-	if (FindJsonStrElement(MainNode, TMSTAG_SUPPORTVOIDSALE, szLabelValue) == APP_SUCC) {
-		(szLabelValue[0] == 'Y') ? SetTransSwitchOnoff(TRANS_VOID, YES) : SetTransSwitchOnoff(TRANS_VOID, NO);
-	}
-	if (FindJsonStrElement(MainNode, TMSTAG_SUPPORTREFUND, szLabelValue) == APP_SUCC) {
-		(szLabelValue[0] == 'Y') ? SetTransSwitchOnoff(TRANS_REFUND, YES) : SetTransSwitchOnoff(TRANS_REFUND, NO);
-	}
-	if (FindJsonStrElement(MainNode, TMSTAG_SUPPORTPREAUTH, szLabelValue) == APP_SUCC) {
-		(szLabelValue[0] == 'Y') ? SetTransSwitchOnoff(TRANS_PREAUTH, YES) : SetTransSwitchOnoff(TRANS_PREAUTH, NO);
-	}
-	if (FindJsonStrElement(MainNode, TMSTAG_SUPPORTAUTHSALE, szLabelValue) == APP_SUCC) {
-		(szLabelValue[0] == 'Y') ? SetTransSwitchOnoff(TRANS_AUTHCOMP, YES) : SetTransSwitchOnoff(TRANS_AUTHCOMP, NO);
-	}
-	if (FindJsonStrElement(MainNode, TMSTAG_SUPPORTVOIDPEAUTH, szLabelValue) == APP_SUCC) {
-		(szLabelValue[0] == 'Y') ? SetTransSwitchOnoff(TRANS_VOID_PREAUTH, YES) : SetTransSwitchOnoff(TRANS_VOID_PREAUTH, NO);
-	}
-	if (FindJsonStrElement(MainNode, TMSTAG_SUPPORTADJUST, szLabelValue) == APP_SUCC) {
-		(szLabelValue[0] == 'Y') ? SetTransSwitchOnoff(TRANS_ADJUST, YES) : SetTransSwitchOnoff(TRANS_ADJUST, NO);
-	}
-	if (FindJsonStrElement(MainNode, TMSTAG_SUPPORTVOIDAUTHSALE, szLabelValue) == APP_SUCC) {
-		(szLabelValue[0] == 'Y') ? SetTransSwitchOnoff(TRANS_VOID_AUTHSALE, YES) : SetTransSwitchOnoff(TRANS_VOID_AUTHSALE, NO);
-	}
-	if (FindJsonStrElement(MainNode, TMSTAG_SUPPORTBALANCE, szLabelValue) == APP_SUCC) {
-		(szLabelValue[0] == 'Y') ? SetTransSwitchOnoff(TRANS_BALANCE, YES) : SetTransSwitchOnoff(TRANS_BALANCE, NO);
-	}
-	GetTransSwitchValue(stAppPosParam.sTransSwitch);
-
-	if (FindJsonStrElement(MainNode, TMSTAG_DEFAULTTRANS, szLabelValue) == APP_SUCC) {
-		if (szLabelValue[0] == 'C')  //sale A-auth
-		{
-			stAppPosParam.cDefaultTransType = '1';
-		}
-		else
-		{
-			stAppPosParam.cDefaultTransType = '0';
-		}
-	}
-
-	// system param
-	FindJsonStrElement(MainNode, TMSTAG_COMM_NII, stAppCommParam.szNii);
-	memset(szLabelValue, 0, sizeof(szLabelValue));
-	if (FindJsonStrElement(MainNode, TMSTAG_TRANS_TRACENO, szLabelValue) == APP_SUCC) {
-		ASSERT_TMSPARAM_FAIL(SetVarTraceNo(szLabelValue), tr("BANK PARAM szTrace fail"));
-	}
-	memset(szLabelValue, 0, sizeof(szLabelValue));
-	if (FindJsonStrElement(MainNode, TMSTAG_TRANS_BATCH, szLabelValue) == APP_SUCC) {
-		ASSERT_TMSPARAM_FAIL(SetVarBatchNo(szLabelValue), tr("BANK PARAM szTrace fail"));
-	}
-	memset(szLabelValue, 0, sizeof(szLabelValue));
-	if (FindJsonStrElement(MainNode, TMSTAG_ISPINPAD, szLabelValue) == APP_SUCC) {
-		stAppPosParam.cIsPinPad = (szLabelValue[0] == 'Y') ? YES : NO;
-	}
-	FindJsonStrElement(MainNode, TMSTAG_MAXTRANSCNT, stAppPosParam.szMaxTransCount);
-	memset(szLabelValue, 0, sizeof(szLabelValue));
-	if (FindJsonStrElement(MainNode, TMSTAG_COMM_TYPE, szLabelValue) == APP_SUCC) {
-		stAppCommParam.cCommType = GetCommTypeByFlag(szLabelValue);
-	}
-	memset(szLabelValue, 0, sizeof(szLabelValue));
-	if (FindJsonStrElement(MainNode, TMSTAG_COMM_TPDU, szLabelValue) == APP_SUCC) {
-		PubAscToHex((uchar *)szLabelValue, 10, 0, (uchar *)stAppCommParam.sTpdu);
-	}
-
-	switch (stAppCommParam.cCommType) {
-	case COMM_DIAL:
-		ASSERT_TMSPARAM_FAIL(PubGetHardwareSuppot(HARDWARE_SUPPORT_MODEM, NULL), "No Support DIAL");
-		FindJsonStrElement(MainNode, TMSTAG_COMM_TELNO1, stAppCommParam.szTelNum1);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_TELNO2, stAppCommParam.szTelNum2);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_TELNO3, stAppCommParam.szTelNum3);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_PREDIALNO, stAppCommParam.szPreDial);
-		memset(szLabelValue, 0, sizeof(szLabelValue));
-		if (FindJsonStrElement(MainNode, TMSTAG_COMM_ISPREDIAL, szLabelValue) == APP_SUCC) {
-			stAppCommParam.cPreDialFlag = (szLabelValue[0] == 'Y') ? 1 : 0;
-		}
-		break;
-	case COMM_ETH:
-		ASSERT_TMSPARAM_FAIL(PubGetHardwareSuppot(HARDWARE_SUPPORT_ETH, NULL), "No Support ETH");
-		FindJsonStrElement(MainNode, TMSTAG_COMM_IP1_E, stAppCommParam.szIp1);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_PORT1_E, stAppCommParam.szPort1);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_IP2_E, stAppCommParam.szIp2);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_PORT2_E, stAppCommParam.szPort2);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_MASK_E, stAppCommParam.szMask);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_IPADDR_E, stAppCommParam.szIpAddr);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_GATE_E, stAppCommParam.szGate);
-		memset(szLabelValue, 0, sizeof(szLabelValue));
-		if (FindJsonStrElement(MainNode, TMSTAG_COMM_ISDHCP_E, szLabelValue) == APP_SUCC) {
-			stAppCommParam.cIsDHCP = (szLabelValue[0] == 'Y') ? 1 : 0;
-		}
-		break;
-	case COMM_CDMA:
-		ASSERT_TMSPARAM_FAIL((PubGetHardwareSuppot(HARDWARE_SUPPORT_WIRELESS, szInfo) || memcmp(szInfo, "CDMA", 4)), "No Support CDMA");
-		FindJsonStrElement(MainNode, TMSTAG_COMM_WIRELESSDIAL_C, stAppCommParam.szWirelessDialNum);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_IP1_C, stAppCommParam.szIp1);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_PORT1_C, stAppCommParam.szPort1);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_IP2_C, stAppCommParam.szIp2);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_PORT2_C, stAppCommParam.szPort2);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_USER_C, stAppCommParam.szUser);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_PWD_C, stAppCommParam.szPassWd);
-		memset(szLabelValue, 0, sizeof(szLabelValue));
-		if (FindJsonStrElement(MainNode, TMSTAG_COMM_MODE_G, szLabelValue) == APP_SUCC) {
-			stAppCommParam.cMode = (szLabelValue[0] == 'N') ? 1 : 0;  //N - alive
-		}
-		break;
-	case COMM_GPRS:
-		ASSERT_TMSPARAM_FAIL((PubGetHardwareSuppot(HARDWARE_SUPPORT_WIRELESS, szInfo) || memcmp(szInfo, "GPRS", 4)), "No Support GPRS");
-		FindJsonStrElement(MainNode, TMSTAG_COMM_WIRELESSDIAL_G, stAppCommParam.szWirelessDialNum);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_IP1_G, stAppCommParam.szIp1);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_PORT1_G, stAppCommParam.szPort1);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_IP2_G, stAppCommParam.szIp2);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_PORT2_G, stAppCommParam.szPort2);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_APN1, stAppCommParam.szAPN1);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_USER_G, stAppCommParam.szUser);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_PWD_G, stAppCommParam.szPassWd);
-		memset(szLabelValue, 0, sizeof(szLabelValue));
-		if (FindJsonStrElement(MainNode, TMSTAG_COMM_MODE_G, szLabelValue) == APP_SUCC) {
-			stAppCommParam.cMode = (szLabelValue[0] == 'N') ? 1 : 0;  //N - alive
-		}
-		break;
-	case COMM_RS232:
-		ASSERT_TMSPARAM_FAIL(PubGetHardwareSuppot(HARDWARE_SUPPORT_COMM_NUM, NULL), "No Support SERIAL");
-		break;
-	case COMM_WIFI:
-		ASSERT_TMSPARAM_FAIL(PubGetHardwareSuppot(HARDWARE_SUPPORT_WIFI, NULL), "No Support WIFI");
-		FindJsonStrElement(MainNode, TMSTAG_COMM_IP1_W, stAppCommParam.szIp1);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_PORT1_W, stAppCommParam.szPort1);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_IP2_W, stAppCommParam.szIp2);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_PORT2_W, stAppCommParam.szPort2);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_MASK_W, stAppCommParam.szMask);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_IPADDR_W, stAppCommParam.szIpAddr);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_GATE_W, stAppCommParam.szGate);
-		memset(szLabelValue, 0, sizeof(szLabelValue));
-		if (FindJsonStrElement(MainNode, TMSTAG_COMM_WIFIMODE, szLabelValue) == APP_SUCC) {
-			stAppCommParam.cWifiMode = szLabelValue[0] - '0';
-		}
-		memset(szLabelValue, 0, sizeof(szLabelValue));
-		if (FindJsonStrElement(MainNode, TMSTAG_COMM_ISDHCP_W, szLabelValue) == APP_SUCC) {
-			stAppCommParam.cIsDHCP = (szLabelValue[0] == 'Y') ? 1 : 0;
-		}
-		
-		switch(stAppCommParam.cWifiMode)
-		{
-		case 1:
-			stAppCommParam.cWifiMode = WIFI_AUTH_OPEN;
-			break;
-		case 2:
-			stAppCommParam.cWifiMode = WIFI_AUTH_WEP_PSK;
-			break;
-		case 3:
-			stAppCommParam.cWifiMode = WIFI_AUTH_WPA_PSK;
-			break;
-		case 4:
-			stAppCommParam.cWifiMode = WIFI_AUTH_WPA2_PSK;
-			break;
-		case 5:
-			stAppCommParam.cWifiMode = WIFI_AUTH_WPA_WPA2_MIXED_PSK; // ?
-			break;
-		default:
-			ASSERT_TMSPARAM_FAIL(APP_FAIL, "Wifi mode error");
-			return APP_FAIL;
-		}
-		FindJsonStrElement(MainNode, TMSTAG_COMM_WIFIKEY, stAppCommParam.szWifiKey);
-		FindJsonStrElement(MainNode, TMSTAG_COMM_WIFISSID, stAppCommParam.szWifiSsid);
-		break;
-	default:
-		ASSERT_TMSPARAM_FAIL(APP_FAIL, "Comm Type INVALID");
-		return APP_FAIL;
-	}
-
-	//key passwd
-	FindJsonStrElement(MainNode, TMSTAG_MAINKEYNO, stAppPosParam.szMainKeyNo);
-	memset(szLabelValue, 0, sizeof(szLabelValue));
-	if (FindJsonStrElement(MainNode, TMSTAG_ENCRYMODE, szLabelValue) == APP_SUCC) {
-		if (szLabelValue[0] == '1')
-		{
-			stAppPosParam.cEncyptMode = DESMODE_3DES;
-		}
-		else
-		{
-			stAppPosParam.cEncyptMode = DESMODE_DES;
-		}
-	}
-	FindJsonStrElement(MainNode, TMSTAG_ADMINPWD, stAppPosParam.szAdminPwd);
-	FindJsonStrElement(MainNode, TMSDEFAULT_FUNCTION, stAppPosParam.szFuncPwd);
-
-	// print settings
-	FindJsonStrElement(MainNode, TMSTAG_PNTTITLE, stAppPosParam.szPntTitleEn);
-	memset(szLabelValue, 0, sizeof(szLabelValue));
-	if (FindJsonStrElement(MainNode, TMSTAG_PNTPAGECNT, szLabelValue) == APP_SUCC) {
-		stAppPosParam.cPrintPageCount = szLabelValue[0];
-	}
-	memset(szLabelValue, 0, sizeof(szLabelValue));
-	if (FindJsonStrElement(MainNode, TMSTAG_FONTSIZE, szLabelValue) == APP_SUCC) {
-		if (szLabelValue[0] == 'S') {
-			stAppPosParam.cFontSize = 16;
-		} else if (szLabelValue[0] == 'M') {
-			stAppPosParam.cFontSize = 24;
-		} else if (szLabelValue[0] == 'B') {
-			stAppPosParam.cFontSize = 32;
-		}
-	}
-	memset(szLabelValue, 0, sizeof(szLabelValue));
-	if (FindJsonStrElement(MainNode, TMSTAG_PNTDETAIL, szLabelValue) == APP_SUCC) {
-		stAppPosParam.cIsPntDetail = (szLabelValue[0] == 'Y') ? YES : NO;
-	}
-	memset(szLabelValue, 0, sizeof(szLabelValue));
-	if (FindJsonStrElement(MainNode, TMSTAG_ISPREAUTHSHIELDPAN, szLabelValue) == APP_SUCC) {
-		stAppPosParam.cIsPreauthShieldPan = (szLabelValue[0] == 'Y') ? YES : NO;
-	}
-
-	UpdateAppPosParam(FILE_APPPOSPARAM, stAppPosParam);
-	UpdateAppCommParam(FILE_APPCOMMPARAM, stAppCommParam);
-	CommInit();
-
-	return APP_SUCC;
-}
-
-int UpdateAppParamByTms(void)
-{
-	int nFd = 0;
-	int nFileSize = 0;
-	char IsUpdate = NO;
-	char* pFileBuffer = NULL;
-	char szParamFileName[128] = {0};
-	cJSON *MainNode = NULL;
-
-	sprintf(szParamFileName, "%s.param", APP_NAMEDESC);
-
-	PubFsFileSize(szParamFileName, (uint *)&nFileSize);
-	if(nFileSize <= 0)
-	{
-		return APP_SUCC;
-	}
-	pFileBuffer = (char*)malloc(sizeof(char) * nFileSize);
-	if((nFd=PubFsOpen (szParamFileName, "r")) < 0) 			
-	{
-		goto FAIL;
-	}
-
-	PubFsSeek(nFd, 0L, SEEK_SET);
-	if((nFileSize = PubFsRead(nFd, pFileBuffer, nFileSize)) < 0)
-	{
-		TRACE("Fail");
-		PubFsClose(nFd);
-		goto FAIL;
-	}
-	PubFsClose(nFd);
-	TRACE("Read szParamFileName[%s] pFileBuffer = [%s]", szParamFileName, pFileBuffer);
-
-	MainNode = cJSON_Parse(pFileBuffer);
-	if(MainNode == NULL)
-	{
-		goto FAIL;
-	}
-
-	if (ParseTmsParam(MainNode) != APP_SUCC) {
-		goto FAIL;
-	}
-	IsUpdate = YES;
-FAIL:
-	if (MainNode != NULL)
-	{
-		cJSON_Delete(MainNode);
-	}
-	if (pFileBuffer != NULL)
-	{
-		free(pFileBuffer);
-	}
-	if (IsUpdate == YES)
-	{
-		PubFsDel(szParamFileName);
-	}
-
-	return APP_SUCC;
-}
 #endif
 
 /**
 * @brief Get Transaction name according to type
 * @param in char cTransType
-* @param out char *pszTtitle 
+* @param out char *pszTtitle
 * @return void
 */
 void GetTransName(char cTransType, char *pszTransName)
@@ -3969,7 +3618,7 @@ void GetTransName(char cTransType, char *pszTransName)
 		strcpy(pszTransName, tr("PREAUTH VOID" ));
 		break;
 	case TRANS_AUTHCOMP:
-		strcpy(pszTransName, tr("AUTH_COMP")); 
+		strcpy(pszTransName, tr("AUTH_COMP"));
 		break;
 	case TRANS_AUTHSALEOFF:
 		strcpy(pszTransName, tr("AUTH SETTLEMENT"));
@@ -3978,7 +3627,7 @@ void GetTransName(char cTransType, char *pszTransName)
 		strcpy(pszTransName, tr("AUTH_COMP VOID"));
 		break;
 	case TRANS_REFUND:
-		strcpy(pszTransName, tr("REFUND"));	
+		strcpy(pszTransName, tr("REFUND"));
 		break;
 	case TRANS_OFFLINE:
 		strcpy(pszTransName, tr("OFFLINE"));
@@ -4018,7 +3667,7 @@ int SetFunctionPinpadUsage(void)
 	char *pszItems[] = {
 		tr("1.Only PIN"),
 		tr("2.Card And PIN"),
-	}; 
+	};
 	int nSelcItem = 1, nStartItem = 1;
 
 	while(1)
@@ -4066,9 +3715,9 @@ int SetFunctionPinpadPort(void)
 		tr("1.PINPAD"),
 		tr("2.USB"),
 		tr("3.RS232"),
-	}; 
+	};
 	int nSelcItem = 1, nStartItem = 1, nOldPort;
-	
+
 	while(1)
 	{
 		nOldPort = gstAppPosParam.cPinPadAuxNo;
@@ -4113,8 +3762,8 @@ int SetFunctionPinpadPort(void)
 * @brief Get pinpad usage
 * @param void
 * @return
-* @li 
-* @li 
+* @li
+* @li
 * @author
 * @date
 */
@@ -4138,7 +3787,7 @@ int SetFunctionPinpadType(void)
 	char *pszItems[] = {
 		tr("1.ME51P"),
 		tr("2.SP100"),
-	}; 
+	};
 	int nSelcItem = 1, nStartItem = 1, nOldType;
 
 	nOldType = gstAppPosParam.cPinpadType;
@@ -4182,8 +3831,8 @@ int SetFunctionPinpadType(void)
 * @brief Get pinpad type
 * @param void
 * @return
-* @li 
-* @li 
+* @li
+* @li
 * @author
 * @date
 */
@@ -4220,6 +3869,35 @@ void SetL3initStatus(char cStatus)
 char GetL3initStatus()
 {
 	return gstAppPosParam.cL3initStatus;
+}
+
+
+void SetLockTerminal(char cStatus)
+{
+    cStatus = cStatus > 0 ? 1 : 0;
+    gstAppPosParam.cLockTerminal = cStatus;
+	UpdateTagParam(FILE_APPPOSPARAM, TAG_LOCKTERMINAL, 1, &gstAppPosParam.cLockTerminal);
+}
+
+char GetLockTerminal()
+{
+	return gstAppPosParam.cLockTerminal;
+}
+
+int SetLockPromptInfo(char *pszPromptInfo)
+{
+    if (pszPromptInfo == NULL) {
+        return APP_FAIL;
+    }
+
+    memset(gstAppPosParam.szLockPromptInfo, 0, sizeof(gstAppPosParam.szLockPromptInfo));
+    snprintf (gstAppPosParam.szLockPromptInfo, sizeof(gstAppPosParam.szLockPromptInfo), "%s", pszPromptInfo);
+    return UpdateTagParam(FILE_APPPOSPARAM, TAG_LOCKPROMPTINFO, sizeof(gstAppPosParam.szLockPromptInfo), gstAppPosParam.szLockPromptInfo);
+}
+
+char *GetLockPromptInfo()
+{
+    return gstAppPosParam.szLockPromptInfo;
 }
 
 int GetIsLoadXMLConfig()

@@ -1,15 +1,15 @@
 /***************************************************************************
-** Copyright (c) 2019 Newland Payment Technology Co., Ltd All right reserved   
+** Copyright (c) 2019 Newland Payment Technology Co., Ltd All right reserved
 ** File name:  comm.c
-** File indentifier: 
-** Synopsis:  
+** File indentifier:
+** Synopsis:
 ** Current Verion:  v1.0
 ** Auther: sunh
 ** Complete date: 2016-7-4
-** Modify record: 
-** Modify date: 
-** Version: 
-** Modify content: 
+** Modify record:
+** Modify date:
+** Version:
+** Modify content:
 ***************************************************************************/
 
 #include "apiinc.h"
@@ -52,10 +52,15 @@ static YESORNO GetControlCommInit(void);
 static int SetFuncDomain(void);
 static int SetFuncDNSIp1(void);
 static int SetFuncDNSIp2(void);
-static int SetFuncTMSDomain(void);
 static int SetFuncIsSSL(void);
 static int GetVarIsSSL(void);
-
+#ifdef USE_TOMS
+static int SetFuncTOMSAppDomain(void);
+static int SetFuncTOMSParamDomain(void);
+static int SetFuncTOMSKeyPosDomain(void);
+static int SetFuncTOMSFileServerDomain(void);
+static int SetFuncTOMSTdasDomain(void);
+#endif
 /**
 * Interface function implementation
 */
@@ -65,9 +70,9 @@ static char gcIsCommInit = YES;/**<to record if need to initialize, YES-need*/
 ** brief: ConTrol need to initialize commucation
 ** param: void
 ** return: void
-** auther: 
+** auther:
 ** date: 2016-7-4
-** modify: 
+** modify:
 */
 void SetControlCommInit(void)
 {
@@ -78,9 +83,9 @@ void SetControlCommInit(void)
 ** brief: Get the flag if need to initialize
 ** param: void
 ** return: YESORNO
-** auther: 
+** auther:
 ** date: 2016-7-4
-** modify: 
+** modify:
 */
 static YESORNO GetControlCommInit(void)
 {
@@ -91,28 +96,28 @@ static YESORNO GetControlCommInit(void)
 	else
 	{
 		return NO;
-	} 
+	}
 }
 
 /**
 ** brief: Set default communication parameters, it should run one time at first run.
 ** param: void
-** return: 
+** return:
 ** li APP_SUCC
 ** li APP_FAIL
-** auther: 
+** auther:
 ** date: 2016-7-4
-** modify: 
+** modify:
 */
 int InitCommParam(void)
 {
 	char szBuf[50] = {0};
-	
+
 	memset(&gstAppCommParam, 0, sizeof(STAPPCOMMPARAM));
 	if (APP_SUCC != PubGetHardwareSuppot(HARDWARE_SUPPORT_WIRELESS,szBuf))
 	{
 		gstAppCommParam.cCommType = COMM_DIAL;
-		
+
 	}
 	else if (0 == memcmp(szBuf, "GPRS", 4))
 	{
@@ -163,7 +168,7 @@ int InitCommParam(void)
 	{
 		strcpy(gstAppCommParam.szWirelessDialNum, "D*99***1#");/**<"D*99***1#"*/
 	}
-	
+
 	strcpy(gstAppCommParam.szPdpType, "IP");
 	strcpy(gstAppCommParam.szUser, "card");
 	strcpy(gstAppCommParam.szPassWd, "card");
@@ -176,9 +181,25 @@ int InitCommParam(void)
 	strcpy(gstAppCommParam.szWifiKey,"password");
 	gstAppCommParam.cWifiMode = WIFI_AUTH_OPEN;
 	memcpy(gstAppCommParam.szDomain2,gstAppCommParam.szDomain,50);
-	memcpy(gstAppCommParam.szNii,"280",3); 
+	memcpy(gstAppCommParam.szNii,"280",3);
 	gstAppCommParam.cIsSSL = 0;
-	strcpy(gstAppCommParam.szTMSDomain, "https://npitms.newlandpayment.com:23202/");
+
+#ifdef DEV
+	/* Tetsting URL */
+	strcpy(gstAppCommParam.szTOMSAppDomain, "https://124.70.94.24:6033/");
+    strcpy(gstAppCommParam.szTOMSTdasDomain, "https://124.70.94.24:6036/");
+	strcpy(gstAppCommParam.szTOMSKeyPosDomain, "https://124.70.94.24:6039/");
+	strcpy(gstAppCommParam.szTOMSFileServerDomain, "http://124.70.94.24:6030/");
+	strcpy(gstAppCommParam.szTOMSParamDomain, "https://218.66.48.231:6082/");
+	/* Production URL */
+#else
+	strcpy(gstAppCommParam.szTOMSAppDomain, "https://toms-t.newlandpayment.com:6043/");
+	strcpy(gstAppCommParam.szTOMSParamDomain, "https://toms.newlandpayment.com/");
+	strcpy(gstAppCommParam.szTOMSKeyPosDomain, "https://toms-t.newlandpayment.com:6049/");
+	strcpy(gstAppCommParam.szTOMSFileServerDomain, "http://toms-t.newlandpayment.com:6040/");
+	strcpy(gstAppCommParam.szTOMSTdasDomain, "https://toms-t.newlandpayment.com:6046/");
+#endif
+
 	InitCommParamFile(gstAppCommParam);
 
 	return APP_SUCC;
@@ -190,9 +211,9 @@ int InitCommParam(void)
 ** return: void
 ** li APP_SUCC
 ** li APP_FAIL
-** auther: 
+** auther:
 ** date: 2016-7-4
-** modify: 
+** modify:
 */
 int CommInit(void)
 {
@@ -200,17 +221,17 @@ int CommInit(void)
 	STCOMMPARAM stPubCommParam;
 	static STCOMMPARAM stOldPubCommParam = {0};
 	static char cInitFlag = 0;
-	
+
 	memset(&stPubCommParam, 0, sizeof(STCOMMPARAM));
 	CommParamAppToPub(&gstAppCommParam, &stPubCommParam);
 
 	if (memcmp(&stOldPubCommParam, &stPubCommParam, sizeof(STCOMMPARAM)) != 0 || 0 == cInitFlag || YES == GetControlCommInit())
 	{
-		SetStatusBar(STATUSBAR_OTHER_OPEN);	
+		SetStatusBar(STATUSBAR_OTHER_OPEN);
 		PubClearAll();
 		PubDisplayGen(2, tr("Init communication"));
 		PubDisplayGen(3, tr("Please wait..."));
-		PubUpdateWindow();		
+		PubUpdateWindow();
 		nRet = PubCommInit(&stPubCommParam);
 		if (nRet != APP_SUCC)
 		{
@@ -222,14 +243,14 @@ int CommInit(void)
 					PubDispErr(tr("Comm Fail"));
 					cInitFlag = 0;
 					return APP_FAIL;
-				}			
+				}
 			}
 			else
 			{
-				PubDispErr(tr("Comm Fail"));			
+				PubDispErr(tr("Comm Fail"));
 				cInitFlag = 0;
 				return APP_FAIL;
-			}		
+			}
 		}
 
 		memcpy(&stOldPubCommParam, &stPubCommParam, sizeof(STCOMMPARAM));/**<save the old parameters*/
@@ -247,7 +268,7 @@ int PreCommInit(void)
 	STCOMMPARAM stPubCommParam;
 	static STCOMMPARAM stOldPubCommParam = {0};
 	static char cInitFlag = 0;
-	
+
 	memset(&stPubCommParam, 0, sizeof(STCOMMPARAM));
 	CommParamAppToPub(&gstAppCommParam, &stPubCommParam);
 
@@ -274,12 +295,12 @@ int PreCommInit(void)
 * @li APP_FAIL
 */
 int CommPreDial(void)
-{	
+{
 	int nRet = 0;
 
 #ifdef DEMO
 	return APP_SUCC;
-#endif	
+#endif
 	nRet = PubCommPreConnect();
 	if (nRet != APP_SUCC)
 	{
@@ -290,7 +311,7 @@ int CommPreDial(void)
 			if (nRet != APP_SUCC)
 			{
 				return APP_FAIL;
-			}			
+			}
 		}
 		else
 		{
@@ -303,7 +324,7 @@ int CommPreDial(void)
 
 /**
 * @brief Process SSL setting
-* @param 
+* @param
 * @return
 * @li APP_SUCC
 * @li APP_FAIL
@@ -313,7 +334,7 @@ int SSLConfig(void)
 	STSSLMODE stSslMode;
 
 	if(GetVarIsSSL() == APP_SUCC)
-	{				
+	{
 		memset(&stSslMode, 0, sizeof(STSSLMODE));
 		stSslMode.nAuthOpt = SSL_AUTH_CLIENT;
 		stSslMode.nType = HANDSHAKE_TLSv1_2;
@@ -329,9 +350,9 @@ int SSLConfig(void)
 
 /**
 * @brief Connecting, If CommType1 is failed, use CommType2
-* @return 
-* @li APP_FAIL 
-* @li APP_SUCC 
+* @return
+* @li APP_FAIL
+* @li APP_SUCC
 */
 int SwitchCommType()
 {
@@ -390,14 +411,14 @@ int CommConnect(void)
 	stShowInfoxy.nColumn = 7;
 	stShowInfoxy.nRow = 4;
 	PubSetShowXY(stShowInfoxy);
-	
+
 	nRet = PubCommConnect();
 	if (nRet == APP_QUIT)
 	{
 		return APP_QUIT;
 	}
 	if (nRet != APP_SUCC)
-	{		
+	{
 
 		if(gstAppCommParam.cCommType2 != COMM_NONE)
 		{
@@ -407,7 +428,7 @@ int CommConnect(void)
 			{
 				PubDispErr(tr("Connect Fail"));
 				return APP_FAIL;
-			}			
+			}
 		}
 		else
 		{
@@ -415,7 +436,7 @@ int CommConnect(void)
 			return APP_FAIL;
 		}
 	}
-	
+
 	return APP_SUCC;
 }
 
@@ -427,7 +448,7 @@ int CommConnect(void)
 * @return
 * @li APP_SUCC
 * @li APP_FAIL
-* @author 
+* @author
 * @date
 */
 static int AddTpdu(char *psBuf, uint *punLen)
@@ -476,8 +497,8 @@ static int DelTpdu(char *psBuf, uint *punLen)
 
 /**
 * @brief Send data
-* @param in psSendBuf 
-* @param in nSendLen 
+* @param in psSendBuf
+* @param in nSendLen
 * @return
 * @li APP_SUCC
 * @li APP_FAIL
@@ -486,21 +507,21 @@ int CommSend(const char *psSendBuf, int nSendLen)
 {
 	int nRet = 0;
 	int nLen = 0;
-	char sSendBuf[MAX_SEND_SIZE];	
+	char sSendBuf[MAX_SEND_SIZE];
 
 	memcpy(sSendBuf, psSendBuf, nSendLen);
-	nLen = nSendLen;	
+	nLen = nSendLen;
 	AddTpdu(sSendBuf, (uint *)&nLen);
 
 	PubCommClear();
-	
+
 	PubClear2To4();
 	PubDisplayStrInline(DISPLAY_MODE_CENTER, 3, tr("Sending..."));
 	PubUpdateWindow();
 #ifdef DEMO
 	PubSysDelay(10);
 	return APP_SUCC;
-#endif		
+#endif
 	if (YES == GetVarIsPrintIso() && APP_SUCC == PubConfirmDlg(NULL, tr("Print ISO?"), 0, 10))
 	{
 		PrintIsoData(psSendBuf);
@@ -508,7 +529,7 @@ int CommSend(const char *psSendBuf, int nSendLen)
 	TRACE_HEX(sSendBuf, nLen, "<COMM SEND>");
 
 	nRet = PubCommSend(sSendBuf, nLen);
-	
+
 	if (nRet != APP_SUCC)
 	{
 		PubDispErr(tr("CommSend FAIL"));
@@ -519,8 +540,8 @@ int CommSend(const char *psSendBuf, int nSendLen)
 
 /**
 * @brief Revieve data
-* @param out psRecvBuf 
-* @param out nRecvLen 
+* @param out psRecvBuf
+* @param out nRecvLen
 * @return
 * @li APP_SUCC
 * @li APP_FAIL
@@ -539,12 +560,12 @@ int CommRecv(char *psRecvBuf, int *nRecvLen)
 #ifdef DEMO
 	PubSysDelay(20);
 	return APP_SUCC;
-#endif	
+#endif
 	stShowInfoxy.nType = 0;
 	stShowInfoxy.nColumn = 7;
 	stShowInfoxy.nRow = 4;
 	PubSetShowXY(stShowInfoxy);
-	
+
 	nRet = PubCommRecv(sRecvBuf, &nLen);
 	if(nRet != APP_SUCC)
 	{
@@ -573,9 +594,9 @@ int CommRecv(char *psRecvBuf, int *nRecvLen)
 /**
 * @brief send and recieve data
 * @param in psSendBuf
-* @param in nSendLen 
-* @param out psRecvBuf 
-* @param out nRecvLen 
+* @param in nSendLen
+* @param out psRecvBuf
+* @param out nRecvLen
 * @return
 * @li APP_SUCC
 * @li APP_FAIL
@@ -583,7 +604,7 @@ int CommRecv(char *psRecvBuf, int *nRecvLen)
 int CommSendRecv(const char *psSendBuf, int nSendLen, char *psRecvBuf, int *nRecvLen)
 {
 	int nRet = 0;
-	
+
 	nRet = CommSend(psSendBuf, nSendLen);
 	if (nRet != APP_SUCC)
 	{
@@ -621,13 +642,13 @@ int CommHangUp(void)
 		else/**<not alive hangup PPP*/
 		{
 			return PubCommClose();
-		}			
+		}
 	}
 	return PubCommHangUp();
 }
 
 /**
-* @brief 
+* @brief
 * @param void
 * @return
 * @li APP_SUCC
@@ -639,7 +660,7 @@ int CommHangUpSocket(void)
 	{
 		PubCommHangUp();
 	}
-	
+
 	return APP_SUCC;
 }
 
@@ -655,7 +676,7 @@ int CommDump(void)
 	if (COMM_DIAL == gstAppCommParam.cCommType)
 	{
 		return PubCommHangUp();
-	}	
+	}
 	else
 	{
 		return PubCommClose();
@@ -665,12 +686,12 @@ int CommDump(void)
 /**
 * @brief set predial number and initialize
 * @param void
-* @return 
+* @return
 * @li APP_SUCC
 * @li APP_FAIL
 */
 int DoSetPreDialNum(void)
-{	
+{
 	SetFuncCommPreDialNum();
 	return CommInit();
 }
@@ -683,7 +704,7 @@ int DoSetPreDialNum(void)
 * @li APP_FAIL
 */
 int SetFuncCommPreDialNum(void)
-{	
+{
 	char szTemp[14+1] = {0};
 	int nLen = 10;
 
@@ -694,7 +715,7 @@ int SetFuncCommPreDialNum(void)
 	ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_PREDIALNO, strlen(gstAppCommParam.szPreDial),\
 		gstAppCommParam.szPreDial));
 	return APP_SUCC;
-} 
+}
 
 /**
 * @brief  communicaiton setting menu
@@ -738,10 +759,10 @@ void CommMenu(void)
 		case 4:
 			{
 			int (*lSetFuns[])(void) = {
-				SetFuncCommTelNo, 
-				DoSetPreDialNum, 
+				SetFuncCommTelNo,
+				DoSetPreDialNum,
 				SetFuncCommIsPreDial,
-				NULL};		
+				NULL};
 				PubUpDownMenus(lSetFuns);
 			}
 			break;
@@ -778,7 +799,7 @@ void CommMenu(void)
 			{
 			int (*lSetFuns[])(void) = {
 				SetFuncIsDhcp,
-				SetFuncCommIpAddr, 
+				SetFuncCommIpAddr,
 			    SetFuncCommGate,
 			    SetFuncCommMask,
 				SetFuncCommIp,
@@ -795,7 +816,7 @@ void CommMenu(void)
 		case 9:
 			{
 			int (*lSetFuns[])(void) = {
-			    SetFuncWifiSsid, 
+			    SetFuncWifiSsid,
 			    SetFuncWifiPwd,
 			    SetFuncIsDhcp,
 				SetFuncCommIpAddr,
@@ -808,7 +829,7 @@ void CommMenu(void)
 				NULL};
 			    PubUpDownMenus(lSetFuns);
 			}
-			break;	
+			break;
 		case 10:
 			{
 			int (*lSetFuns[])(void) = {
@@ -819,7 +840,13 @@ void CommMenu(void)
 				SetFuncCommTimeOut,
 				SetFuncCommReDialNum,
 				SetFuncIsSSL,
-				SetFuncTMSDomain,
+#ifdef USE_TOMS
+				SetFuncTOMSAppDomain,
+				SetFuncTOMSParamDomain,
+                SetFuncTOMSKeyPosDomain,
+                SetFuncTOMSFileServerDomain,
+                SetFuncTOMSTdasDomain,
+#endif
 				NULL};
 			    PubUpDownMenus(lSetFuns);
 			}
@@ -832,7 +859,7 @@ void CommMenu(void)
 
 
 /**
-* @brief Set standby type of communication 
+* @brief Set standby type of communication
 * @param void
 * @return
 * @li APP_SUCC
@@ -842,30 +869,30 @@ int SetFuncCommType2(void)
 {
 	char szInfo[64]={0};
 	const char *pszItems[] = {
-		tr("1.NONE"), 
-		tr("2.MODEM"), 
-		tr("3.GPRS"), 
-		tr("4.CDMA"), 
-		tr("5.RS232"), 
-		tr("6.ETH"), 
+		tr("1.NONE"),
+		tr("2.MODEM"),
+		tr("3.GPRS"),
+		tr("4.CDMA"),
+		tr("5.RS232"),
+		tr("6.ETH"),
 		tr("7.WIFI"),
-	}; 
+	};
 	int nSelcItem, nStartItem = 1;
-	
+
 	nSelcItem = gstAppCommParam.cCommType2 + 1;
 	ASSERT_FAIL(PubShowMenuItems(tr("SET COMM"), (char **)pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem,0));
-	
+
 	if((nSelcItem-1) == gstAppCommParam.cCommType)
 	{
 		PubMsgDlg("SET COMM", "CommType2 should be different from CommType1", 3, 5);
 		return APP_FAIL;
 	}
-	
+
 	switch(nSelcItem)
 	{
 	case 1:
 		gstAppCommParam.cCommType2 = COMM_NONE;
-		break;		
+		break;
 	case 2:
 		if(APP_SUCC != PubGetHardwareSuppot(HARDWARE_SUPPORT_MODEM, NULL))
 		{
@@ -927,24 +954,24 @@ int SetFuncCommType2(void)
 
 
 /**
-* @brief Set type of communication 
+* @brief Set type of communication
 * @param void
 * @return
 * @li APP_SUCC
 * @li APP_FAIL
 */
 int SetFuncCommType(void)
-{	
+{
 	char szInfo[64]={0};
 	char cOldCommType = gstAppCommParam.cCommType;
 	const char *pszItems[] = {
-		tr("1.MODEM"), 
-		tr("2.GPRS"), 
-		tr("3.CDMA"), 
-		tr("4.RS232"), 
-		tr("5.ETH"), 
+		tr("1.MODEM"),
+		tr("2.GPRS"),
+		tr("3.CDMA"),
+		tr("4.RS232"),
+		tr("5.ETH"),
 		tr("6.WIFI")
-	}; 
+	};
 	int nSelcItem = 1, nStartItem = 1;
 
 	nSelcItem = gstAppCommParam.cCommType;
@@ -1024,7 +1051,7 @@ int SetFuncCommType(void)
 		return APP_FAIL;
 	}
 	return APP_SUCC;
-} 
+}
 
 /**
 * @brief set resend time
@@ -1034,10 +1061,10 @@ int SetFuncCommType(void)
 * @li APP_FAIL
 */
 int SetFuncCommReSendNum(void)
-{	
+{
 	int nLen = 0,nRet;
 	char szTemp[3+1];
-		
+
 	for (;;)
 	{
 		memset(szTemp, 0, sizeof(szTemp));
@@ -1047,7 +1074,7 @@ int SetFuncCommReSendNum(void)
 		nRet = atoi(szTemp);
 		if ((nRet >= 1 )&& (nRet <= 3))
 		{
-			break; 
+			break;
 		}
 		PubMsgDlg(tr("REVERSAL RESEND"),tr("INVALID INPUT.TRY AGAIN!"),0,1);
 	}
@@ -1055,7 +1082,7 @@ int SetFuncCommReSendNum(void)
 	ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_RESENDNUM, 1, &gstAppCommParam.cReSendNum));
 
 	return APP_SUCC;
-} 
+}
 
 /**
 * @brief change app parameter structure to  pub_lib parameter strcuture
@@ -1071,7 +1098,7 @@ static int CommParamAppToPub(const STAPPCOMMPARAM *pstApp, STCOMMPARAM *pstCommP
 	pstCommParam->nTimeOut = pstApp->cTimeOut;
 	pstCommParam->cReDialNum = pstApp->cReDialNum > 0x30 ? pstApp->cReDialNum - 0x30 : pstApp->cReDialNum;
 	pstCommParam->cMode = pstApp->cMode == '1' || pstApp->cMode == 1 ? 0x01 : 0x02;
-	pstCommParam->cIsSupportQuitRecv = SERVERMODE_RECVQUIT|SERVERMODE_CLOSENOWAIT|SERVERMODE_INITNOWAIT; 
+	pstCommParam->cIsSupportQuitRecv = SERVERMODE_RECVQUIT|SERVERMODE_CLOSENOWAIT|SERVERMODE_INITNOWAIT;
 	if(pstApp->cIsSSL == 0)
 	{
 		pstCommParam->cSslFlag = 0;
@@ -1133,7 +1160,7 @@ static int CommParamAppToPub(const STAPPCOMMPARAM *pstApp, STCOMMPARAM *pstCommP
 		{
 			memcpy(pstCommParam->ConnInfo.stCdmaParam.szModemDialNo, pstApp->szWirelessDialNum, 20);
 		}
-		memcpy(pstCommParam->ConnInfo.stCdmaParam.sTPDU, pstApp->sTpdu, 5);	
+		memcpy(pstCommParam->ConnInfo.stCdmaParam.sTPDU, pstApp->sTpdu, 5);
 		memcpy(pstCommParam->ConnInfo.stGprsParam.szPdpType, pstApp->szPdpType, 20);
 		break;
 	case COMM_ETH:
@@ -1177,7 +1204,7 @@ static int CommParamAppToPub(const STAPPCOMMPARAM *pstApp, STCOMMPARAM *pstCommP
 	default:
 		return APP_FAIL;
 	}
-	
+
 	if(pstApp->cIsDns == 0)
 	{
 		memcpy(pstCommParam->stServerAddress.lszIp[0], pstApp->szIp1, 16);
@@ -1190,7 +1217,7 @@ static int CommParamAppToPub(const STAPPCOMMPARAM *pstApp, STCOMMPARAM *pstCommP
 	}
 	pstCommParam->stServerAddress.lnPort[0] = atoi(pstApp->szPort1);
 	pstCommParam->stServerAddress.lnPort[1] = atoi(pstApp->szPort2);
-	
+
 	pstCommParam->ShowFunc = NULL;
 	return APP_SUCC;
 }
@@ -1202,10 +1229,10 @@ static int CommParamAppToPub(const STAPPCOMMPARAM *pstApp, STCOMMPARAM *pstCommP
 * @li APP_FAIL
 */
 static int SetFuncCommMode(void)
-{	
+{
 	char cSelect = 0;
 	char* SelMenu[] = {"0.BREAK","1.ALIVE"};
-	
+
 	cSelect = gstAppCommParam.cMode == '1' || gstAppCommParam.cMode == 1 ? 1 : 0;
 	ASSERT_RETURNCODE(PubSelectYesOrNo((char*)tr("SET COMM"), (char*)tr("PPP MODE"), SelMenu, &cSelect));//'NO' means long link
 	switch(cSelect)
@@ -1222,7 +1249,7 @@ static int SetFuncCommMode(void)
 	ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_MODE, 1, &gstAppCommParam.cMode));
 
 	return APP_SUCC;
-} 
+}
 
 
 /**
@@ -1232,7 +1259,7 @@ static int SetFuncCommMode(void)
 * @li APP_FAIL
 */
 static int SetFuncCommIsPreDial(void)
-{	
+{
 	char cSelect = 0;
 
 	cSelect = gstAppCommParam.cPreDialFlag == '1' || gstAppCommParam.cPreDialFlag == 1 ? 1 : 0;
@@ -1251,7 +1278,7 @@ static int SetFuncCommIsPreDial(void)
 	ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_ISPREDIAL, 1, &gstAppCommParam.cPreDialFlag));
 
 	return APP_SUCC;
-} 
+}
 
 /**
 * @brief set timeout
@@ -1260,7 +1287,7 @@ static int SetFuncCommIsPreDial(void)
 * @li APP_FAIL
 */
 static int SetFuncCommTimeOut(void)
-{	
+{
 	int nRet = 0;
 	char szTemp[3+1];
 	int nLen = 0;
@@ -1274,7 +1301,7 @@ static int SetFuncCommTimeOut(void)
 		nRet = atoi(szTemp);
 		if (nRet < 10 || nRet >= 100)
 		{
-			continue; 
+			continue;
 		}
 		gstAppCommParam.cTimeOut = nRet;
 		break;
@@ -1282,7 +1309,7 @@ static int SetFuncCommTimeOut(void)
 	ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_TIMEOUT, 1, &gstAppCommParam.cTimeOut));
 
 	return APP_SUCC;
-} 
+}
 
 /**
 * @brief set redial time
@@ -1311,9 +1338,9 @@ int SetFunctionOffResendNum(void)
 {
 	char szNum[2] = {0};
 	int nNum, nLen;
-		
+
 	while(1)
-	{	
+	{
 		szNum[0] = gstAppCommParam.cOffResendNum+'0';
 		ASSERT_RETURNCODE( PubInputDlg(tr("OFFLINE RESEND"), tr("NUM(<=9):"), szNum, &nLen, 1, 1, 0, INPUT_MODE_NUMBER));
 		nNum=atoi(szNum);
@@ -1323,7 +1350,7 @@ int SetFunctionOffResendNum(void)
 		}
 		PubMsgDlg(tr("OFFLINE RESEND"),tr("INVALID INPUT,TRY AGAIN!"),0,1);
 	}
-	gstAppCommParam.cOffResendNum = nNum;	
+	gstAppCommParam.cOffResendNum = nNum;
 	ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_OFFRESENDNUM, 1, &gstAppCommParam.cOffResendNum));
 	return APP_SUCC;
 }
@@ -1335,7 +1362,7 @@ int SetFunctionOffResendNum(void)
 * @li APP_FAIL
 */
 static int SetFuncCommTelNo(void)
-{	
+{
 	char szTemp[19+1] = {0};
 	int nLen=0, i, nRet;
 	char *p = NULL;
@@ -1346,7 +1373,7 @@ static int SetFuncCommTelNo(void)
 	{
 		memset(szTemp, 0, sizeof(szTemp));
 		memcpy(szTemp, p, sizeof(gstAppCommParam.szTelNum1) -1);
-		sprintf(szContent, "TEL NUM(%d):", i);				
+		sprintf(szContent, "TEL NUM(%d):", i);
 		nRet = PubInputDlg(tr("SET COMM"), szContent, szTemp, &nLen, 0, 14, 60, INPUT_MODE_STRING);
 		if(nRet == KEY_UP)
 		{
@@ -1366,7 +1393,7 @@ static int SetFuncCommTelNo(void)
 			p += sizeof(gstAppCommParam.szTelNum1);
 			continue;
 		}
-		ASSERT_RETURNCODE(nRet);		
+		ASSERT_RETURNCODE(nRet);
 		memcpy(p, szTemp, sizeof(gstAppCommParam.szTelNum1) -1);
 		p += sizeof(gstAppCommParam.szTelNum1);
 		if (i == 1)
@@ -1383,10 +1410,10 @@ static int SetFuncCommTelNo(void)
 		}
 	}
 	return APP_SUCC;
-} 
+}
 
 /**
-* @brief set dialing access number of wireless modem 
+* @brief set dialing access number of wireless modem
 * @param void
 * @li APP_SUCC
 * @li APP_FAIL
@@ -1469,36 +1496,126 @@ static int SetFuncDomain(void)
 	{
 		return APP_FUNCQUIT;
 	}
-	
+
 	memset(szTemp, 0, sizeof(szTemp));
 	memcpy(szTemp, gstAppCommParam.szDomain, sizeof(gstAppCommParam.szDomain)-1);
 	nLen = strlen(szTemp);
-	ASSERT_RETURNCODE(PubInputDlg(tr("SET COMM"), tr("Server Domain name"), szTemp, &nLen,0,50,60,INPUT_MODE_STRING));
+	ASSERT_RETURNCODE(PubInputDlg(tr("SET COMM"), tr("Server Domain Name"), szTemp, &nLen,0,50,60,INPUT_MODE_STRING));
 	memcpy(gstAppCommParam.szDomain, szTemp, sizeof(gstAppCommParam.szDomain) -1);
 	ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_DOMAIN1, strlen(gstAppCommParam.szDomain), gstAppCommParam.szDomain));
 	return APP_SUCC;
 }
 
+#ifdef USE_TOMS
 /**
-* @brief TMSDomain name
+* @brief TOMSDomain name
 * @param int
 * @li APP_SUCC
 * @li APP_FAIL
 */
-static int SetFuncTMSDomain(void)
+static int SetFuncTOMSAppDomain(void)
 {
 	char szTemp[100+1];
 	int nLen;
 
 	memset(szTemp, 0, sizeof(szTemp));
-	memcpy(szTemp, gstAppCommParam.szTMSDomain, sizeof(gstAppCommParam.szTMSDomain)-1);
+	memcpy(szTemp, gstAppCommParam.szTOMSAppDomain, sizeof(gstAppCommParam.szTOMSAppDomain)-1);
 	nLen = strlen(szTemp);
-	ASSERT_RETURNCODE(PubInputDlg(tr("SET COMM"), tr("Server Domain name"), szTemp, &nLen,0,100,60,INPUT_MODE_STRING));
-	memcpy(gstAppCommParam.szTMSDomain, szTemp, sizeof(gstAppCommParam.szTMSDomain) -1);
-	ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_TMSDOMAIN, strlen(gstAppCommParam.szTMSDomain), gstAppCommParam.szTMSDomain));
+	ASSERT_RETURNCODE(PubInputDlg(tr("SET COMM"), tr("TOMS App Domain Name"), szTemp, &nLen,0,100,60,INPUT_MODE_STRING));
+	memcpy(gstAppCommParam.szTOMSAppDomain, szTemp, sizeof(gstAppCommParam.szTOMSAppDomain) -1);
+	ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_TOMSAPPDOMAIN, strlen(gstAppCommParam.szTOMSAppDomain), gstAppCommParam.szTOMSAppDomain));
+    ASSERT_FAIL(TOMS_UpdateDomain(TOMS_OPT_CONF_APP_DOMAIN, gstAppCommParam.szTOMSAppDomain));
 
 	return APP_SUCC;
 }
+
+/**
+* @brief TOMS Param Domain
+* @param int
+* @li APP_SUCC
+* @li APP_FAIL
+*/
+static int SetFuncTOMSParamDomain(void)
+{
+	char szTemp[100+1];
+	int nLen;
+
+	memset(szTemp, 0, sizeof(szTemp));
+	memcpy(szTemp, gstAppCommParam.szTOMSParamDomain, sizeof(gstAppCommParam.szTOMSParamDomain)-1);
+	nLen = strlen(szTemp);
+	ASSERT_RETURNCODE(PubInputDlg(tr("SET COMM"), tr("Param Domain Name"), szTemp, &nLen,0,100,60,INPUT_MODE_STRING));
+	memcpy(gstAppCommParam.szTOMSParamDomain, szTemp, sizeof(gstAppCommParam.szTOMSParamDomain) -1);
+	ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_TOMSPARAMDOMAIN, strlen(gstAppCommParam.szTOMSParamDomain), gstAppCommParam.szTOMSParamDomain));
+    ASSERT_FAIL(TOMS_UpdateDomain(TOMS_OPT_CONF_PARAM_DOMAIN, gstAppCommParam.szTOMSParamDomain));
+
+	return APP_SUCC;
+}
+
+/**
+* @brief TOMS Key Pos Domain
+* @param int
+* @li APP_SUCC
+* @li APP_FAIL
+*/
+static int SetFuncTOMSKeyPosDomain(void)
+{
+	char szTemp[100+1];
+	int nLen;
+
+	memset(szTemp, 0, sizeof(szTemp));
+	memcpy(szTemp, gstAppCommParam.szTOMSKeyPosDomain, sizeof(gstAppCommParam.szTOMSKeyPosDomain)-1);
+	nLen = strlen(szTemp);
+	ASSERT_RETURNCODE(PubInputDlg(tr("SET COMM"), tr("KeyPos Domain Name"), szTemp, &nLen,0,100,60,INPUT_MODE_STRING));
+	memcpy(gstAppCommParam.szTOMSKeyPosDomain, szTemp, sizeof(gstAppCommParam.szTOMSKeyPosDomain) -1);
+	ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_TOMSKEYPOSDOMAIN, strlen(gstAppCommParam.szTOMSKeyPosDomain), gstAppCommParam.szTOMSKeyPosDomain));
+    ASSERT_FAIL(TOMS_UpdateDomain(TOMS_OPT_CONF_KEYPOS_DOMAIN, gstAppCommParam.szTOMSKeyPosDomain));
+
+	return APP_SUCC;
+}
+
+/**
+* @brief TOMS file server name
+* @param int
+* @li APP_SUCC
+* @li APP_FAIL
+*/
+static int SetFuncTOMSFileServerDomain(void)
+{
+	char szTemp[100+1];
+	int nLen;
+
+	memset(szTemp, 0, sizeof(szTemp));
+	memcpy(szTemp, gstAppCommParam.szTOMSFileServerDomain, sizeof(gstAppCommParam.szTOMSFileServerDomain)-1);
+	nLen = strlen(szTemp);
+	ASSERT_RETURNCODE(PubInputDlg(tr("SET COMM"), tr("File Server Domain Name"), szTemp, &nLen,0,100,60,INPUT_MODE_STRING));
+	memcpy(gstAppCommParam.szTOMSFileServerDomain, szTemp, sizeof(gstAppCommParam.szTOMSFileServerDomain) -1);
+	ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_TOMSFILESERDOMAIN, strlen(gstAppCommParam.szTOMSFileServerDomain), gstAppCommParam.szTOMSFileServerDomain));
+    ASSERT_FAIL(TOMS_UpdateDomain(TOMS_OPT_CONF_FILESERVER_DOMAIN, gstAppCommParam.szTOMSFileServerDomain));
+
+	return APP_SUCC;
+}
+
+/**
+* @brief TOMS Tdas Domain
+* @param int
+* @li APP_SUCC
+* @li APP_FAIL
+*/
+static int SetFuncTOMSTdasDomain(void)
+{
+	char szTemp[100+1];
+	int nLen;
+
+	memset(szTemp, 0, sizeof(szTemp));
+	memcpy(szTemp, gstAppCommParam.szTOMSTdasDomain, sizeof(gstAppCommParam.szTOMSTdasDomain)-1);
+	nLen = strlen(szTemp);
+	ASSERT_RETURNCODE(PubInputDlg(tr("SET COMM"), tr("TDAS Domain Name"), szTemp, &nLen,0,100,60,INPUT_MODE_STRING));
+	memcpy(gstAppCommParam.szTOMSTdasDomain, szTemp, sizeof(gstAppCommParam.szTOMSTdasDomain) -1);
+	ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_TOMSTDASDOMAIN, strlen(gstAppCommParam.szTOMSTdasDomain), gstAppCommParam.szTOMSTdasDomain));
+    ASSERT_FAIL(TOMS_UpdateDomain(TOMS_OPT_CONF_TDAS_DOMAIN, gstAppCommParam.szTOMSTdasDomain));
+	return APP_SUCC;
+}
+#endif
 
 /**
 * @brief 1st DNS
@@ -1515,7 +1632,7 @@ static int SetFuncDNSIp1(void)
 	{
 		return APP_FUNCQUIT;
 	}
-	
+
 	memset(szTemp, 0, sizeof(szTemp));
 	memcpy(szTemp, gstAppCommParam.szDNSIp1, sizeof(gstAppCommParam.szDNSIp1)-1);
 	nLen = strlen(szTemp);
@@ -1540,7 +1657,7 @@ static int SetFuncDNSIp2(void)
 	{
 		return APP_FUNCQUIT;
 	}
-	
+
 	memset(szTemp, 0, sizeof(szTemp));
 	memcpy(szTemp, gstAppCommParam.szDNSIp2, sizeof(gstAppCommParam.szDNSIp2)-1);
 	nLen = strlen(szTemp);
@@ -1617,7 +1734,7 @@ static int SetFuncCommPort(void)
 		nRet = atoi(szTemp);
 		if (nRet < 0 || nRet > 65535)
 		{
-			continue; 
+			continue;
 		}
 		break;
 	}
@@ -1647,7 +1764,7 @@ static int SetFuncCommBackPort(void)
 		nRet = atoi(szTemp);
 		if (nRet < 0 || nRet > 65535)
 		{
-			continue; 
+			continue;
 		}
 		break;
 	}
@@ -1668,7 +1785,7 @@ static int SetFuncCommIpAddr(void)
 	int nLen;
 
 	if(gstAppCommParam.cIsDHCP != 0)
-	{	
+	{
 		return APP_FUNCQUIT;
 	}
 
@@ -1677,7 +1794,7 @@ static int SetFuncCommIpAddr(void)
 	ASSERT_RETURNCODE(PubInputIp(tr("SET COMM"), tr("LOCAL IP"), szTemp, &nLen));
 	memcpy(gstAppCommParam.szIpAddr, szTemp, sizeof(gstAppCommParam.szIpAddr) -1);
 	ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_IPADDR, strlen(gstAppCommParam.szIpAddr), gstAppCommParam.szIpAddr));
-	
+
 	return APP_SUCC;
 }
 
@@ -1696,7 +1813,7 @@ static int SetFuncCommMask(void)
 	{
 		return APP_FUNCQUIT;
 	}
-	
+
 	memcpy(szTemp, gstAppCommParam.szMask, sizeof(gstAppCommParam.szMask)-1);
 	nLen = strlen(szTemp);
 	ASSERT_RETURNCODE(PubInputIp(tr("SET COMM"), tr("MASK"), szTemp, &nLen));
@@ -1721,7 +1838,7 @@ static int SetFuncCommGate(void)
 	{
 		return APP_FUNCQUIT;
 	}
-	
+
 	memcpy(szTemp, gstAppCommParam.szGate, sizeof(gstAppCommParam.szGate)-1);
 	nLen = strlen(szTemp);
 	ASSERT_RETURNCODE(PubInputIp(tr("SET COMM"), tr("GATE"), szTemp, &nLen));
@@ -1764,7 +1881,7 @@ static int SetFuncAuxIsAddTpdu(void)
 int GetVarCommTimeOut(char *pszTimeOut)
 {
 	char szTmp[2+1] = {0};
-	
+
 	sprintf(szTmp, "%02d", gstAppCommParam.cTimeOut);
 	memcpy(pszTimeOut, szTmp, 2);
 
@@ -1773,7 +1890,7 @@ int GetVarCommTimeOut(char *pszTimeOut)
 
 /**
 * @brief set timeout to app communication parameter
-* @param in pszTimeOut 2 ascii bytes 
+* @param in pszTimeOut 2 ascii bytes
 * @li APP_SUCC
 * @li APP_FAIL
 */
@@ -1882,7 +1999,7 @@ int SetFuncWifiSsid(void)
 		gstAppCommParam.cWifiMode = stInfo.stApInfo.emAuthType;
 		strcpy(gstAppCommParam.szWifiSsid, stInfo.stApInfo.szSsid);
 		ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_WIFIMODE, 1, &gstAppCommParam.cWifiMode));
-		ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_WIFISSID, strlen(gstAppCommParam.szWifiSsid), gstAppCommParam.szWifiSsid));	
+		ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_WIFISSID, strlen(gstAppCommParam.szWifiSsid), gstAppCommParam.szWifiSsid));
 	}
 
 	PubClearAll();
@@ -1901,7 +2018,7 @@ int SetFuncWifiSsid(void)
 		PubClear2To4();
 		PubDisplayStrInline(0, 2, (char*)tr("SEARCH SSID"));
 		PubDisplayStrInline(0, 3, (char*)tr("PLEASE WAIT..."));
-		PubUpdateWindow();		
+		PubUpdateWindow();
 		ASSERT_RETURNCODE(PubCommScanWifi(tr("SET COMM"), szTemp, &nWifiMode, 60));
 		gstAppCommParam.cWifiMode = nWifiMode;
 		memset(gstAppCommParam.szWifiSsid, 0, sizeof(gstAppCommParam.szWifiSsid));
@@ -1934,7 +2051,7 @@ int SetFuncWifiPwd(void)
 	ST_WIFI_CONFIG_LIST stList;
 	ST_WIFI_CONFIG_T stConfig[WIFI_AP_NUM_MAX];
 	int nLen, i;
-	
+
 	stList.pstList = stConfig;
 	nRet = NAPI_WifiGetConfiguredNetworks(&stList);
 	TRACE("num=%d", stList.num);
@@ -1955,7 +2072,7 @@ int SetFuncWifiPwd(void)
 	ASSERT_RETURNCODE( PubInputDlg(tr("WIFI PARAM"), tr("Password"), szTemp, \
 				&nLen, 0, 32, 60, INPUT_MODE_STRING));
 	memcpy(gstAppCommParam.szWifiKey, szTemp, sizeof(gstAppCommParam.szWifiKey) -1);
-	
+
 	ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_WIFIKEY, strlen(gstAppCommParam.szWifiKey), gstAppCommParam.szWifiKey));
 	return APP_SUCC;
 }
@@ -1974,12 +2091,12 @@ int SetFuncWifiMode(void)
 		tr("3.WPA-PSK"),
 		tr("4.WPA2-PSK"),
 		tr("5.WPA-CCKM")
-	}; 
+	};
 	int nSelcItem = 1, nStartItem = 1;
 
 	nSelcItem = gstAppCommParam.cWifiMode;
 	ASSERT_RETURNCODE(PubShowMenuItems(tr("WIFI MODE"), (char**)pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem,0));
-	
+
 	switch(nSelcItem)
 	{
 	case 1:
@@ -2027,7 +2144,7 @@ int SetFuncIsUseDns(void)
 	default:
 		return APP_QUIT;
 	}
-	
+
 	ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_ISDNS, 1, &gstAppCommParam.cIsDns));
 	return APP_SUCC;
 }
@@ -2056,7 +2173,7 @@ static int SetFuncIsDhcp(void)
 	default:
 		return APP_QUIT;
 	}
-	
+
 	ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_ISDHCP, 1, &gstAppCommParam.cIsDHCP));
 	return APP_SUCC;
 }
@@ -2083,7 +2200,7 @@ void SetAppCommParam(STAPPCOMMPARAM stAppCommParam)
 
 /**
 * @brief Get NII
-* @param out pszNii 
+* @param out pszNii
 * @li APP_SUCC
 * @li APP_FAIL
 */
@@ -2097,12 +2214,12 @@ int GetVarCommNii(char * pszNii)
 ** brief: Exprot communication parammeter
 ** param: void
 ** return: APP_SUCC or APP_FAIL
-** auther: 
+** auther:
 ** date: 2016-7-4
-** modify: 
+** modify:
 */
 int ExportCommParam(void)
-{	
+{
 	memset(&gstAppCommParam, 0, sizeof(STAPPCOMMPARAM));
 	ASSERT_FAIL(LoadTagParam(FILE_APPCOMMPARAM, (void *)&gstAppCommParam));
 
@@ -2113,16 +2230,16 @@ int ExportCommParam(void)
 ** brief: Set Nii
 ** param: void
 ** return: APP_SUCC or APP_FAIL
-** auther: 
+** auther:
 ** date: 2016-7-4
-** modify: 
+** modify:
 */
 int SetFuncCommNii(void)
 {
 	char szTemp[3+1];
 	int nLen;
 	char szTpdu[10+1] = {0};
-	
+
 	memset(szTemp, 0, sizeof(szTemp));
 	memcpy(szTemp, gstAppCommParam.szNii, sizeof(gstAppCommParam.szNii)-1);
 	nLen = strlen(szTemp);
@@ -2141,13 +2258,13 @@ int SetFuncCommNii(void)
 ** brief: set communication parameter
 ** param: void
 ** return: APP_SUCC
-** auther: 
+** auther:
 ** date: 2016-7-4
-** modify: 
+** modify:
 */
 int SetComm()
 {
-	CommMenu();	
+	CommMenu();
 	CommInit();
 	return APP_SUCC;
 }
@@ -2185,7 +2302,7 @@ static int SetFuncIsSSL(void)
 }
 
 static int GetVarIsSSL(void)
-{	
+{
 	if(gstAppCommParam.cCommType != COMM_DIAL)
 	{
 		if(gstAppCommParam.cIsSSL == 1)

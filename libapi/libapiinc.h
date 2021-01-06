@@ -1,8 +1,8 @@
 /**************************************************************************
 * Copyright (C) 2019 Newland Payment Technology Co., Ltd All Rights Reserved
 *
-* @file  libapiinc.h 
-* @brief 
+* @file  libapiinc.h
+* @brief
 * @version 1.0
 * @author zhangj
 * @date 2019-9-2
@@ -16,11 +16,12 @@
 #include "ltool.h"
 #include "lsecurity.h"
 #include "lprint.h"
-#include "ltms.h"
 #include "emvl3.h"
 #include "emvconfig.h"
 #include "emverrcode.h"
-
+#ifdef USE_TOMS
+#include "ltoms.h"
+#endif
 #include "napi_display.h"
 #include "napi_kb.h"
 #include "napi_sysinfo.h"

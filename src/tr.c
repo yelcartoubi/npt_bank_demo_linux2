@@ -204,12 +204,12 @@ static char* gpszTrText[][3] = {
 	{"3.FILE Mode" , "",""},
 	{"4.Export Log" , "",""},
 	{"5.EMV Debug" , "",""},
-	{"6.TMS Debug" , "",""},
-	{"1.RS232", "",""}, 
-	{"2.PINPAD", "",""}, 
+	{"6.TOMS Debug" , "",""},
+	{"1.RS232", "",""},
+	{"2.PINPAD", "",""},
 	{"3.USB", "",""},
-	{"1.Normal", "",""}, 
-	{"2.Warning", "",""}, 
+	{"1.Normal", "",""},
+	{"2.Warning", "",""},
 	{"3.All", "",""},
 	{"Debug" , "",""},
 	{"Port Num" , "",""},
@@ -334,7 +334,7 @@ static char* gpszTrText[][3] = {
 	{"3.SHOW TVR" , "",""},
 	{"4.PRINT ISO" , "",""},
 	{"5.EMV LOG" , "",""},
-	{"6.TMS" , "",""},
+	{"6.TOMS" , "",""},
 	{"1.MERCHANT" , "",""},
 	{"2.COMMUNICATION" , "",""},
 	{"3.ON-OF" , "",""},
@@ -583,7 +583,7 @@ static char* gpszTrText[][3] = {
 	{"7.OTHER" , "",""},
 	{"PRINT PARA" , "",""},
 	{"SALECOMP" , "",""},
-	{"TMS" , "",""},
+	{"TOMS" , "",""},
 	{"%s: YES" , "",""},
 	{"%s: NO" , "",""},
 	{"PRINTING" , "",""},
@@ -633,46 +633,27 @@ static char* gpszTrText[][3] = {
 	{"[CANCEL]" , "",""},
 	{"[ENTER]" , "",""},
 	{"ENTER" , "",""},
-	{"PRINT SETTLE"
- , "",""},
-	{"PLEASE WAIT"
- , "",""},
-	{"0.NO"
- , "",""},
-	{"1.YES"
- , "",""},
-	{"PRINT DETAIL?"
- , "",""},
-	{"PRINT DETAIL..."
- , "",""},
-	{"SETTLE SUCC"
- , "",""},
-	{"Look Up Summary"
- , "",""},
-	{"TOTAL SALES:"
- , "",""},
-	{"TOTAL REFUNDS:"
- , "",""},
-	{"1.Look up"
- , "",""},
-	{"2.Print"
- , "",""},
-	{"Look up summary"
- , "",""},
-	{"Summary"
- , "",""},
-	{"Print?"
- , "",""},
-	{"Amount Out Of Limit!"
- , "",""},
-	{"Settlement had not commplete,continue?"
- , "",""},
-	{"UPLOAD"
- , "",""},
-	{"UPLOAD [%d]"
- , "",""},
-	{"UPLOADING..."
- , "",""},
+	{"PRINT SETTLE" , "",""},
+	{"PLEASE WAIT", "",""},
+	{"0.NO", "",""},
+	{"1.YES", "",""},
+	{"PRINT DETAIL?", "",""},
+	{"PRINT DETAIL...", "",""},
+	{"SETTLE SUCC", "",""},
+	{"Look Up Summary", "",""},
+	{"TOTAL SALES:", "",""},
+	{"TOTAL REFUNDS:", "",""},
+	{"1.Look up", "",""},
+	{"2.Print", "",""},
+	{"Look up summary", "",""},
+	{"Summary", "",""},
+	{"Print?", "",""},
+	{"Amount Out Of Limit!", "",""},
+	{"Settlement had not commplete,continue?", "",""},
+	{"UPLOAD", "",""},
+	{"UPLOAD [%d]", "",""},
+	{"UPLOADING...", "",""},
+	{"TOMS INIT FAIL", "", ""}
 };
 
 
@@ -711,7 +692,7 @@ static int SetTrLang(EM_LANG emLang)
 	else
 	{
 		return APP_FAIL;
-	}	
+	}
 }
 
 int SetCustomizedFont(EM_LANG emLang)

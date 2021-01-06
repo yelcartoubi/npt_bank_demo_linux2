@@ -26,8 +26,7 @@ TOOLINCDIR = module/libtool/inc
 TOOLSRCDIR = module/libtool/src
 COMMINCDIR = module/libcomm/inc
 COMMSRCDIR = module/libcomm/src
-TMSINCDIR = module/libtms/inc
-TMSSRCDIR = module/libtms/src
+
 
 # SDK directory definition
 SDKDIR = C:\\NPT_SDK
@@ -45,19 +44,20 @@ LIBL2EMVDIR = $(SDKDIR)\\Linux\\Core\\EMV\\L2_SDK\\lib\\gcc_4.9.4
 # Libc
 SDKSYSLIB = $(SDKDIR)\\Linux\\Compiler\\4.9.4\\arm-linux-gnueabi\\libc\\usr\\lib
 
-CFLAGS += -Wall -Werror -DNDEBUG $(CROSS_CFLAGS) -O2 -g $(INCPATH) -D USE_TMS -D DEMO
+# -D USE_TOMS -D DEMO
+CFLAGS += -Wall -Werror -DNDEBUG $(CROSS_CFLAGS) -O -g $(INCPATH) -D DEMO
 CFLAGS += -funwind-tables
-
+CFLAGS += -DAPP_VERSION=\"$(PARAMINI_VER)\"
 # File search path
-VPATH = src $(PRINTSRCDIR) $(SECURITYISRCDIR) $(CARDSRCDIR) $(UISRCDIR) $(TOOLSRCDIR) $(COMMSRCDIR) $(TMSSRCDIR) $(OBJDIR)
+VPATH = src $(PRINTSRCDIR) $(SECURITYISRCDIR) $(CARDSRCDIR) $(UISRCDIR) $(TOOLSRCDIR) $(COMMSRCDIR) $(OBJDIR)
 
 # Header file search path
-INCLPATH = -I$(INCDIR) -I$(PRINTINCDIR) -I$(SECURITYIINCDIR) -I$(CARDINCDIR) -I$(UIINCDIR) -I$(TOOLINCDIR) -I$(COMMINCDIR) -I$(TMSINCDIR)  -I$(LIBINCDIR) -I$(SDKNAPIINC)
+INCLPATH = -I$(INCDIR) -I$(PRINTINCDIR) -I$(SECURITYIINCDIR) -I$(CARDINCDIR) -I$(UIINCDIR) -I$(TOOLINCDIR) -I$(COMMINCDIR)  -I$(LIBINCDIR) -I$(SDKNAPIINC)
 
 # Program link parameters
 LDFLAGS += -L$(SDKAPILIB) -lndk
 
-LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_app -lnapi_c_sysinfo 
+LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_app -lnapi_c_sysinfo
 LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_datetime -lnapi_c_kb -lnapi_c_power -lnapi_c_beeper
 LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_eth -lnapi_c_modem -lnapi_c_net -lnapi_c_wifi -lnapi_c_wlm
 LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_ctlscard -lnapi_c_magcard -lnapi_c_smartcard
@@ -68,7 +68,7 @@ LDFLAGS += -L$(SDKSYSLIB) -lssl -lcrypto -lcurl -lpthread -ldl -lz
 # EMV L2 Lib
 LDFLAGS += -L$(LIBL2EMVDIR) -lemvl2 -lentrypoint -lbase
 # App Lib
-LDFLAGS += -L$(LIBAPPDIR) -ltms 
+LDFLAGS += -L$(LIBAPPDIR) -ltoms
 LDFLAGS += -L$(LIBAPPDIR) -lemvl3
 
 # model such as SP630
@@ -76,14 +76,14 @@ MODEL = SP630
 # Application Name
 PARAMINI_NAME = BANKDEMO
 # Application Version
-PARAMINI_VER = 2021010501
+PARAMINI_VER = 1.0.01
 
 # Generated program name
 NAME = main
 APPNAME = app_$(MODEL)_$(PARAMINI_NAME)_$(PARAMINI_VER).NLD
 
 # Module used in the program
-SRCS = $(wildcard $(SRCDIR)/*.c $(PRINTSRCDIR)/*.c $(SECURITYISRCDIR)/*.c $(CARDSRCDIR)/*.c $(UISRCDIR)/*.c $(TOOLSRCDIR)/*.c $(COMMSRCDIR)/*.c $(TMSSRCDIR)/*.c )
+SRCS = $(wildcard $(SRCDIR)/*.c $(PRINTSRCDIR)/*.c $(SECURITYISRCDIR)/*.c $(CARDSRCDIR)/*.c $(UISRCDIR)/*.c $(TOOLSRCDIR)/*.c $(COMMSRCDIR)/*.c )
 SRSS = $(notdir $(SRCS))
 OBJS = $(subst .c,.o,$(SRSS))
 OBJSD = $(addprefix $(OBJDIR)/,$(SRSS))
@@ -98,11 +98,11 @@ $(NAME):config $(OBJS)
 	iniupdate Version=$(PARAMINI_VER) $(BINDIR)/param.ini
 %.o: %.c
 	$(CC) -c $(CFLAGS) $(INCLPATH) $< -o $(OBJDIR)/$@
-# Automatic generation of dependency files  
+# Automatic generation of dependency files
 config: $(subst .o,.deps, $(OBJS))
 
 %.deps: %.c
-	$(CC) -MM $(INCLPATH) $< >$(OBJDIR)/$@ 
+	$(CC) -MM $(INCLPATH) $< >$(OBJDIR)/$@
 
 .PHONY:clean
 clean:
@@ -111,4 +111,4 @@ clean:
 	-$(RM) $(OBJDIR)/*.deps
 
 NLD:$(NAME)
-	$(MKUPT) -h $(BINDIR)/filepath.txt -p $(BINDIR)/param.ini -o $(BINDIR)/$(APPNAME)	
+	$(MKUPT) -h $(BINDIR)/filepath.txt -p $(BINDIR)/param.ini -o $(BINDIR)/$(APPNAME)

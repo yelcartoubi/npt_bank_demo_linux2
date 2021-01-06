@@ -6,4 +6,4 @@ bin\roboto.ttf
 bin\Newland_L3_configuration.xml
 bin\server.pem
 lib\libemvl3.so
-lib\libtms.so
+lib\libtoms.so

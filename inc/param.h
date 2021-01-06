@@ -1,15 +1,15 @@
 /***************************************************************************
-** Copyright (c) 2019 Newland Payment Technology Co., Ltd All right reserved   
+** Copyright (c) 2019 Newland Payment Technology Co., Ltd All right reserved
 ** File name:  param.h
-** File indentifier: 
-** Brief:  
+** File indentifier:
+** Brief:
 ** Current Verion:  v1.0
 ** Auther: sunh
 ** Complete date: 2016-9-22
-** Modify record: 
-** Modify date: 
-** Version: 
-** Modify content: 
+** Modify record:
+** Modify date:
+** Version:
+** Modify content:
 ***************************************************************************/
 #ifndef _PARAM_H_
 #define _PARAM_H_
@@ -30,13 +30,13 @@
 #define DISPAMTLEN               32
 
 /**
-* @struct STREVERSALPARAM 
+* @struct STREVERSALPARAM
 */
 typedef struct
 {
 	char cIsReversal;		/**<Reversal flag£¬'0'-Has reversal£¬'1'-Not yet*/
 	int nHaveReversalNum;	/**<The reversal time had sent*/
-	STREVERSAL stReversal;	
+	STREVERSAL stReversal;
 } STREVERSALPARAM;
 
 typedef struct
@@ -49,13 +49,13 @@ typedef enum
 {
 	EM_NONE_PWD = 0,
 	EM_SYSTEM_PWD = 1,
-	EM_TRANS_PWD,	
-	EM_FUNC_PWD,	
+	EM_TRANS_PWD,
+	EM_FUNC_PWD,
 }EM_PWD_TYPE;
 
 typedef enum {
-	LANG_EN_US 		= 0, 
-	LANG_ZH_CN 		= 1, 
+	LANG_EN_US 		= 0,
+	LANG_ZH_CN 		= 1,
 	LANG_CUSTOMIZED	= 2
 }EM_LANG;
 
@@ -67,8 +67,8 @@ enum CardAttribute
 };
 
 typedef enum {
-	PINPAD_ME51, 
-	PINPAD_SP100, 
+	PINPAD_ME51,
+	PINPAD_SP100,
 }EM_PINPADTYPE;
 
 /**
@@ -78,49 +78,49 @@ typedef struct
 {
 	char szTerminalId[8+1];			/**<TID*/
 	char szMerchantId[15+1];			/**<MID*/
-	char szMerchantNameEn[40+1];		
-	char szMerchantAddr[3][80+1];		
-	char szAdminPwd[16+1];		
-	char szUsrPwd[16+1];		
-	char szFuncPwd[16+1];			
-	char sTransSwitch[4];			
-	char szAcqName[20+1];				
-	char szIssuerName[20+1];		
-	char szCurrencyName[3+1];			
+	char szMerchantNameEn[40+1];
+	char szMerchantAddr[3][80+1];
+	char szAdminPwd[16+1];
+	char szUsrPwd[16+1];
+	char szFuncPwd[16+1];
+	char sTransSwitch[4];
+	char szAcqName[20+1];
+	char szIssuerName[20+1];
+	char szCurrencyName[3+1];
 	char cPrintPageCount;				/**<'0'-'9'*/
-	char cIsPntDetail;				
-	char cIsTipFlag;				
-	char szTipRate[2+1];			
-	char cIsCardInput;				
-	char cIsVoidStrip;			
-	char cIsVoidPin;				
+	char cIsPntDetail;
+	char cIsTipFlag;
+	char szTipRate[2+1];
+	char cIsCardInput;
+	char cIsVoidStrip;
+	char cIsVoidPin;
 	char cIsSupportRF;					/**<'1' support*/
 	char cIsExRF;						/**<'1' support*/
 	char cIsPinPad;						/**<'1'-use pinpad*/
-	char cPinPadAuxNo;				
-	char szPinPadTimeOut[3+1];			
+	char cPinPadAuxNo;
+	char szPinPadTimeOut[3+1];
 	char szMainKeyNo[3+1];				/**<INDEX   '00'-'99'*/
 	char cEncyptMode;					/**<'0'-de   '1'-3des*/
 	char cPinEncyptMode;				/**<'0'-With pan '1'-without pan*/
-	char szMaxTransCount[5+1];		
-	char cIsPrintErrReport;				
+	char szMaxTransCount[5+1];
+	char cIsPrintErrReport;
 	char cDefaultTransType;				/**<'1'-sale,'0'-preauth*/
 	char cIsDispEMV_TVRTSI;				/**<'1'show,'0'Not show*/
-	char cIsShieldPan;					
-	char cPntTitleMode;					
-	char szPntTitleEn[40+1];			
-	char szAppDispname[20+1];			
-	char cIsAdminPwd;               
+	char cIsShieldPan;
+	char cPntTitleMode;
+	char szPntTitleEn[40+1];
+	char szAppDispname[20+1];
+	char cIsAdminPwd;
 	char cIsPrintMinus;					/*1 print*/
 	char cIsNeedCVV2;
-	char cIsPreauthShieldPan;			
+	char cIsPreauthShieldPan;
 	char cIsReprintSettle;
 	char cIsSupportSwipe;					//support swipe 0: not 1:yes
 	char cIsSupportContact;
 	char cIsPrintIso;
 	char cKeySystemType;				//'0'-MK/SK '1'--DUKPT
 	char cLanguage;
-	char cTmsAutoUpdate;
+	char cTomsObtainCmd;
 	char cFontSize;
 	char szVerChkValue[8+1];
 	char szVersion[8+1];
@@ -128,6 +128,8 @@ typedef struct
 	char cPinPadCallbackFlag; // pinpad information is synchronized with upper computer.
 	char cPinpadType;
 	char cL3initStatus;
+    char cLockTerminal;
+    char szLockPromptInfo[32+1];
 }STAPPPOSPARAM;
 
 /**
@@ -422,10 +424,10 @@ extern int SetFunctionQPSLimit(void);
 
 extern void GetTransName(char , char *);
 extern void GetTransSwitchValue(char *);
-#ifdef USE_TMS
-extern int UpdateAppParamByTms(void);
-extern YESORNO GetVarTmsAutoUpdate();
-extern int SetFunctionTmsAutoUpdate(void);
+
+#ifdef USE_TOMS
+extern YESORNO GetVarTomsAutoObtainCmd();
+extern int SetFunctionTomsAutoObtainCmd(void);
 #endif
 extern int SetFunctionPinpadUsage(void);
 extern int GetVarPinPadUsage(void);
@@ -437,6 +439,12 @@ extern YESORNO GetVarIsPinpadReadCard();
 extern void SetL3initStatus(char cStatus);
 extern char GetL3initStatus();
 extern int GetIsLoadXMLConfig();
+
+extern void SetLockTerminal(char cStatus);
+extern char GetLockTerminal();
+
+extern int SetLockPromptInfo(char *pszPromptInfo);
+extern char *GetLockPromptInfo();
 
 #endif
 

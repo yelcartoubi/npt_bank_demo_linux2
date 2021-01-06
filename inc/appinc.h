@@ -1,15 +1,15 @@
 /***************************************************************************
-** Copyright (c) 2019 Newland Payment Technology Co., Ltd All right reserved   
+** Copyright (c) 2019 Newland Payment Technology Co., Ltd All right reserved
 ** File name:  appinc.h
-** File indentifier: 
-** Synopsis:  
+** File indentifier:
+** Synopsis:
 ** Current Verion:  v1.0
 ** Auther: sunh
 ** Complete date: 2016-9-5
-** Modify record: 
-** Modify date: 
-** Version: 
-** Modify content: 
+** Modify record:
+** Modify date:
+** Version:
+** Modify content:
 ***************************************************************************/
 #ifndef _APPINC_H_
 #define _APPINC_H_
@@ -39,9 +39,10 @@
 
 #include "sslsockets.h"
 
-#ifdef USE_TMS
-#include "tms_callback.h"
-#include "tms_process.h"
+#ifdef USE_TOMS
+#include "toms_callback.h"
+#include "toms_process.h"
 #endif
+
 #include "exception.h"
 #endif

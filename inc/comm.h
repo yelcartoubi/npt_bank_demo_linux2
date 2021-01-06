@@ -1,15 +1,15 @@
 /***************************************************************************
-** Copyright (c) 2019 Newland Payment Technology Co., Ltd All right reserved   
+** Copyright (c) 2019 Newland Payment Technology Co., Ltd All right reserved
 ** File name: comm.h
-** File indentifier: 
-** Synopsis:  
+** File indentifier:
+** Synopsis:
 ** Current Verion:  v1.0
 ** Auther: sunh
 ** Complete date: 2016-9-5
-** Modify record: 
-** Modify date: 
-** Version: 
-** Modify content: 
+** Modify record:
+** Modify date:
+** Version:
+** Modify content:
 ***************************************************************************/
 #ifndef _COMM_H_
 #define _COMM_H_
@@ -24,7 +24,7 @@
 typedef struct
 {
 	char cCommType;					/**<see enum COMMTYPE*/
-	char cCommType2;			
+	char cCommType2;
 	char cPreDialFlag;				/**<predial identifier*/
 	char cReDialNum;				/**<redial time*/
 	char cReSendNum;				/**<resend time*/
@@ -62,8 +62,13 @@ typedef struct
 	char cWifiMode;					/**<wifi mode EM_WIFI_NET_SEC*/
 	char szNii[3+1];				/**EDC NII*/
 	char cIsSSL;
-	char szTMSDomain[50+1];			/**<TMS Domain	An50*/
 	char szPdpType[20];
+
+    char szTOMSAppDomain[50+1]; 		/**<TOMS APP Domain An50*/
+    char szTOMSParamDomain[50+1]; 		/**<TOMS Param Domain An50*/
+    char szTOMSKeyPosDomain[50+1]; 		/**<TOMS Key POS Domain An50*/
+    char szTOMSFileServerDomain[50+1];  /**<TOMS file server domain An50 */
+    char szTOMSTdasDomain[50+1];        /**<TOMS file server domain An50 */
 }STAPPCOMMPARAM;
 
 enum COMMTYPE

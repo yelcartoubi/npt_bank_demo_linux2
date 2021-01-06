@@ -29,7 +29,6 @@ static int gnLastConnectIndex = -1;		/**<the last socket handle index*/
 static char gcWifiAPConnected = FALSE;	/**<AP connected status */
 static char gcSslFlag;					/**<use ssl or not */
 static char gcIsNWifiInit = FALSE;  	/**<WIFI init or not*/
-static ST_WIFI_INFO_T gstCurrWifiinfo;
 static ST_WIFI_CONFIG_T gstWifi;
 static EM_WIFI_SIGNAL_T gemSignal;  /**< used for multiThread communication */
 static pthread_mutex_t gmutex = PTHREAD_MUTEX_INITIALIZER; /**< used for Ensuring Thread Safety*/
@@ -163,6 +162,7 @@ void WifiSetSignalVal(EM_WIFI_SIGNAL_T emSignal)
 		break;
 	}
 	pthread_mutex_unlock(&gmutex);
+
 }
 
 EM_WIFI_SIGNAL_T WifiGetSignalVal(void)
@@ -184,22 +184,25 @@ int ProGetWifiAPConnected(void)
 	cConnected = gcWifiAPConnected;
 	pthread_mutex_unlock(&gmutex);
 
+    if (cConnected == TRUE)
+    {
+        return cConnected;
+    }
+
+    ST_WIFI_INFO_T stConnectInfo;
+    if (NAPI_WifiGetConnectionInfo(&stConnectInfo) == NAPI_OK  && stConnectInfo.emConState == WIFI_CONNECTED)
+    {
+        cConnected = TRUE;
+        WifiSetSignalVal(WIFI_SIGNAL_CONNECTED);
+    }
+
 	return cConnected;
 }
 
 void WifiSignalCallback(EM_WIFI_SIGNAL_T signal, void *arg)
 {
-	WIFI_TRACE(WIFI_DEBUG_LEVEL, "enter New WIFI signal callback [signal]:[%d]..", signal);
+	//WIFI_TRACE(WIFI_DEBUG_LEVEL, "enter New WIFI signal callback [signal]:[%d]..", signal);
 	WifiSetSignalVal(signal);
-	if (NAPI_WifiGetConnectionInfo(&gstCurrWifiinfo) == NAPI_OK)
-	{
-		WIFI_TRACE(WIFI_DEBUG_LEVEL,  "ssid:%s", gstCurrWifiinfo.stApInfo.szSsid);
-	}
-	else
-	{
-		memset((char *)&gstCurrWifiinfo, 0, sizeof(gstCurrWifiinfo));
-		WIFI_TRACE(WIFI_DEBUG_LEVEL,  "NAPI_WifiGetConnectionInfo fail");
-	}
 }
 
 static int WifiRegSignalFunc(void)
@@ -705,11 +708,15 @@ int WifiConnectState(int *pnStatus)
 
 int WifiGetCurrentInfo(ST_WIFI_INFO_T *pstCurrWifiinfo)
 {
-	if (strlen(gstCurrWifiinfo.stApInfo.szSsid) == 0)
+    if (pstCurrWifiinfo == NULL)
+    {
+        return APP_FAIL;
+    }
+
+	if (NAPI_WifiGetConnectionInfo(pstCurrWifiinfo) != NAPI_OK)
 	{
 		return APP_FAIL;
 	}
-	memcpy((char *)pstCurrWifiinfo, (char *)&gstCurrWifiinfo, sizeof(ST_WIFI_INFO_T));
 
 	return APP_SUCC;
 }

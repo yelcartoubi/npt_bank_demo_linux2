@@ -9,6 +9,7 @@
 
 #include "napi_display.h"
 
+
 void DisplayTitleWithStyle(char *pszTitle, int nUpDown)
 {
 	uint unScrWidth;

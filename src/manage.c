@@ -1,15 +1,15 @@
 /***************************************************************************
-** Copyright (c) 2019 Newland Payment Technology Co., Ltd All right reserved   
+** Copyright (c) 2019 Newland Payment Technology Co., Ltd All right reserved
 ** File name:  manage.c
 ** File indentifier: Manage precessing module
-** Brief:  
+** Brief:
 ** Current Verion:  v1.0
 ** Auther: sunh
 ** Complete date: 2016-9-19
-** Modify record: 
-** Modify date: 
-** Version: 
-** Modify content: 
+** Modify record:
+** Modify date:
+** Version:
+** Modify content:
 ***************************************************************************/
 
 #include "apiinc.h"
@@ -34,10 +34,10 @@ static int ResendManage(void);
 void ClearRevFlag(void)
 {
 	STREVERSAL stReversal;
-	
+
 	SetVarIsReversal(NO);
 	SetVarHaveReversalNum(0);
-	
+
 	memset(&stReversal, 0, sizeof(STREVERSAL));
 	SetReversalData(&stReversal);
 	PubMsgDlg(tr("CLEAR REVERSAL"),tr("SUCC"), 0, 1);
@@ -57,21 +57,21 @@ int DoClear(void)
 		tr("2.CLEAR TRANSLOG"),
 		tr("3.SET UNSIGNED"),
 		tr("4.SET SIGNED"),
-	}; 
+	};
 	int nSelcItem = 1, nStartItem = 1;
 
-	
+
 	while(1)
 	{
 		ASSERT_QUIT(PubShowMenuItems(tr("CLEAR"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 0));
-	
+
 		switch(nSelcItem)
 		{
 		case 1:
 			nRet = PubConfirmDlg(tr("CLEAR REVERSAL"),tr("CONFIRM?"), 0, 0);
 			if( nRet == APP_SUCC )
 			{
-				ClearRevFlag(); 
+				ClearRevFlag();
 			}
 			break;
 		case 2:
@@ -86,7 +86,7 @@ int DoClear(void)
 				PubMsgDlg(tr("CLEAR TRANS"),tr("CLEAR OK"), 1, 1);
 			}
 			break;
-		case 3: 
+		case 3:
 			nRet = PubConfirmDlg(tr("SET UNSIGNED"),tr("CONFIRM?"), 0, 0);
 			if( nRet == APP_SUCC )
 			{
@@ -124,7 +124,7 @@ int ChkPinpad(void)
 		SetControlChkPinpad(YES);
 		nMode = SECRITY_MODE_INSIDE;
 		stPinpadParam.cTimeout = DEFAULT_PIN_INPUT_TIME;
-		
+
 		nRet = PubInitSecrity(nMode, &stPinpadParam);
 		if (APP_SUCC != nRet)
 		{
@@ -365,14 +365,14 @@ int KeyManage(void)
 		tr("3.KEYNO"),
 		tr("4.CLEAR"),
 		tr("5.CHECK KCV")
-	}; 
+	};
 	int nSelcItem = 1, nStartItem = 1;
 
-	
+
 	while(1)
 	{
 		ASSERT_QUIT(PubShowMenuItems(tr("DOWNLOAD KEY"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 0));
-		
+
 		switch(nSelcItem)
 		{
 		case 1:
@@ -380,10 +380,10 @@ int KeyManage(void)
 			break;
  		case 2:
 			SetTmkByHand();
-			break;	
+			break;
 		case 3:
 			SetFunctionMainKeyNo();
-			break;	
+			break;
 		case 4:
 			nRet = PubConfirmDlg(tr("KEY MANAGE"),tr("Clear all keys?"), 0, 0);
 			if (nRet == APP_SUCC)
@@ -417,7 +417,7 @@ int SetTmkByHand(void)
 	char szTmpStr[21] = {0};
 	char szAscKey[32+1], sBcdKey[16];
 	char szAscIPEK[32+1], sBcdIPEK[16];
-	char szAscKSN[20+1], sBcdKSN[10]; 
+	char szAscKSN[20+1], sBcdKSN[10];
 	char *pszTitle = tr("INPUT BY MANUAL");
 	YESORNO cIsPinPad = NO;
 
@@ -445,8 +445,8 @@ int SetTmkByHand(void)
 
 	if (GetVarKeySystemType() == KS_MSK)
 	{
-		memset(szAscKey, 0, sizeof(szAscKey));	
-		ASSERT_QUIT(PubInputDlg(pszTitle, tr("INPUT TMK(32):"), szAscKey, &nLen, 32, 32, 0, INPUT_MODE_STRING));	
+		memset(szAscKey, 0, sizeof(szAscKey));
+		ASSERT_QUIT(PubInputDlg(pszTitle, tr("INPUT TMK(32):"), szAscKey, &nLen, 32, 32, 0, INPUT_MODE_STRING));
 		PubAscToHex((uchar *)szAscKey, nLen, 0, (uchar *)sBcdKey);
 		nLen >>= 1;
 
@@ -459,12 +459,12 @@ int SetTmkByHand(void)
 	}
 	else
 	{
-		memset(szAscIPEK, 0, sizeof(szAscIPEK));	
-		ASSERT_QUIT(PubInputDlg(pszTitle, tr("INPUT IPEK(32):"), szAscIPEK, &nLen, 32, 32, 0, INPUT_MODE_STRING));	
+		memset(szAscIPEK, 0, sizeof(szAscIPEK));
+		ASSERT_QUIT(PubInputDlg(pszTitle, tr("INPUT IPEK(32):"), szAscIPEK, &nLen, 32, 32, 0, INPUT_MODE_STRING));
 		PubAscToHex((uchar *)szAscIPEK, nLen, 0, (uchar *)sBcdIPEK);
 
-		memset(szAscKSN, 0, sizeof(szAscKSN));	
-		ASSERT_QUIT(PubInputDlg(pszTitle, tr("INPUT KSN(20):"), szAscKSN, &nLen, 20, 20, 0, INPUT_MODE_STRING));	
+		memset(szAscKSN, 0, sizeof(szAscKSN));
+		ASSERT_QUIT(PubInputDlg(pszTitle, tr("INPUT KSN(20):"), szAscKSN, &nLen, 20, 20, 0, INPUT_MODE_STRING));
 		PubAscToHex((uchar *)szAscKSN, nLen, 0, (uchar *)sBcdKSN);
 
 
@@ -475,10 +475,10 @@ int SetTmkByHand(void)
 			return APP_FAIL;
 		}
 	}
-		
-	sprintf(szTmpStr, tr("LOAD(%d) SUC"), nKeyIndex);	
+
+	sprintf(szTmpStr, tr("LOAD(%d) SUC"), nKeyIndex);
 	PubMsgDlg(pszTitle, tr("SET TMK OK"), 1, 1);
-	
+
 	return APP_SUCC;
 }
 
@@ -488,9 +488,9 @@ static int PosPrintSet()
 		tr("1.RECEIPT HEAD"),
 		tr("2.PAGE"),
 		tr("3.OTHER")
-	}; 
+	};
 	int nSelcItem = 1, nStartItem = 1;
-	
+
 	while(1)
 	{
 		ASSERT_QUIT(PubShowMenuItems(tr("SET PRINT"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 0));
@@ -508,10 +508,10 @@ static int PosPrintSet()
 					SetFunctionIsPntDetail,
 				   	SetFunctionIsPrintPrintMinus,
 				   NULL};
-				PubUpDownMenus(lSetFuns);	
+				PubUpDownMenus(lSetFuns);
 			}
 			break;
-		default:                         
+		default:
 			break;
 		}
 	}
@@ -525,10 +525,10 @@ static int MerchantManage(void)
 		tr("2.TERMINAL ID"),
 		tr("3.MERCHANT NAME"),
 		tr("4.MERCHANT ADDR")
-	}; 
+	};
 	int nSelcItem = 1, nStartItem = 1;
 
-	
+
 	while(1)
 	{
 		ASSERT_QUIT(PubShowMenuItems(tr("SET TERMINAL"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 0));
@@ -551,7 +551,7 @@ static int MerchantManage(void)
 				PubUpDownMenus(lSetFuns);
 			}
 			break;
-		default:                         
+		default:
 			break;
 		}
 	}
@@ -563,10 +563,10 @@ static int ResendManage(void)
 	char *pszItems[] = {
 		tr("1.OFFLINE RESEND"),
 		tr("2.REVERSAL RESEND")
-	}; 
+	};
 	int nSelcItem = 1, nStartItem = 1;
 
-	
+
 	while(1)
 	{
 		ASSERT_QUIT(PubShowMenuItems(tr("SET RESEND"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 0));
@@ -574,12 +574,12 @@ static int ResendManage(void)
 		switch(nSelcItem)
 		{
 		case 1:
-			SetFunctionOffResendNum(); 
+			SetFunctionOffResendNum();
 			break;
 		case 2:
 			SetFuncCommReSendNum();
 			break;
-		default:                         
+		default:
 			break;
 		}
 	}
@@ -596,7 +596,7 @@ int DoPrint()
 		tr("4.PRINT SUMMRY"),
 		tr("5.PRINT DETAIL"),
 		tr("6.PRINT PARAM")
-	}; 
+	};
 	int nSelcItem = 1, nStartItem = 1;
 
 
@@ -623,7 +623,7 @@ int DoPrint()
 		break;
 	default:
 		break;
-		
+
 	}
 	return APP_SUCC;
 }
@@ -634,7 +634,7 @@ int DoLookUp()
 		tr("1.VIEW DETAIL"),
 		tr("2.VIEW ANY"),
 		tr("3.VIEW TOTAL")
-	}; 
+	};
 	int nSelcItem = 1, nStartItem = 1;
 
 
@@ -670,7 +670,7 @@ static int TransParam(void)
 		tr("8.DEFAULT TRANS"),
 		tr("9.SET QPS LIMIT"),
 		tr("10.SET TIP RATE")
-	}; 
+	};
 	int nSelcItem = 1, nStartItem = 1;
 
 	while(1)
@@ -709,7 +709,7 @@ static int TransParam(void)
 		case 10:
 			SetFunctionTipRate();
 			break;
-		default:                         
+		default:
 			break;
 		}
 	}
@@ -723,11 +723,11 @@ int SetPaymentType()
 		tr("2.MANUAL ENABLE"),
 		tr("3.CONTACT ENABLE"),
 		tr("4.WAVE ENABLE")
-	}; 
+	};
 	int nSelcItem = 1, nStartItem = 1;
 
 	while (1)
-	{	
+	{
 		ASSERT_QUIT(PubShowMenuItems(tr("PAYMENT TYPE"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 0))
 		switch(nSelcItem)
 		{
@@ -762,12 +762,12 @@ int ControlOnOf(void)
 		tr("2.PAYMENT TYPE"),
 		tr("3.TIP ENABLE"),
 		tr("4.CVV2 ENABLE"),
-	}; 
+	};
 	int nSelcItem = 1, nStartItem = 1;
 
-	
+
 	ASSERT_QUIT(ProCheckPwd(tr("ON OFF"), EM_SYSTEM_PWD));
-	
+
 	while (1)
 	{
 
@@ -831,32 +831,32 @@ void setLanguage(void)
 }
 
 void setFontSize(void)
-{	
-	int  nRet;	
-	int nSelcItem = 1, nStartItem = 1;	
+{
+	int  nRet;
+	int nSelcItem = 1, nStartItem = 1;
 	char *pszStrs[] = {
 		"1.16",
 		"2.24",
 		"3.32"
-	};	
+	};
 
 	nSelcItem = GetVarSystemFontSize() / 8 - 1;
-	while(1)	
-	{		
-		nRet = PubShowMenuItems(tr("Set Font"), pszStrs, sizeof(pszStrs)/sizeof(char *), &nSelcItem, &nStartItem, 0);		
+	while(1)
+	{
+		nRet = PubShowMenuItems(tr("Set Font"), pszStrs, sizeof(pszStrs)/sizeof(char *), &nSelcItem, &nStartItem, 0);
 		if (nRet==APP_QUIT || nRet==APP_TIMEOUT)
 		{
 			return;
 		}
 		switch(nSelcItem)
-		{			
-		case 1: 
-		case 2: 
-		case 3:	
+		{
+		case 1:
+		case 2:
+		case 3:
 			SetVarSystemFontSize((nSelcItem + 1) * 8);
 			PubSetDispForm((nSelcItem + 1) * 8, GetVarSystemFontSize() / 4);
 			break;
-		}	
+		}
 	}
 }
 
@@ -899,13 +899,13 @@ int AdminMenu()
 		tr("5.LANGUAGE"),
 		tr("6.FONT SIZE"),
 		tr("7.EXTERN RF")
-	}; 
+	};
 	int nSelcItem = 1, nStartItem = 1;
 
 	while (1)
 	{
 		ASSERT_QUIT(PubShowMenuItems(tr("SYSTEM"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 0))
-	
+
 		switch(nSelcItem)
 		{
 		case 1:
@@ -939,54 +939,52 @@ int AdminMenu()
 	return APP_SUCC;
 }
 
-#ifdef USE_TMS
-
-static void DisplayCertNum(void)
+#ifdef USE_TOMS
+static int TOMS_Menu(void)
 {
-	char szOID[48] = {0};
-	char sBuff[128] = {0};
-
-	PubClear2To4();
-
-	TMS_GetData(LTMS_DATATYPE_CERTNUM, szOID);
-	sprintf(sBuff, "Certificate Number: \r\n\r\n%s", szOID);
-	PubDisplayStrs(DISPLAY_ALIGN_BIGFONT, 0, 2, 1, "%s", sBuff);
-	PubGetKeyCode(0);
-	return;
-}
-
-static int TMS_Menu(void)
-{
+	int nRet = 0;
 	int nSelcItem = 1, nStartItem = 1;
 	char *pszItems[] = {
-		tr("1.ACTIVATE"),
-		tr("2.UPDATE"),
-		tr("3.CERTIFICATE NUM"),
-		tr("4.AUTO UPDATE"),
-	}; 
+		tr("1.Update"),
+		tr("2.Remote Command"),
+		tr("3.Auth Terminal"),
+		tr("4.Auto Obtain Command")
+	};
 
-	ASSERT_QUIT(ProCheckPwd(tr("TMS"), EM_SYSTEM_PWD));
-	while(1)
-	{
-		ASSERT_QUIT(PubShowMenuItems(tr("TMS"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 0));
-		switch(nSelcItem)
-		{
-		case 1:
-			TmsCheckUpdate(UPTMODE_INITIATIVE, YES);
-			break;
-		case 2:
-			TmsCheckUpdate(UPTMODE_INITIATIVE, NO);
-			break;
-		case 3:
-			DisplayCertNum();
-			break;
-		case 4:
-			SetFunctionTmsAutoUpdate();
-			break;
-		default:
-			break;
-		}
-	}
+    while(1)
+    {
+        NAPI_KbFlush();
+        PubClearAll();
+
+        ProDealLockTerminal();
+        nRet = PubShowMenuItems("MENU", pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 10);
+        if(nRet == APP_TIMEOUT)
+        {
+            continue;
+        }
+        if(nRet != APP_SUCC)
+        {
+            return APP_QUIT;
+        }
+        switch(nSelcItem)
+        {
+        case 1:
+            TOMS_CheckUpdate(TOMS_OPR_DOWNLOAD_UPDATE);
+            break;
+        case 2:
+            TOMS_CheckRemoteCmds();
+            break;
+        case 3:
+            TOMS_AuthTerminal();
+            break;
+        case 4:
+            SetFunctionTomsAutoObtainCmd();
+            break;
+        default:
+            break;
+        }
+    }
+
 	return APP_SUCC;
 }
 #endif
@@ -996,15 +994,15 @@ int OtherMenu()
 	char *pszItems[] = {
 		tr("1.SHOW TVR"),
 		tr("2.PRINT ISO"),
-		tr("3.TMS"),
-	}; 
+		tr("3.TOMS"),
+	};
 	int nSelcItem = 1, nStartItem = 1;
 
-	
+
 	while (1)
 	{
 		ASSERT_QUIT(PubShowMenuItems(tr("OTHER"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 0))
-	
+
 		switch(nSelcItem)
 		{
 		case 1:
@@ -1014,8 +1012,8 @@ int OtherMenu()
 			SetFunctionIsPrintIso();
 			break;
 		case 3:
-#ifdef USE_TMS
-			TMS_Menu();
+#ifdef USE_TOMS
+			TOMS_Menu();
 #else
 			PubMsgDlg(NULL, "NONSUPPORT", 1, 5);
 #endif
@@ -1043,11 +1041,11 @@ int SystemManage()
 		tr("9.OTHER")
 		};
 	int nSelcItem = 1, nStartItem = 1;
-	
+
 	ASSERT_QUIT(ProCheckPwd(tr("MANAGE"), EM_FUNC_PWD));
-	
+
  	while(1)
-	{	
+	{
 		nRet = PubShowMenuItems(tr("MANAGE"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 0);
 		if (nRet==APP_QUIT)
 		{

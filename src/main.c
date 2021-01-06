@@ -1,15 +1,15 @@
 /***************************************************************************
-** Copyright (c) 2019 Newland Payment Technology Co., Ltd All right reserved   
+** Copyright (c) 2019 Newland Payment Technology Co., Ltd All right reserved
 ** File name:  main.c
-** File indentifier: 
-** Synopsis:  
+** File indentifier:
+** Synopsis:
 ** Current Verion:  v1.0
 ** Auther: sunh
 ** Complete date: 2016-7-1
-** Modify record: 
-** Modify date: 
-** Version: 
-** Modify content: 
+** Modify record:
+** Modify date:
+** Version:
+** Modify content:
 ***************************************************************************/
 
 #include "apiinc.h"
@@ -51,9 +51,12 @@ int main(void)
 	* module initialize , important !!!
 	*/
 	AppInit();
-
-#ifdef USE_TMS
-	TmsCheckUpdate(UPTMODE_EXIST, NO);
+#ifdef USE_TOMS
+    if (TOMS_ProInit() != APP_SUCC)
+    {
+        PubMsgDlg("Error", "Init Toms Fail", 0, 1);
+       // return -1;
+    }
 #endif
 
 	/*
@@ -65,7 +68,9 @@ int main(void)
 		* Communication Initialize
 		*/
 		CommInit();
-
+#ifdef USE_TOMS
+        TOMS_CheckUpdate(TOMS_OPR_EXIST_INSTALL);
+#endif
 		/**
 		* Enter default screen
 		*/
@@ -81,12 +86,12 @@ int main(void)
 
 /**
 ** brief: Run application firstly and initialize
-** param [in]: 
-** param [out]: 
-** return: 
+** param [in]:
+** param [out]:
+** return:
 ** auther: sunh
 ** date: 2016-7-1
-** modify: 
+** modify:
 */
 static int FirstRunChk(void)
 {
@@ -108,7 +113,7 @@ static int FirstRunChk(void)
 		InitBatchFile();
 		PubDeReclFile(LASTSETTLEFILE);
 		EmvClearRecord();
-		ASSERT_FAIL(InitPosDefaultParam());	
+		ASSERT_FAIL(InitPosDefaultParam());
 #ifdef DEMO
 		SetControlChkPinpad(YES);
 		ChkPdAndRF();
@@ -140,9 +145,9 @@ static int FirstRunChk(void)
 ** brief: Close default screen
 ** param: void
 ** return: void
-** auther: 
+** auther:
 ** date: 2016-7-3
-** modify: 
+** modify:
 */
 static void DisableDispDefault(void)
 {
@@ -156,24 +161,24 @@ static void DisableDispDefault(void)
 ** brief: Show default screen
 ** param: void
 ** return: void
-** auther: 
+** auther:
 ** date: 2016-7-4
-** modify: 
+** modify:
 */
 static void EnableDispDefault(void)
 {
 	char szSoftVer[16+1] = {0};
 	char szShowInfo[16+1]={0};
-	//uint unWspace, unHspace; 
+	//uint unWspace, unHspace;
 	int nMaxLine;
 	//open status bar
 	SetStatusBar(STATUSBAR_STANDBY_OPEN);
 	PubGetDispView(&nMaxLine ,NULL);
 	szSoftVer[0] = 'V';
-	GetVarSoftVer(&szSoftVer[1]);	
-	
+	GetVarSoftVer(&szSoftVer[1]);
+
 	if(GetVarIsSwipe() == YES)
-	{	
+	{
 		strcpy(szShowInfo, tr("SWIPE"));
 	}
 	if (GetVarIsSupportContact() == YES)
@@ -197,19 +202,19 @@ static void EnableDispDefault(void)
 	PubDisplayStrInlines(DISPLAY_ALIGN_SMALLFONT, 0, nMaxLine*2, PubGetPosTypeStr());
 	PubDisplayStrInlines(DISPLAY_ALIGN_SMALLFONT, DISPLAY_MODE_TAIL, nMaxLine*2, szSoftVer);
 	PubUpdateWindow();
-	
+
 	ShowLightIdle();
 	return;
 }
 
 /**
 ** brief: Application initialize
-** param [in]: 
-** param [out]: 
-** return: 
+** param [in]:
+** param [out]:
+** return:
 ** auther: sunh
 ** date: 2016-7-1
-** modify: 
+** modify:
 */
 static int AppInit(void)
 {
@@ -224,7 +229,7 @@ static int AppInit(void)
 	{
 		PubMsgDlg("Warning", "Exporting Iso definition fail", 3, 10);
 	}
-	
+
 	nRet = ExportPosParam();
 	nRet += ExportCommParam();
 	if (APP_SUCC != nRet)
@@ -245,22 +250,22 @@ static int AppInit(void)
 }
 
 /**
-** brief: Enter into interface of transaction 
-** param [in]: 
-** param [out]: 
-** return: 
+** brief: Enter into interface of transaction
+** param [in]:
+** param [out]:
+** return:
 ** auther: sunh
 ** date: 2016-7-1
-** modify: 
+** modify:
 */
 static int AppTrans(void)
-{ 
+{
 	int nRet = 0;
 	char cMenuSel = 0xff;			/*Enter default screen*/
 
 	DealSettleTask();//deal settle
 	while(1)
-	{			
+	{
 		if (cMenuSel == 0)
 		{
 			/**
@@ -281,7 +286,7 @@ static int AppTrans(void)
 			/**
 			* Enter default menu
 			*/
-			MenuDefault();
+		    MenuDefault();
 		}
 		cMenuSel = ~cMenuSel;
 	}
@@ -289,22 +294,22 @@ static int AppTrans(void)
 }
 
 /**
-* NewLand apps support two kinds of debug mode: port and file. 
+* NewLand apps support two kinds of debug mode: port and file.
 *
-* 1)Port debug is adding debug statements in the program code. 
-* When a terminal is connected to PC through serial or USB cable, PC launch a serial port monitoring tool. 
+* 1)Port debug is adding debug statements in the program code.
+* When a terminal is connected to PC through serial or USB cable, PC launch a serial port monitoring tool.
 * Then serial port tool will receive debug log as debug statements execute. It is for programmer to locate
-* issues. Port debug is usually used when the port of terminal is available. 
+* issues. Port debug is usually used when the port of terminal is available.
 * This mode is convenient to see debug log immediately.
 *
-* 2)File debug is similar to port debug, but before programmer calls a specific function (PubExportDebugFile) 
-* to export debug log, nobody will see the debug log. File debug mode is usually used when both serial and USB 
+* 2)File debug is similar to port debug, but before programmer calls a specific function (PubExportDebugFile)
+* to export debug log, nobody will see the debug log. File debug mode is usually used when both serial and USB
 * port of terminal are not available temporarily but available when a task ends.
 *
 *
 * The following function provides a debug menu to turn on/off and choose port/file debug, see following.
 * Once debug function is enabled, programmer can add debug statements to anywhere to debug app.
-* for example, 
+* for example,
 * PubDebug("%d%s", i, str); 				//out formatted debuging text
 * PubDebugData("title", buff, len);			//out text in hex mode
 *
@@ -312,7 +317,7 @@ static int AppTrans(void)
 * TRACE(("%d%s", i, str)); 					//out formatted debuging text
 * TRACE_HEX((buff, len, "%d%s" i, str));	//out text in hex mode
 *
-* Debug level is not applicable for PubDebug/PubDebugData/TRACE/TRACE_HEX. 
+* Debug level is not applicable for PubDebug/PubDebugData/TRACE/TRACE_HEX.
 * It's only used to control debug level in Public APIs for locating issues of Public APIs.
 *
 */
@@ -326,6 +331,7 @@ static int DebugMenu(void)
 		tr("4.CONSOLE Mode"),
 		tr("5.Export Log"),
 		tr("6.EMV Debug"),
+		tr("7.TOMS Debug"),
 	};
 	char *pszItems2[] = {
 		tr("1.RS232"), 
@@ -337,13 +343,21 @@ static int DebugMenu(void)
 		tr("2.Warning"), 
 		tr("3.All")
 	};
+
+#ifdef USE_TOMS
+	char *pszItems4[] = {
+	tr("1.Close"),
+	tr("2.Open")};
+
+    static int nTomsDebugSwitch = 0;
+#endif
 	
 	int nSelect = 1, nStartItem = 1;
 
 	nSelect = PubGetDebugMode() + 1;
-	
+
 	ASSERT_QUIT(PubShowMenuItems(tr("Debug"), pszItems1, sizeof(pszItems1)/sizeof(char *), &nSelect, &nStartItem,60));
-	
+
 	switch(nSelect)
 	{
 	case 1:
@@ -375,7 +389,7 @@ static int DebugMenu(void)
 		}
 		PubSetDebugMode(DEBUG_PORT);
 		nSelect = PubGetDebugLevel() + 1;
-		
+
 		ASSERT_QUIT(PubShowMenuItems(tr("Debug Level"), pszItems3, sizeof(pszItems3)/sizeof(char *), &nSelect, &nStartItem,60));
 		switch(nSelect)
 		{
@@ -444,7 +458,23 @@ static int DebugMenu(void)
 		break;
 	case 6:
 		MenuEmvSetDebug();
-		break;		
+		break;
+    case 7:
+#ifdef USE_TOMS
+		ASSERT_QUIT(PubShowMenuItems(tr("TOMS DEBUG"), pszItems4, sizeof(pszItems4)/sizeof(char *), &nTomsDebugSwitch, &nStartItem,60));
+		switch(nTomsDebugSwitch)
+		{
+		case 1:
+            TOMS_SetDebugSwitch(0);
+			break;
+		case 2:
+            TOMS_SetDebugSwitch(1);
+			break;
+		default:
+			break;
+		}
+#endif
+		break;
 	default:
 		break;
 	}
@@ -493,7 +523,7 @@ static int DebugMenu(void)
 	default:
 		break;
 	}
- 
+
 	 return APP_SUCC;
  }
 
@@ -529,7 +559,7 @@ static int ReprintMenu()
 		PubClearAll();
 		DISP_PRINTING_NOW;
 		PrintRecord(&stTransRecord, REPRINT);
-		break;			
+		break;
 	case 2:
 		GetRecordNum(&nRecordNum);
 		if (nRecordNum <=0 )
@@ -588,17 +618,17 @@ static int PreauthMenu()
 	TxnL3TerminateTransaction();
 
 	return APP_SUCC;
-	
+
 }
 
 /**
 ** brief: Main menu of transaction
-** param [in]: 
-** param [out]: 
-** return: 
+** param [in]:
+** param [out]:
+** return:
 ** auther: sunh
 ** date: 2016-7-1
-** modify: 
+** modify:
 */
 static int MenuFuncSel(void)
 {
@@ -628,7 +658,7 @@ static int MenuFuncSel(void)
 			return nRet;
 		}
 		switch(nSelcItem)
-		{ 
+		{
 		case 1:
 			TxnCommonEntry(TRANS_VOID, &nInputMode);
 			TxnL3TerminateTransaction();
@@ -685,12 +715,12 @@ static int MenuFuncSel(void)
 
 /**
 ** brief: Default interface
-** param [in]: 
-** param [out]: 
-** return: 
+** param [in]:
+** param [out]:
+** return:
 ** auther: sunh
 ** date: 2016-7-1
-** modify: 
+** modify:
 */
 static int MenuDefault(void)
 {
@@ -716,10 +746,11 @@ static int MenuDefault(void)
 	{
 		nRecordNum = 0;
 		CheckAutoReboot();
-	#ifdef USE_TMS
-		if (GetVarTmsAutoUpdate() == YES)
+	#ifdef USE_TOMS
+        ProDealLockTerminal();
+        if (GetVarTomsAutoObtainCmd() == YES)
 		{
-			TmsCheckUpdate(UPTMODE_PASSIVE, NO);
+			TOMS_CheckRemoteCmds();
 		}
 	#endif
 		EnableDispDefault();
@@ -727,7 +758,7 @@ static int MenuDefault(void)
 		{
 			nFirstsInput = L3_CARD_OTHER_EVENT;
 		}
-		nRet = NAPI_L3DetectCard(nFirstsInput, 0, &nInputMode);
+		nRet = NAPI_L3DetectCard(nFirstsInput, 60, &nInputMode);
 		if(nRet == L3_ERR_SWIPE_CHIP)
 		{
 			PubMsgDlg(NULL, "Chip Card, PLEASE Insert Card", 0, 1);
@@ -738,10 +769,10 @@ static int MenuDefault(void)
 			GetCardEventData(szFuncEvent);
 			nRet = szFuncEvent[0];
 		}
-		if((nRet >= KEY_1 && nRet <= KEY_8) 
+		if((nRet >= KEY_1 && nRet <= KEY_8)
 			|| (nRet >= KEY_F1 && nRet <= KEY_F2)
-			|| nRet == KEY_ENTER 
-		    || nRet == APP_SUCC 
+			|| nRet == KEY_ENTER
+		    || nRet == APP_SUCC
 		    || nRet == L3_ERR_CANCEL)
 		{
 			DisableDispDefault();
@@ -759,7 +790,7 @@ static int MenuDefault(void)
 		case KEY_2:
 			Settle(0);
 			DISP_OUT_ICC;
-			break;		
+			break;
 		case KEY_3:
 			nRecordNum = 0;
 			GetRecordNum(&nRecordNum);
@@ -774,7 +805,7 @@ static int MenuDefault(void)
 			PubClearAll();
 			DISP_PRINTING_NOW;
 			PrintRecord(&stTransRecord, REPRINT);
-			break;			
+			break;
 		case KEY_4:
 			nRecordNum = 0;
 			GetRecordNum(&nRecordNum);
@@ -849,12 +880,12 @@ static int MenuDefault(void)
 
 /**
 ** brief: Detect pinpad
-** param [in]: 
-** param [out]: 
-** return: 
+** param [in]:
+** param [out]:
+** return:
 ** auther: sunh
 ** date: 2016-7-1
-** modify: 
+** modify:
 */
 static int ChkPdAndRF(void)
 {
