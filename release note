@@ -1,5 +1,10 @@
 bankdemo by napi
 ====================================================
+Date: 2020/01/07 +0800
+for paywave should not be trated as a "decline" of the refund
+changes include:
+emv_l3process.c: PerformTransaction
+====================================================
 Date: 2020/01/06 +0800
 change XTMS to TOMS
 changes include:

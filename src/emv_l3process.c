@@ -167,6 +167,23 @@ static void EmvDispTvrTsi(void)
 	return ;
 }
 
+static YESORNO CheckIsPayWave(const STSYSTEM *pstSystem)
+{
+	char sBuff[32] = {0};
+
+	if (pstSystem->cTransAttr != ATTR_CONTACTLESS) {
+		return NO;
+	}
+	if(TxnL3GetData(_EMV_TAG_9F06_TM_AID, sBuff, sizeof(sBuff)) <= 0) {
+		return NO;
+	}
+	if (memcmp(sBuff, "\xA0\x00\x00\x00\x03", 5) == 0) {
+		return YES;
+	}
+
+	return NO;
+}
+
 int PerformTransaction(char *pszTitle, STSYSTEM *pstSystem, int *pnInputMode)
 {
     int nTlvLen = 0, nErrcode = 0;
@@ -272,6 +289,10 @@ int PerformTransaction(char *pszTitle, STSYSTEM *pstSystem, int *pnInputMode)
         return APP_FAIL;
         break;
     case L3_TXN_APPROVED:
+		// for paywave should not be trated as a "decline" of the refund
+		if (pstSystem->cTransType == TRANS_REFUND && CheckIsPayWave(pstSystem) == YES) {
+			break;
+		}
         EmvOfflineAccept(pszTitle, pstSystem);
         return APP_QUIT;
         break;
