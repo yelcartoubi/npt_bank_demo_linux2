@@ -1,5 +1,10 @@
 bankdemo by napi
 ====================================================
+Date: 2020/01/15 +0800
+change MAC_TYPE_X99 to MAC_TYPE_X919
+changes include:
+CheckMac: change MAC_TYPE_X99 to MAC_TYPE_X919
+====================================================
 Date: 2020/01/07 +0800
 for paywave should not be trated as a "decline" of the refund
 changes include:

@@ -307,7 +307,7 @@ int CheckMac(const char *psBuffer,  int nDataLen)
 	GetVarMainKeyNo(&nGroupNo);
 	PubSetCurrentMainKeyIndex(nGroupNo);
 
-	nRet = PubCalcMac(MAC_TYPE_X99, psBuffer, nDataLen - 8, sCalcMacBuf);
+	nRet = PubCalcMac(MAC_TYPE_X919, psBuffer, nDataLen - 8, sCalcMacBuf);
 	if (nRet != APP_SUCC)
 	{
 		TRACE("nRet = %d", nRet);
