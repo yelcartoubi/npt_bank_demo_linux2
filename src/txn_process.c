@@ -175,15 +175,12 @@ static int TxnPreprocess(const char cTransType)
 
 int TxnObtainFromRecord(STTRANSRECORD stTransRecord, STSYSTEM *pstSystem)
 {
-	char szTmpStr[64+1] = {0};
-
-	if (strlen(stTransRecord.sPan) > 0) {
-		PubHexToAsc((uchar *)stTransRecord.sPan, 20, 1, (uchar *)szTmpStr);
-		memcpy(pstSystem->szPan, szTmpStr, stTransRecord.nPanLen);
+	if (stTransRecord.nPanLen > 0) {
+		PubHexToAsc((uchar *)stTransRecord.sPan, stTransRecord.nPanLen, 0, (uchar *)pstSystem->szPan);
 	}
 
-	if (strlen(stTransRecord.sTrack2) > 0) {
-		PubHexToAsc((uchar *)stTransRecord.sTrack2, stTransRecord.nTrack2Len, 1, (uchar *)pstSystem->szTrack2);
+	if (stTransRecord.nTrack2Len > 0) {
+		PubHexToAsc((uchar *)stTransRecord.sTrack2, stTransRecord.nTrack2Len, 0, (uchar *)pstSystem->szTrack2);
 	}
 
 	if (strlen(stTransRecord.szCVV2) > 0)
