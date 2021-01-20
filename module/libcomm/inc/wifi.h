@@ -1,4 +1,4 @@
-﻿/**
+/**
 * @file wireless.h
 * @brief WIFI module
 * @version

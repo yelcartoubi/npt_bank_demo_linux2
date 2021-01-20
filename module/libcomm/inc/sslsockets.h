@@ -1,4 +1,4 @@
-﻿/*
+/*
 * Newland payment(c) 2011-2015
 * NAPI 
 * Date	2012-08-17

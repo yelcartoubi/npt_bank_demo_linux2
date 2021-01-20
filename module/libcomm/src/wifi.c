@@ -1,4 +1,4 @@
-﻿/**
+/**
 * @file nwifi.c
 * @brief new wifi module use forth interface
 * @version  1.0

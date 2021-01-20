@@ -225,7 +225,7 @@ SETTLE_TAIL:
 	/**
 	* Print settle
 	*/
-	if (cProcStep <= 3)
+	if (PubIsSupportPrint() == YES && cProcStep <= 3)
 	{
 		SetVarPrintSettleHalt(YES);
 		PubClearAll();
@@ -243,7 +243,7 @@ SETTLE_TAIL:
 	/**
 	* print detail
 	*/
-	if (cProcStep <= 4)
+	if (PubIsSupportPrint() == YES && cProcStep <= 4)
 	{
 		SetVarPrintDetialHalt(YES);
 		if (YES == GetVarIsPntDetail())

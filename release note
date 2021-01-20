@@ -1,6 +1,11 @@
 bankdemo by napi
 ====================================================
 Date: 2020/01/20 +0800
+added gcc4.2.0 compilation for ME51R device
+changes include:
+build/makefile and related changes(switch some files format to UTF-8, such as wifi.h)
+====================================================
+Date: 2020/01/20 +0800
 fix obtain pan and the second track data error
 changes include:
 TxnObtainFromRecord in txn_process.c

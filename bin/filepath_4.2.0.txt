@@ -5,5 +5,5 @@ bin\EMVERRCODE.INI
 bin\roboto.ttf
 bin\Newland_L3_configuration.xml
 bin\server.pem
-lib\gcc4.9.4\libemvl3.so
-lib\gcc4.9.4\libtoms.so
+lib\gcc4.2.0\libemvl3.so
+lib\gcc4.2.0\libtoms.so

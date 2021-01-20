@@ -332,7 +332,11 @@ int PubPrintCommit(int (*SendPrintData)(void *), void *pvParam,uint unPrintType)
 	char szContent[100] = {0};
 	char szFontName[128] = {0};
 
-	if(PubIsSupportPrint() == NO || SendPrintData == NULL)
+	if (PubIsSupportPrint() == NO) {
+		return APP_SUCC;
+	}
+
+	if(SendPrintData == NULL)
 	{
 		return APP_FAIL;
 	}
