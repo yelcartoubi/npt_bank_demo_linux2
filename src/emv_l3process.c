@@ -267,7 +267,9 @@ int PerformTransaction(char *pszTitle, STSYSTEM *pstSystem, int *pnInputMode)
         TlvAdd(0x1F8124, 6, szQPSLimit, szTlvList, &nTlvLen);
     }
 
-    ShowLightDeal();
+	// control LED: on Led(\x01\x00\x00) off led((\x01\x00\x00))
+	TlvAdd(0x1F8129, 3, "\x00\x00\x00", szTlvList, &nTlvLen);
+	ShowLightDeal();
 
 	nErrcode = TxnL3PerformTransaction(szTlvList, nTlvLen, &res, pstSystem);
 	TRACE("NAPI_L3PerformTransaction, nErrcode=%d, res=%d", nErrcode, res);

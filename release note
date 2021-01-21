@@ -1,5 +1,11 @@
 bankdemo by napi
 ====================================================
+Date: 2020/01/21 +0800
+update libemvl3.so
+changes include:
+1.update libemvl3.so, (the same as C:\NPT_SDK\Linux\Core\EMV\L3_SDK\lib)
+2.PerformTransaction: set LED attr:0x1F8129(off the led)
+====================================================
 Date: 2020/01/20 +0800
 added gcc4.2.0 compilation for ME51R device
 changes include:
