@@ -157,6 +157,63 @@ static void DisableDispDefault(void)
 	return ;
 }
 
+void DispScreenSaver_U1000(void)
+{
+	int i, nPicNum = 3;
+	ST_PADDATA Paddata;
+
+	SetStatusBar(STATUSBAR_OTHER_CLOSE);
+	while(1)
+	{
+		for (i = 0 ; i < nPicNum; i++)
+		{
+			PubClearAll();
+			PubDisplayLogo("screensaver1.png", 0, 160*i);
+			PubUpdateWindow();
+			while (1) {
+				if (NAPI_KbGetPad(&Paddata, 3*1000) == NAPI_ERR_TIMEOUT) {
+					break;
+				}
+				if (Paddata.emPadState == PADSTATE_UP) {
+					SetStatusBar(STATUSBAR_OTHER_OPEN);
+					return;
+				} else if (Paddata.emPadState == PADSTATE_KEY) {
+					SetStatusBar(STATUSBAR_OTHER_OPEN);
+					return;
+				}
+			}
+		}
+	}
+}
+
+void DispScreenSaver(void)
+{
+	if (strcmp(PubGetPosTypeStr(), "U1000") == 0) {
+		DispScreenSaver_U1000();
+		return;
+	}
+
+	SetStatusBar(STATUSBAR_OTHER_CLOSE);
+	while(1)
+	{
+		PubClearAll();
+		PubDisplayLogo("screensaver2.png", 0, 0);
+		PubUpdateWindow();
+		if (PubGetKeyCode(3) != 0) {
+			SetStatusBar(STATUSBAR_OTHER_OPEN);
+			return;
+		}
+
+		PubClearAll();
+		PubDisplayLogo("screensaver1.png", 0, 40);
+		PubUpdateWindow();
+		if (PubGetKeyCode(3) != 0) {
+			SetStatusBar(STATUSBAR_OTHER_OPEN);
+			return;
+		}
+	}
+}
+
 /**
 ** brief: Show default screen
 ** param: void
@@ -753,12 +810,13 @@ static int MenuDefault(void)
 			TOMS_CheckRemoteCmds();
 		}
 	#endif
+
 		EnableDispDefault();
 		if (GetVarIsPinpadReadCard() == YES)
 		{
 			nFirstsInput = L3_CARD_OTHER_EVENT;
 		}
-		nRet = NAPI_L3DetectCard(nFirstsInput, 60, &nInputMode);
+		nRet = NAPI_L3DetectCard(nFirstsInput, 10, &nInputMode);
 		if(nRet == L3_ERR_SWIPE_CHIP)
 		{
 			PubMsgDlg(NULL, "Chip Card, PLEASE Insert Card", 0, 1);
@@ -855,9 +913,8 @@ static int MenuDefault(void)
 			break;
 		case KEY_MENU:
 			break;
-		case APP_TIMEOUT:
-			/**rf blue led show(if the led exists)*/
-			ShowLightIdle();
+		case L3_ERR_TIMEOUT:
+			DispScreenSaver();
 			break;
 		default:
 			break;

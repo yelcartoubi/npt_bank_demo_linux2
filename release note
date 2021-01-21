@@ -1,6 +1,12 @@
 bankdemo by napi
 ====================================================
 Date: 2020/01/21 +0800
+Added screensaver
+changes include:
+1.Added screensaver images: filepath.txt
+2.Display screen saver(main.c:DispScreenSaver)
+====================================================
+Date: 2020/01/21 +0800
 update libemvl3.so
 changes include:
 1.update libemvl3.so, (the same as C:\NPT_SDK\Linux\Core\EMV\L3_SDK\lib)
