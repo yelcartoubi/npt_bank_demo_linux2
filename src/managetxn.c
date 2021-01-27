@@ -345,7 +345,7 @@ int Login(void)
 	PubDisplayTitle(szTitle);
 	
 	memset(stSystem.szField57, 0, sizeof(stSystem.szField57));
-	nFieldLen = 58;
+	nFieldLen = 57;
 	ASSERT_HANGUP_FAIL(GetField(57, stSystem.szField57, &nFieldLen));
 	ASSERT_FAIL(DealFld57WorkKey(stSystem.szField57, nFieldLen));
 	
@@ -471,9 +471,12 @@ static int DealFld57WorkKey(char *psField57, int nFieldLen)
 	char sPinKey[16];
 	char sMacKey[16];
 	char sTrkKey[16];
+	char sPinKeyKcv[3];
+	char sMacKeyKcv[3];
+	char sTrkKeyKcv[3];
 	int nMainKeyNo, nRet, nOff = 0;
 	
-	if (nFieldLen != 36 && nFieldLen != 58)
+	if (nFieldLen != 38 && nFieldLen != 57)
 	{
 		PubMsgDlg(pszTitle, tr("Len Of WorkKey Errors"), 3, 1);
 		return APP_FAIL;
@@ -482,11 +485,12 @@ static int DealFld57WorkKey(char *psField57, int nFieldLen)
 	GetVarMainKeyNo(&nMainKeyNo);
 	PubSetCurrentMainKeyIndex(nMainKeyNo);
 
-	nOff += 10;
 	//PINKEY
 	memcpy(sPinKey, psField57 + nOff, 16);
 	nOff += 16;
-	nRet = PubLoadWorkKey(KEY_TYPE_PIN, sPinKey, 16, NULL);
+	memcpy(sPinKeyKcv, psField57 + nOff, 3);
+	nOff += 3;
+	nRet = PubLoadWorkKey(KEY_TYPE_PIN, sPinKey, 16, sPinKeyKcv);
 	if (nRet != APP_SUCC)
 	{
 		PubMsgDlg(pszTitle, tr("Loading PinKey Errs"), 3, 10);
@@ -496,7 +500,9 @@ static int DealFld57WorkKey(char *psField57, int nFieldLen)
 	//MACKEY
 	memcpy(sMacKey, psField57 + nOff, 16);
 	nOff += 16;
-	nRet = PubLoadWorkKey(KEY_TYPE_MAC, sMacKey, 16, NULL);
+	memcpy(sMacKeyKcv, psField57 + nOff, 3);
+	nOff += 3;
+	nRet = PubLoadWorkKey(KEY_TYPE_MAC, sMacKey, 16, sMacKeyKcv);
 	if (nRet != APP_SUCC)
 	{
 		PubMsgDlg(pszTitle, tr("Loading MacKey Errs"), 3, 10);
@@ -506,7 +512,9 @@ static int DealFld57WorkKey(char *psField57, int nFieldLen)
 	//DATAKEY
 	memcpy(sTrkKey, psField57 + nOff, 16);
 	nOff += 16;
-	nRet = PubLoadWorkKey(KEY_TYPE_DATA, sTrkKey, 16, NULL);
+	memcpy(sTrkKeyKcv, psField57 + nOff, 3);
+	nOff += 3;
+	nRet = PubLoadWorkKey(KEY_TYPE_DATA, sTrkKey, 16, sTrkKeyKcv);
 	if (nRet != APP_SUCC)
 	{
 		PubMsgDlg(pszTitle, tr("Loading TrkKey Errs"), 3, 10);
@@ -515,7 +523,6 @@ static int DealFld57WorkKey(char *psField57, int nFieldLen)
 	TRACE("load work key ok ");
 	return APP_SUCC;
 }
-
 
 /**
 * @brief Check the switch of Transaction is Enable
@@ -551,9 +558,9 @@ int LoadKey()
 	char sInput[8] = {0}, sOutput[8] = {0}; //Used to veryfiy DUKPT key. It's like to calculate key check value.
 	
 	memset(sTmk, 0x00, sizeof(sTmk));
-	memset(sPinKey, 0x11, 16);	//kcv "\xCA\x25\x1B\x79"
-	memset(sMacKey, 0x22, 16);	//kcv "\x10\x82\x38\x76"
-	memset(sDataKey, 0x33, 16);	//kcv "\xD9\x7E\xB4\x64"
+	memset(sPinKey, 0x11, 16);	//kcv "\xCA\x25\x1B"
+	memset(sMacKey, 0x22, 16);	//kcv "\x10\x82\x38"
+	memset(sDataKey, 0x33, 16);	//kcv "\xD9\x7E\xB4"
 
 	GetVarMainKeyNo(&nIndex);
 
@@ -569,21 +576,21 @@ int LoadKey()
 		PubSetCurrentMainKeyIndex(nIndex);
 		//sPinKey(work key) should be ciphertext. It you want to inject 32byte 0x11, 
 		//you should calculate the ciphertext of 32byte 0x11 (encrypt 32byte 0x11 by sTmk (32 bytes 0x00)), then inject ciphertext to terminal.
-		nRet = PubLoadWorkKey(KEY_TYPE_PIN, sPinKey, 16, NULL);
+		nRet = PubLoadWorkKey(KEY_TYPE_PIN, sPinKey, 16, "\xCA\x25\x1B");
 		if (nRet != APP_SUCC)
 		{
 			PubDispErr(tr("Load PIN Key Fail"));
 			return APP_FAIL;
 		}
 		//sMacKey(work key) should be ciphertext. Same steps as pin key.
-		nRet = PubLoadWorkKey(KEY_TYPE_MAC, sMacKey, 16, NULL);
+		nRet = PubLoadWorkKey(KEY_TYPE_MAC, sMacKey, 16, "\x10\x82\x38");
 		if (nRet != APP_SUCC)
 		{
 			PubDispErr(tr("Load MAC Key Fail"));
 			return APP_FAIL;
 		}
 		//sDataKey(work key) should be ciphertext. Same steps as pin key.
-		nRet = PubLoadWorkKey(KEY_TYPE_DATA, sDataKey, 16, NULL);
+		nRet = PubLoadWorkKey(KEY_TYPE_DATA, sDataKey, 16, "\xD9\x7E\xB4");
 		if (nRet != APP_SUCC)
 		{
 			PubDispErr(tr("Load Data Key Fail"));

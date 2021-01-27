@@ -1,5 +1,11 @@
 bankdemo by napi
 ====================================================
+Date: 2020/01/27 +0800
+MK/SK key added kcv check when loading key
+changes include:
+1.MK/SK key added kcv check when loading key in managetxn.c
+2.void transaction added field 37
+====================================================
 Date: 2020/01/21 +0800
 Added screensaver
 changes include:
