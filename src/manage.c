@@ -599,6 +599,11 @@ int DoPrint()
 	};
 	int nSelcItem = 1, nStartItem = 1;
 
+	if (PubIsSupportPrint() == NO)
+	{
+		PubMsgDlg(NULL, "NOSUPPORT PRINT", 3, 10);
+		return APP_SUCC;
+	}
 
 	ASSERT_QUIT(PubShowMenuItems(tr("DO PRINT"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 0));
 	switch (nSelcItem)

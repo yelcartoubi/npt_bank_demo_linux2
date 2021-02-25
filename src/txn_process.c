@@ -244,14 +244,15 @@ static void TxnShowBalance(STSYSTEM stSystem)
 		PubUpdateWindow();
 		PubDispPinPad ("Balance:", NULL, NULL, NULL);
 		PubDispPinPad (NULL, szDispAmt, NULL, NULL);
-		PubGetKeyCode(5);
+		TxnWaitAnyKey(5);
 		PubClrPinPad();
 	}
 	else
 	{
 		PubDisplayStrInline(1, 2, "Balance:");
 		PubDisplayStrInline(1, 3, "%s", szDispAmt);
-		PubGetKeyCode(5);
+		PubUpdateWindow();
+		PubWaitConfirm(5);
 	}
 }
 
@@ -520,7 +521,7 @@ int TxnReversal(void)
 			PubClearAll();
 			PubDisplayGen(3, tr("REVERSAL SUCC"));
 			PubUpdateWindow();
-			PubGetKeyCode(1);
+			TxnWaitAnyKey(1);
 			return APP_SUCC;
 		}
 		else
@@ -1157,6 +1158,10 @@ int TxnL3PerformTransaction(char *pszTlvLise, int nTlvLen, L3_TXN_RES *res, STSY
 	}
 	else
 	{
+		if (PubGetKbAttr() == KB_VIRTUAL) 
+		{
+			ResetVirtualkbStatus();
+		}
 		nErrcode = NAPI_L3PerformTransaction(pszTlvLise, nTlvLen, res);
 	}
 
@@ -1354,5 +1359,18 @@ int TxnL3Init()
 	}
 
 	return APP_SUCC;
+}
+
+int TxnWaitAnyKey(int nTimeout)
+{
+	int nRet;
+
+	if (PubGetKbAttr() == KB_VIRTUAL) {
+		nRet = PubWaitGetKbPad(nTimeout);
+	} else {
+		nRet = PubGetKeyCode(nTimeout);
+	}
+
+	return nRet;
 }
 

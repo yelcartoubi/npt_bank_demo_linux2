@@ -438,7 +438,7 @@ int Unpack(const char *psPackBuffer, const int nPackLen)
 		PubDisplayGen(1, tr("UNPACK ERR"));
 		PubDisplayStrInline(0, 2, tr("[%d]Field Err"),nRes);
 		PubUpdateWindow();
-		PubGetKeyCode(3);
+		PubWaitConfirm(3);
 		return nRet;
 	}
 	return nRet;
@@ -465,7 +465,6 @@ void DispResp(const char *pszRespCode)
 		}
 	}
 }
-
 
 /**
 * @brief Check Respond isSuccess
@@ -584,7 +583,7 @@ int DealPackAndComm(char* pszTitle, EM_OPERATEFLAG cOperFlag,STSYSTEM *pstSystem
 		PubSetCurrentMainKeyIndex(nMainKeyNo);
 		PubDukptIncreaseKSN();
 	}
-		
+
 	if((memcmp("55", pstSystem->szResponse,2) == 0) && (nInputPinNum < 3))
 	{
 		if ((cOperFlag & CFG_REVERSAL) == CFG_REVERSAL)

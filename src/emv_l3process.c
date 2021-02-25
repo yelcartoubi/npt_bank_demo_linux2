@@ -162,7 +162,7 @@ static void EmvDispTvrTsi(void)
 	               sTVR[2], sTVR[3], sTVR[4]);
 	PubDisplayStrs(DISPLAY_ALIGN_BIGFONT, 0, 4, 1, "TSI:%02X%02X",  sTSI[0], sTSI[1]);
 	PubUpdateWindow();
-	PubGetKeyCode(0);
+	PubWaitConfirm(0);
 	NAPI_ScrPop();
 	return ;
 }
@@ -246,7 +246,7 @@ int PerformTransaction(char *pszTitle, STSYSTEM *pstSystem, int *pnInputMode)
     AddTransType(pstSystem, szTlvList, &nTlvLen);
 
     PubGetCurrentDatetime(szDate);
-	
+
     PubAscToHex((uchar* )szDate+2, 6, 0, (uchar*)szTmpData);
     TlvAdd(0x9A, 3, szTmpData, szTlvList, &nTlvLen);
 
@@ -267,8 +267,9 @@ int PerformTransaction(char *pszTitle, STSYSTEM *pstSystem, int *pnInputMode)
         TlvAdd(0x1F8124, 6, szQPSLimit, szTlvList, &nTlvLen);
     }
 
-	// control LED: on Led(\x01\x00\x00) off led((\x01\x00\x00))
-	TlvAdd(0x1F8129, 3, "\x00\x00\x00", szTlvList, &nTlvLen);
+	// control LED: on Led(\x80\x00\x00) off led((\x00\x00\x00))
+	// 1F8129 ,byte1 bit8 - led  bit7 - beep when reading card succ with rf
+	TlvAdd(0x1F8129, 3, "\x40\x00\x00", szTlvList, &nTlvLen);
 	ShowLightDeal();
 
 	nErrcode = TxnL3PerformTransaction(szTlvList, nTlvLen, &res, pstSystem);

@@ -23,6 +23,8 @@ static char gszCardEventData[19+1] = {0};
 static char gszExpriryDate[4+1] = {0};
 static char gszCvv[4+1] = {0};
 
+static char gcIsCreateVirtualKb = NO;
+
 extern int ActivePIN(L3_PIN_TYPE type, char *pszPan, publicKey *pinPK);
 extern int PubGetKeySystemType();
 
@@ -166,6 +168,9 @@ int Func_UI_Event(unsigned int uiEventID, unsigned char*uiEventData)
 		break;
 	case UI_CHIP_ERR_RETRY:
 		PubMsgDlg(NULL, "Chip Error, Retry", 0, 1);
+		if (PubGetKbAttr() == KB_VIRTUAL) {
+			ResetVirtualkbStatus();
+		}
 		break;
 	}
 
@@ -615,7 +620,7 @@ int Func_VOICE_REFERRALS(int *result)
 	PubDisplayStrInline(0,4, szPan);
 	PubUpdateWindow();
 	PubBeep(1);
-	PubGetKeyCode(20);
+	PubWaitConfirm(20);
 	PubClearAll();
 
 
@@ -690,15 +695,33 @@ static int ProInputCardNo(int nMin, int nMax, char *szCardNo, int nTimeOut)
 	NAPI_ScrGetxy(&unX, &unY);
 	PubGetDispForm(NULL, NULL ,&nLineHeight);
 	//PubGetDispLineInfo(&nLineHeight);
-	nLineno = unY/nLineHeight  + 2;
+
+	if (PubGetKbAttr() == KB_PHYSICAL) {
+		nLineno = unY/nLineHeight + 2;
+	} else {
+		unX = 48;
+		unX = 192;
+		nLineno = 6;
+	}
+
 	strcpy(szBuf, szCardNo);
 	nLen = strlen(szBuf);
 	while(1)
 	{		
 		PubDisplayStrInline(DISPLAY_MODE_CLEARLINE, nLineno, szBuf);
-		
 		NAPI_ScrRefresh();
-		NAPI_KbGetCode(nTimeOut, &nCode);
+		if (PubGetKbAttr() == KB_VIRTUAL)
+		{
+			nCode = Virtual_KbGetCode(nTimeOut);
+			if (nCode == APP_TIMEOUT) {
+				nCode = 0;
+			}
+		} 
+		else 
+		{
+			NAPI_KbGetCode(nTimeOut, &nCode);
+		}
+
 		switch(nCode)
 		{
 		case 0:
@@ -755,16 +778,42 @@ static int ProInputCardNo(int nMin, int nMax, char *szCardNo, int nTimeOut)
 //typedef int(*FUNC_CARD_DETECT_EVENT)(int input, int *res);
 int Func_CARD_DETECT_EVENT(int input, int *res)
 {
-	//TODO Cancel Detect Card
-	//TODO Manual 
-	//TODO FUNCTION KEY
-
 	int nKeyCode = 0;
 	char szInput[200] = {0};
+	ST_PADDATA stPaddata;
+	uint unX, unY, unScrWidth, unScrHeight;
 
 	memset(gszCardEventData, 0, sizeof(gszCardEventData));
+	if (PubGetKbAttr() == KB_VIRTUAL)
+	{
+		memset(&stPaddata, 0, sizeof(ST_PADDATA));
+		NAPI_ScrGetViewPort(&unX, &unY, &unScrWidth, &unScrHeight);
 
-	NAPI_KbHit(&nKeyCode);
+		if (input & L3_CARD_OTHER_EVENT)
+		{
+			nKeyCode = PubShowGetKbPad_Ms(300, BUTTON_HOMEMENU, "F1", "Enter", "F2", NULL);
+			if(nKeyCode == APP_TIMEOUT) {
+				nKeyCode = 0;
+			}
+		}
+		else
+		{
+			if (gcIsCreateVirtualKb == NO)
+			{
+				Virtual_KbCreate(NULL, INPUT_MODE_NUMBER);
+			}
+			nKeyCode = Virtual_KbHit();
+			if (nKeyCode == 0) {
+				gcIsCreateVirtualKb = YES;
+				return L3_ERR_TIMEOUT;
+			}
+		}
+	} 
+	else
+	{
+		NAPI_KbHit(&nKeyCode);
+	}
+
 	switch(nKeyCode)
 	{
 	case 0:
@@ -1582,5 +1631,10 @@ int PinPad_PerformTransaction(char *pszInput, int nInPutLen, L3_TXN_RES *res, ST
 	nOff += nTLvLen;
 
 	return nErrCode;
+}
+
+void ResetVirtualkbStatus()
+{
+	gcIsCreateVirtualKb = NO;
 }
 

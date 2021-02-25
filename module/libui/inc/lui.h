@@ -58,15 +58,106 @@
 #define KEY_BACKPAPER   	0xb2		
 #define KEY_NULL			0xfe		/**<0xfe*/
 
+#define KEY_a				'a'
+#define KEY_b				'b'
+#define KEY_c				'c'
+#define KEY_d				'd'
+#define KEY_e				'e'
+#define KEY_f				'f'
+#define KEY_g				'g'
+#define KEY_h				'h'
+#define KEY_i				'i'
+#define KEY_j				'j'
+#define KEY_k				'k'
+#define KEY_l				'l'
+#define KEY_m				'm'
+#define KEY_n				'n'
+#define KEY_o				'o'
+#define KEY_p				'p'
+#define KEY_q				'q'
+#define KEY_r				'r'
+#define KEY_s				's'
+#define KEY_t				't'
+#define KEY_u				'u'
+#define KEY_v				'v'
+#define KEY_w				'w'
+#define KEY_x				'x'
+#define KEY_y				'y'
+#define KEY_z				'z'
+#define KEY_A				'A'
+#define KEY_B				'B'
+#define KEY_C				'C'
+#define KEY_D				'D'
+#define KEY_E				'E'
+#define KEY_F				'F'
+#define KEY_G				'G'
+#define KEY_H				'H'
+#define KEY_I				'I'
+#define KEY_J				'J'
+#define KEY_K				'K'
+#define KEY_L				'L'
+#define KEY_M				'M'
+#define KEY_N				'N'
+#define KEY_O				'O'
+#define KEY_P				'P'
+#define KEY_Q				'Q'
+#define KEY_R				'R'
+#define KEY_S				'S'
+#define KEY_T				'T'
+#define KEY_U				'U'
+#define KEY_V				'V'
+#define KEY_W				'W'
+#define KEY_X				'X'
+#define KEY_Y				'Y'
+#define KEY_Z				'Z'
+
+#define KEY_DOT				'.'
+#define KEY_COMMA			','
+#define KEY_SEMICOLON		';'
+#define KEY_DIAGONAL		'/'
+#define KEY_LEFTPRNTHS		'('
+#define KEY_RIGHTPRNTHS		')'
+
+#define COLOR_RED       0xF800
+#define COLOR_GREEN     0x07E0
+#define COLOR_BLACK     0x0000
+#define COLOR_DBLUE     0x000F
+#define COLOR_BLUE      0x001F
+#define COLOR_SKYBLUE   0x7D5C
+#define COLOR_DGREY     0x7BEF
+#define COLOR_WHITE     0xFFFF
+#define COLOR_YELLOW    0xFFE0
+#define COLOR_LGRAY     0xC618
+#define COLOR_CYAN      0x07FF
+#define COLOR_MAGENTA   0xF81F        //  magenta
+#define COLOR_DGREEN    0x03E0        //dark green
+#define COLOR_DCYAN     0x03EF
+#define COLOR_MAROON    0x7800
+#define COLOR_PURPLE    0x780F
+#define COLOR_OLIVE     0x7BE0
 
 /** @}*/ // End of Keyboard
 
+#define MAX_MUNE_LINE_NUM    5
 
 typedef enum
 {
 	MENU_TITLE_MUST = 0,			/**<Title must exist*/
 	MENU_TITLE_AUTO					/**<Title probably exist*/
 }EM_MENU_TITLE;
+
+typedef enum
+{
+	BUTTON_CONFIRM = 0,
+	BUTTON_NORMAL,
+	BUTTON_HOMEMENU,
+}EM_BUTTON_ATTR;
+
+typedef enum
+{
+	KB_VIRTUAL = 0,
+	KB_PHYSICAL = 1,
+}EM_KEYBOARD_ATTR;
 
 typedef enum
 {
@@ -763,6 +854,8 @@ int PubSelectYesOrNo(char *pszTitle, char *pszStr, char* SelMenu[], char *pcSele
 */
 int PubShowMenuItems(char *pszTitle, char **ppMenuItems, int nMenuItemNum, int *pnSelectItem, int *pnStartItem, int nTimeout);
 
+int PubShowMenuItems_Ext(char *pszTitle, char **ppMenuItems, int nMenuItemNum, int *pnSelectItem, int *pnStartItem, int nTimeout);
+
 /**
 * @fn PubStrCopy
 * @brief  Smart copy funtion. Used to avoid half char of non-English string.
@@ -773,6 +866,77 @@ int PubShowMenuItems(char *pszTitle, char **ppMenuItems, int nMenuItemNum, int *
 * @li  Length of result
 */
 int PubStrCopy(char *psDst, const char *psSrc, int nLen);
+
+/**
+* @brief show buttons
+* @param [in] nButton_attr   button attr (normal/confirm...)
+* @param [in] pszButton1/2/3/4 first/second/third.. button name
+* @return 
+* @li APP_SUCC    Success
+*/
+int PubShowButton(EM_BUTTON_ATTR nButton_attr, char *pszButton1, char *pszButton2, char *pszButton3, char *pszButton4);
+
+/**
+* @brief Prompt dialog box
+* @param [in] nButton_attr button attr
+* @param [in] pszButton1/pszButton2/pszButton3/pszButton3  button key name
+* @param [in] nTimeOut   Timeout : second
+* @return 
+* @ the button num = 1, return key_enter
+* @ the button num = 2, return key_esc key_enter
+* @ the button num = 3, return key_F1 key_esc key_F2
+* @ the button num = 4, return key_up/key_esc/key_enter/key_down
+* @li APP_TIMEOUT 0: Block; Non-zero: Timeout in milliseconds
+* @li APP_SUCC    Success
+*/
+int PubShowGetKbPad(int nTimeout, EM_BUTTON_ATTR nButton_attr, char *pszButton1, char *pszButton2, char *pszButton3, char *pszButton4);
+
+/**
+* @brief Prompt dialog box
+* @param [in] nButton_attr button attr
+* @param [in] pszButton1/pszButton2/pszButton3/pszButton3  button key name
+* @param [in] nTimeOut   Timeout : milliseconds
+* @return 
+* @ the button num = 1, return key_enter
+* @ the button num = 2, return key_esc key_enter
+* @ the button num = 3, return key_F1 key_esc key_F2
+* @ the button num = 4, return key_up/key_esc/key_enter/key_down
+* @li APP_TIMEOUT 0: Block; Non-zero: Timeout in milliseconds
+* @li APP_SUCC    Success
+*/
+int PubShowGetKbPad_Ms(int nMilliseconds, EM_BUTTON_ATTR nButton_attr, char *pszButton1, char *pszButton2, char *pszButton3, char *pszButton4);
+
+/**
+* @brief not key board, jsut Get touch value before time is out. Timeout(>0) can be set, set 0 for blocking unless any key is pressed.
+* @param [in] nTimeout	
+* @return 
+* @li 0 - any touch or APP_TIMEOUT when time is out
+*/
+int PubWaitGetKbPad(int nTimeout);
+
+/** 
+* @brief Get touch value before time is out. Timeout(>0) can be set, set 0 for blocking unless any key is pressed.
+* @param [in] nTimeout	
+* @return KEY_ENTER or KEY_ESC
+* @li 
+*/
+int PubWaitConfirm(int nTimeout);
+
+/** 
+* @brief Set keyboard attr
+* @param [in] Virtual and physical keyboards	
+* @return 
+* @li 
+*/
+void PubSetKbAttr(EM_KEYBOARD_ATTR emKbAttr);
+
+/** 
+* @brief Get keyboard attr
+* @param 
+* @return Virtual and physical keyboards	
+* @li 
+*/
+EM_KEYBOARD_ATTR PubGetKbAttr();
 
 /** @}*/ // End of MessageBox
 

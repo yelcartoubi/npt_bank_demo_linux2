@@ -16,6 +16,11 @@
 
 #define FILE_RECORD APP_NAME"RECORD"
 
+typedef enum {
+	VIEWRECORD_ATTR_DETAIL,
+	VIEWRECORD_ATTR_ONEBYONE,
+} EM_VIEWRECORD_ATTR;
+
 /**
 * @struct STTRANSRECORD flow structure
 */
@@ -73,7 +78,7 @@ extern int FetchFirstRecord(STTRANSRECORD *);
 extern int FetchNextRecord(STTRANSRECORD *);
 extern int FetchPreviousRecord(STTRANSRECORD *);
 extern int FetchLastRecord(STTRANSRECORD *);
-extern int DispTransRecord(const STTRANSRECORD *);
+extern int DispTransRecord(const STTRANSRECORD *, EM_VIEWRECORD_ATTR);
 extern int RecordToSys(const STTRANSRECORD *, STSYSTEM *);
 extern int SysToRecord(const STSYSTEM *, STTRANSRECORD *);
 extern void GetRecordNum(int *);

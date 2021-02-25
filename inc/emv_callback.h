@@ -23,7 +23,9 @@ extern void SetEmvDebugPort(int );
 extern int CtrlCardPan(uchar *, const uint, const uchar, const uint);
 extern int DispPan(char *);
 extern void EmvClrOnlinePin();
-
 extern int PinPad_PerformTransaction(char *pszInput, int nInPutLen, L3_TXN_RES *res, STSYSTEM *pstSystem, char *pszResPonseCode);
+
+extern void ResetVirtualkbStatus();
+
 #endif
 

@@ -90,7 +90,7 @@ int PrintRecord(const STTRANSRECORD *pstTransRecord, int nReprintFlag)
 
 	if (pstTransRecord->cPrintFlag == NO || PubIsSupportPrint() == NO) {
 		PubBeep(1);
-		PubGetKeyCode(1);
+		TxnWaitAnyKey(1);
 		return APP_SUCC;
 	}
 
@@ -112,7 +112,7 @@ int PrintRecord(const STTRANSRECORD *pstTransRecord, int nReprintFlag)
 			PubClearAll();
 			PubDisplayStrInline(DISPLAY_MODE_CENTER, 4, tr("TEAR THE RECEIPT..."));
 			PubUpdateWindow();
-			if(PubGetKeyCode(30) == KEY_ESC)
+			if(PubWaitConfirm(30) == KEY_ESC)
 			{
 				return APP_SUCC;
 			}

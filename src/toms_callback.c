@@ -405,11 +405,11 @@ TOMS_ERRCODE TOMS_DispUIEvent(EM_TOMS_UI_ID emUIID, unsigned char* uszUIData1, u
 			sprintf(szContent, "Version [\"%s\"] contains illegal character[\'%s\']", uszUIData2, uszUIData3);
 		}
 		DispPrompt((uchar *) "Warning", (uchar *)szContent);
-		PubGetKeyCode(60);
+		PubWaitConfirm(60);
 		break;
     case TOMS_UI_NO_UPDATE:
 		DispPrompt(NULL, (uchar *)"No Update");
-		PubGetKeyCode(2);
+		PubWaitConfirm(2);
 		break;
     case TOMS_UI_PROCESSING:
 		DispPrompt((uchar *) getPromptByType(uszUIData1[0]),(uchar *) "Processing...");
@@ -417,12 +417,12 @@ TOMS_ERRCODE TOMS_DispUIEvent(EM_TOMS_UI_ID emUIID, unsigned char* uszUIData1, u
     case TOMS_UI_COMM_ERROR:
 		sprintf(szContent, "%s:%s\n %s", "Comm Err", uszUIData2, "Pls try again later");
 		DispPrompt((uchar *) getPromptByType(uszUIData1[0]), (uchar *)szContent);
-		PubGetKeyCode(60);
+		PubWaitConfirm(60);
 		break;
     case TOMS_UI_NETWORK_ERROR:
 		sprintf(szContent, "%s:%s\n %s", "Network Busy", uszUIData2, "Pls try again later");
 		DispPrompt((uchar *) getPromptByType(uszUIData1[0]), (uchar *)szContent);
-		PubGetKeyCode(60);
+		PubWaitConfirm(60);
 		break;
     case TOMS_UI_INSTALL_APP:
 		DispPrompt((uchar *) "APP Installing", (uchar *) "Do not power off!!!");
@@ -447,7 +447,7 @@ TOMS_ERRCODE TOMS_DispUIEvent(EM_TOMS_UI_ID emUIID, unsigned char* uszUIData1, u
 		break;
 	case TOMS_UI_DNS_RESOLUTION_ERR:
 		DispPrompt((uchar *) getPromptByType(uszUIData1[0]),(uchar *) "DNS Resolution failure");
-		PubGetKeyCode(60);
+		PubWaitConfirm(60);
 		break;
 	case TOMS_UI_DOWNLOADING_APP:
 		DispPrompt((uchar *) getPromptByType(uszUIData1[0]), uszUIData2);
@@ -479,7 +479,7 @@ TOMS_ERRCODE TOMS_DispUIEvent(EM_TOMS_UI_ID emUIID, unsigned char* uszUIData1, u
         break;
     case TOMS_UI_PLS_AUTH_TERMINAL:
         DispPrompt((uchar *) getPromptByType(uszUIData1[0]), (uchar*)"please authenticate terminal");
-        PubGetKeyCode(1);
+        TxnWaitAnyKey(1);
         break;
 	default:
 		break;

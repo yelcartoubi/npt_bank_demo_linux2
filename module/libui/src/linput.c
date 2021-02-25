@@ -9,6 +9,7 @@
 #include "Ltool.h"
 #include "lmenu.h"
 #include "libapiinc.h"
+#include "virtualpad.h"
 
 #define INPUT_MAX_LINE_NUM		8
 #define INPUT_MAX_COLUMN_NUM	40	
@@ -69,6 +70,11 @@ const char	ChTbl[]=
 	'*', '^', ';', '$', '!', ':', '?','*',
 };
 
+const char	ChTbl_Virtual[]=
+{
+	'.', '-', '_', ',', '@', '\\', '/', '+', '|', '~', '%', '^', ';', '$', '*', '#', '!', ':', '?', '\'', '\"', '`','.',
+};
+
 
 extern int gnDispFontSize;
 extern int gnDispLineSpacing ;
@@ -95,17 +101,25 @@ static void ShowIptDispBuf(void);
 
 static void DrawCursor(int x, int y);
 
-
-
-
 static char SwitchChar( char ch)
 {
 	int i;
-	int num = sizeof(ChTbl);
-	for(i=0;i<num;i++)
-	{
-		if(ChTbl[i] == ch)
-			return ChTbl[i+1];
+	int num;
+
+	if (PubGetKbAttr() == KB_VIRTUAL) {
+		num = sizeof(ChTbl_Virtual);
+		for(i=0;i<num;i++)
+		{
+			if(ChTbl_Virtual[i] == ch)
+				return ChTbl_Virtual[i+1];
+		}
+	} else {
+		num = sizeof(ChTbl);
+		for(i=0;i<num;i++)
+		{
+			if(ChTbl[i] == ch)
+				return ChTbl[i+1];
+		}
 	}
 
 	return ch;
@@ -363,7 +377,7 @@ static void InitIptInfo(int nLineno, int nClumno, char *pszDispStr, int nMode)
 
 }
 
-static void SetIptCursor(int x, int y)
+__attribute__((unused)) static void SetIptCursor(int x, int y)
 {
 	int nLine;
 	int i, nStrLen;
@@ -722,22 +736,28 @@ int Inputxy(int nClumno, int nLineno, char* pszOut, int* pnOutLen, int nMinLen, 
 	int     nNum;
 	int		nShowChange = 1;
 	ST_PADDATA stPaddata;
-	int		nTimeCount = 0;
+	int nTimeCount = 0;
 
 	nNum = strlen(pszOut);
 	if (nNum > nMaxLen)
 	{
 		return APP_FAIL;
 	}
-	
-	if (nEditMask == INPUT_MODE_AMOUNT)
+
+	if (PubGetKbAttr() == KB_VIRTUAL)
 	{
-		PubDisplayTail(0, DISPLAY_MODE_CLEARLINE , 0, "Clear Key To Remove");
+		Virtual_KbCreate(NULL, nEditMask);
+	}
+	else
+	{
+		if (nEditMask == INPUT_MODE_AMOUNT)
+		{
+			PubDisplayTail(0, DISPLAY_MODE_CLEARLINE , 0, "Clear Key To Remove");
+		}
 	}
 
 	InitIptInfo(nLineno, nClumno, pszOut, nEditMask);
-	
-	NAPI_KbHit( &nKey );
+	NAPI_KbHit(&nKey);
 	for (;;)
 	{
 		if (nShowChange == 1)
@@ -746,88 +766,118 @@ int Inputxy(int nClumno, int nLineno, char* pszOut, int* pnOutLen, int nMinLen, 
 		}
 		nShowChange = 1;
 		NAPI_ScrRefresh();
-		
-		if(NAPI_KbGetPad(&stPaddata, 500) == NAPI_ERR_TIMEOUT)
+		if (PubGetKbAttr() == KB_VIRTUAL)
 		{
-			if(nTimeOut > 0)
-			{
-				nTimeCount += 500;
-				if(nTimeCount/1000 > nTimeOut)
-					return APP_TIMEOUT;
+			nKey = Virtual_KbGetCode(nTimeOut);
+			if (nKey == APP_TIMEOUT) {
+				nKey = 0;
 			}
-			continue;
 		}
-		nTimeCount = 0;
+		else
+		{
+			if(NAPI_KbGetPad(&stPaddata, 500) == NAPI_ERR_TIMEOUT)
+			{
+				if(nTimeOut > 0)
+				{
+					nTimeCount += 500;
+					if(nTimeCount/1000 > nTimeOut)
+						return APP_TIMEOUT;
+				}
+				continue;
+			}
+			nTimeCount = 0;
 
-		if(stPaddata.emPadState == PADSTATE_KEY)
-		{
-			nKey = stPaddata.unKeycode;			
-			switch (nKey)
+			if(stPaddata.emPadState == PADSTATE_KEY)
 			{
-			case 0:
-				return APP_TIMEOUT;
-			case KEY_SHARP:
-				/*If letter key is pressed in INPUT_MODE_STRING mode*/
-				if (nEditMask == INPUT_MODE_STRING)
-				{
-					ShapIptStr();
-				}
+				nKey = stPaddata.unKeycode;			
+				
+			}
+			else if(stPaddata.emPadState == PADSTATE_DOWN)
+			{
+				if(gstIptInfo.nMode != INPUT_MODE_AMOUNT)//AMT do not support touch screen
+					SetIptCursor(stPaddata.unPadX, stPaddata.unPadY);
+				continue;
+			}
+		}
+
+		switch (nKey)
+		{
+		case 0:
+			return APP_TIMEOUT;
+		case KEY_SHARP:
+			/*If letter key is pressed in INPUT_MODE_STRING mode*/
+			if (nEditMask == INPUT_MODE_STRING)
+			{
+				ShapIptStr();
+			}
+			break;
+		case KEY_STAR:
+			/*'.' is not allowed in non-INPUT_MODE_STRING mode*/
+			if (nEditMask != INPUT_MODE_STRING && nEditMask != INPUT_MODE_NUMBERPOINT)
+			{
 				break;
-			case KEY_STAR:
-				/*'.' is not allowed in non-INPUT_MODE_STRING mode*/
-				if (nEditMask != INPUT_MODE_STRING && nEditMask != INPUT_MODE_NUMBERPOINT)
-				{
-					break;
-				}
-			case KEY_0:
-			case KEY_1:
-			case KEY_2:
-			case KEY_3:
-			case KEY_4:
-			case KEY_5:
-			case KEY_6:
-			case KEY_7:
-			case KEY_8:
-			case KEY_9:
-				if((nKey == KEY_0) && (nEditMask == INPUT_MODE_AMOUNT) && (gstIptInfo.nCurOffset == 0))/*Amount can not begin with '0'*/
-				{
-					break;
-				}
-				if (gstIptInfo.nGetNum >= nMaxLen)
-				{
-					break;
-				}
-				InsIptStr(nKey);
+			}
+		case KEY_0:
+		case KEY_1:
+		case KEY_2:
+		case KEY_3:
+		case KEY_4:
+		case KEY_5:
+		case KEY_6:
+		case KEY_7:
+		case KEY_8:
+		case KEY_9:
+			if((nKey == KEY_0) && (nEditMask == INPUT_MODE_AMOUNT) && (gstIptInfo.nCurOffset == 0))/*Amount can not begin with '0'*/
+			{
 				break;
-			case KEY_BACK:
-				DelIptStr();
+			}
+			if (gstIptInfo.nGetNum >= nMaxLen)
+			{
 				break;
-			case KEY_ENTER:
-				if ((gstIptInfo.nGetNum >= nMinLen) && (gstIptInfo.nGetNum <= nMaxLen))
-				{
-					GetIptStr(pszOut, pnOutLen);
-					return APP_SUCC;
-				}
-				break;
-			case KEY_ESC:
-				return APP_QUIT;
-			case KEY_UP:
-			case KEY_DOWN:
-				if (UI_ChkIsUpDownMenu())
-				{
-				      return nKey;
-				}
-				nShowChange = 0;
-				break;	
-			default:
+			}
+			InsIptStr(nKey);
+			break;
+		case KEY_BACK:
+			DelIptStr();
+			break;
+		case KEY_ENTER:
+			if ((gstIptInfo.nGetNum >= nMinLen) && (gstIptInfo.nGetNum <= nMaxLen))
+			{
+				GetIptStr(pszOut, pnOutLen);
+				return APP_SUCC;
+			}
+			break;
+		case KEY_ESC:
+			return APP_QUIT;
+		case KEY_UP:
+		case KEY_DOWN:
+			if (UI_ChkIsUpDownMenu())
+			{
+			      return nKey;
+			}
+			nShowChange = 0;
+			break;	
+		default:
+			if (PubGetKbAttr() == KB_PHYSICAL) {
 				nShowChange = 0;
 				break;
 			}
-		}
-		else if(stPaddata.emPadState == PADSTATE_DOWN)
-		{
-			if(gstIptInfo.nMode != INPUT_MODE_AMOUNT)//AMT do not support touch screen
-				SetIptCursor(stPaddata.unPadX, stPaddata.unPadY);
+			// for virtual keyboard
+			if (nEditMask == INPUT_MODE_STRING)
+			{
+				if ((nKey >= KEY_A && nKey <= KEY_Z) ||
+					(nKey >= KEY_a && nKey <= KEY_z) ||
+					nKey == KEY_RIGHTPRNTHS || nKey == KEY_LEFTPRNTHS || nKey == KEY_SEMICOLON ||
+					nKey == KEY_COMMA || nKey == KEY_DOT || nKey == KEY_DIAGONAL)
+				{
+					if (gstIptInfo.nGetNum >= nMaxLen)
+					{
+						break;
+					}
+					InsIptStr(nKey);
+				}
+			}
+			break;
 		}
 		
 	}

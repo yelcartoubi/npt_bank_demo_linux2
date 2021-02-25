@@ -61,6 +61,7 @@ static int SetFuncTOMSKeyPosDomain(void);
 static int SetFuncTOMSFileServerDomain(void);
 static int SetFuncTOMSTdasDomain(void);
 #endif
+
 /**
 * Interface function implementation
 */
@@ -2004,21 +2005,31 @@ int SetFuncWifiSsid(void)
 
 	PubClearAll();
 	PubDisplayTitle("WIFI PARAM");
-	PubDisplayStrInline(1, 2,"SSID");
+	PubDisplayStrInline(1, 2,"SSID:");
 	PubDisplayStrInline(1, 3, "%s",gstAppCommParam.szWifiSsid);
-	PubDisplayStrInline(1, 4, "0.SCAN    1.ENTER");
-	PubUpdateWindow();
-	nRet = PubGetKeyCode(60);
-	if(nRet == KEY_F1 || nRet == KEY_F2)
-		return nRet;
-	else if(nRet != KEY_0 && nRet != KEY_1 && nRet != KEY_ENTER)
-		return APP_FAIL;
-	if(nRet == KEY_0)
+
+	if (PubGetKbAttr() == KB_VIRTUAL)
+	{
+		nRet = PubShowGetKbPad(60, BUTTON_CONFIRM, tr("SCAN"), tr("CANCEL"), tr("ENTER"), NULL);
+	}
+	else
+	{
+		PubDisplayStrInline(1, 4, "0.SCAN    1.ENTER");
+		PubUpdateWindow();
+		while (1) {
+			nRet = PubGetKeyCode(60);
+			if(nRet == KEY_0 || nRet == KEY_1 || nRet == KEY_ENTER || nRet == KEY_ESC) {
+				break;
+			}
+		}
+	}
+
+	if(nRet == KEY_0 || nRet == KEY_F1)
 	{
 		PubClear2To4();
 		PubDisplayStrInline(0, 2, (char*)tr("SEARCH SSID"));
 		PubDisplayStrInline(0, 3, (char*)tr("PLEASE WAIT..."));
-		PubUpdateWindow();
+		PubUpdateWindow();	
 		ASSERT_RETURNCODE(PubCommScanWifi(tr("SET COMM"), szTemp, &nWifiMode, 60));
 		gstAppCommParam.cWifiMode = nWifiMode;
 		memset(gstAppCommParam.szWifiSsid, 0, sizeof(gstAppCommParam.szWifiSsid));
@@ -2026,7 +2037,7 @@ int SetFuncWifiSsid(void)
 		ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_WIFIMODE, 1, &gstAppCommParam.cWifiMode));
 		ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_WIFISSID, strlen(gstAppCommParam.szWifiSsid), gstAppCommParam.szWifiSsid));
 	}
-	else if(nRet == KEY_1)
+	else if(nRet == KEY_1 || nRet == KEY_F2 || nRet == KEY_ENTER)
 	{
 		memcpy(szTemp, gstAppCommParam.szWifiSsid, 32);
 		ASSERT_RETURNCODE( PubInputDlg(tr("WIFI PARAM"), "SSID", szTemp, \
@@ -2034,6 +2045,8 @@ int SetFuncWifiSsid(void)
 		memcpy(gstAppCommParam.szWifiSsid, szTemp, sizeof(gstAppCommParam.szWifiSsid) -1);
 		ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_WIFISSID, strlen(gstAppCommParam.szWifiSsid), gstAppCommParam.szWifiSsid));
 		ASSERT_FAIL(SetFuncWifiMode());
+	} else if (nRet == KEY_ESC) {
+		return APP_QUIT;
 	}
 	return APP_SUCC;
 }
@@ -2059,7 +2072,7 @@ int SetFuncWifiPwd(void)
 	{
 		for (i = 0; i < stList.num; i ++)
 		{
-			TRACE("stList.pstList[%d].szSsid=%d", i, stList.pstList[i].szSsid);
+			TRACE("stList.pstList[%d].szSsid=%s", i, stList.pstList[i].szSsid);
 			if (strcmp(stList.pstList[i].szSsid, gstAppCommParam.szWifiSsid) == 0)
 			{
 				memcpy(gstAppCommParam.szWifiKey, stList.pstList[i].szPasswd, 64);

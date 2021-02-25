@@ -158,7 +158,13 @@ static void DispListItem( uint unX, uint unY, const char* pszStr, int nTimeOut, 
 			i++;
 			unFormY += nLineHeight;
 		}
-		nKey = PubGetKeyCode(nTimeOut);
+
+		if (PubGetKbAttr() == KB_VIRTUAL) {
+			nKey = PubShowGetKbPad(nTimeOut, BUTTON_NORMAL, "UP", "CANCEL", "ENTER", "DOWN");
+		} else {
+			nKey = PubGetKeyCode(nTimeOut);
+		}
+
 		switch (nKey)
 		{
 		case KEY_F1:
@@ -251,6 +257,7 @@ int UpDownMsgDlg(const char* pszTitle, const char* pszContent,int nIsResKey, int
 	char szDisp[100][64], szTmp[64];
 	int	 nCount;
 	int nRet;
+
 	if (pszContent == NULL || (nContentLen = strlen(pszContent)) < 0)
 	{
 		return APP_FAIL;
@@ -429,7 +436,18 @@ int UpDownMsgDlg(const char* pszTitle, const char* pszContent,int nIsResKey, int
 		}
 		while(1)
 		{
-			nKeyCode = PubGetKeyCode(nTimeOut);
+			if (PubGetKbAttr() == KB_VIRTUAL) {
+				if(nResKey == NULL) {
+					nKeyCode = PubShowGetKbPad(nTimeOut, BUTTON_CONFIRM, "CANCEL", "ENTER", NULL, NULL);
+				} else if (nIsResKey == YES) {
+					nKeyCode = PubShowGetKbPad(nTimeOut, BUTTON_CONFIRM, "UP", "CANCEL", "ENTER", "DOWN");
+				} else {
+					nKeyCode = PubShowGetKbPad(nTimeOut, BUTTON_CONFIRM, "UP", "CANCLE", "DOWN", NULL);
+				}
+			} else {
+				nKeyCode = PubGetKeyCode(nTimeOut);
+			}
+
 			if((cUpFlag != TRUE && cDownFlag != TRUE) || nIsResKey == NO)
 			{
 				if(nResKey != NULL)
@@ -635,7 +653,11 @@ int UpDownConfirmDlg(const char* pszTitle, const char* pszContent,int nBeep, int
 		PubBeep(nBeep);
 		while(1)
 		{
-			nKeyCode = PubGetKeyCode(nTimeOut);
+			if (PubGetKbAttr() == KB_VIRTUAL) {
+				nKeyCode = PubShowGetKbPad(nTimeOut, BUTTON_NORMAL, "UP", "CANCEL", "ENTER", "DOWN");
+			} else {
+				nKeyCode = PubGetKeyCode(nTimeOut);
+			}
 			switch (nKeyCode)
 			{
 			case KEY_UP:
@@ -653,6 +675,7 @@ int UpDownConfirmDlg(const char* pszTitle, const char* pszContent,int nBeep, int
 				nCurrentNo += nMaxLine-cShowTitleFlag-1;
 				break;
 			case 0:
+			case APP_TIMEOUT:
 				return APP_TIMEOUT;
 			case KEY_ENTER:
 				return APP_SUCC;

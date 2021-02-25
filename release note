@@ -1,5 +1,8 @@
 bankdemo by napi
 ====================================================
+Date: 2021/02/25 +0800
+added virtual keyboard and related changes for u1000 device
+====================================================
 Date: 2020/01/27 +0800
 MK/SK key added kcv check when loading key
 changes include:

@@ -232,5 +232,7 @@ extern int TxnL3LoadTerminalConfig(L3_CARD_INTERFACE cardinterface, unsigned cha
 extern int TxnL3EnumEmvConfig(L3_CARD_INTERFACE cardinterface, L3_AID_ENTRY * aidEntry, int maxCount);
 extern int TxnL3EnumCapk(int start, int end, char capk[][6]);
 extern int TxnL3Init();
+
+extern int TxnWaitAnyKey(int nTimeout);
 #endif
 

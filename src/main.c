@@ -199,7 +199,7 @@ void DispScreenSaver(void)
 		PubClearAll();
 		PubDisplayLogo("screensaver2.png", 0, 0);
 		PubUpdateWindow();
-		if (PubGetKeyCode(3) != 0) {
+		if (TxnWaitAnyKey(3) != 0) {
 			SetStatusBar(STATUSBAR_OTHER_OPEN);
 			return;
 		}
@@ -207,7 +207,7 @@ void DispScreenSaver(void)
 		PubClearAll();
 		PubDisplayLogo("screensaver1.png", 0, 40);
 		PubUpdateWindow();
-		if (PubGetKeyCode(3) != 0) {
+		if (TxnWaitAnyKey(3) != 0) {
 			SetStatusBar(STATUSBAR_OTHER_OPEN);
 			return;
 		}
@@ -255,9 +255,16 @@ static void EnableDispDefault(void)
 	}
 	PubClearAll();
 	PubDisplayLogo("DispLogo.png", 36, 26);
-	PubDisplayGen(nMaxLine - 1, szShowInfo);
-	PubDisplayStrInlines(DISPLAY_ALIGN_SMALLFONT, 0, nMaxLine*2, PubGetPosTypeStr());
-	PubDisplayStrInlines(DISPLAY_ALIGN_SMALLFONT, DISPLAY_MODE_TAIL, nMaxLine*2, szSoftVer);
+
+	if (PubGetKbAttr() == KB_VIRTUAL) {
+		PubDisplayGen(nMaxLine/2 + 1, szShowInfo);
+		PubDisplayStrInlines(DISPLAY_ALIGN_SMALLFONT, 0, nMaxLine*2 - 3, PubGetPosTypeStr());
+		PubDisplayStrInlines(DISPLAY_ALIGN_SMALLFONT, DISPLAY_MODE_TAIL, nMaxLine*2-3, szSoftVer);
+	} else {
+		PubDisplayGen(nMaxLine - 1, szShowInfo);
+		PubDisplayStrInlines(DISPLAY_ALIGN_SMALLFONT, 0, nMaxLine*2, PubGetPosTypeStr());
+		PubDisplayStrInlines(DISPLAY_ALIGN_SMALLFONT, DISPLAY_MODE_TAIL, nMaxLine*2, szSoftVer);
+	}
 	PubUpdateWindow();
 
 	ShowLightIdle();
@@ -302,6 +309,16 @@ static int AppInit(void)
 		TRACE("nRet = %d", nRet);
 	}
 	TxnL3Init();
+
+	// set keyboard attr
+	if (strcmp(PubGetPosTypeStr(), "U1000") == 0)
+	{
+		PubSetKbAttr(KB_VIRTUAL);
+	}
+	else
+	{
+		PubSetKbAttr(KB_PHYSICAL);
+	}
 
 	return APP_SUCC;
 }
@@ -549,39 +566,46 @@ static int DebugMenu(void)
 		tr("4.LOOK UP")
 	};
 
-	nRet = PubShowMenuItems(tr("BANK DEMO"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 60);
-	if (nRet == APP_QUIT || nRet == APP_TIMEOUT)
+	while (1)
 	{
-		return nRet;
-	}
-	switch(nSelcItem)
-	{
-	case 1:
-		PrnTotal();
-		break;
-	case 2:
-		PrintAllRecord();
-		break;
-	case 3:
-		GetRecordNum(&nRecordNum);
-		if (nRecordNum <=0 )
+		nRet = PubShowMenuItems(tr("BANK DEMO"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 60);
+		if (nRet == APP_QUIT || nRet == APP_TIMEOUT)
 		{
-			char szDispBuf[100];
-			PubGetStrFormat(DISPLAY_ALIGN_BIGFONT, szDispBuf, "|CNO TRANS");
-			PubMsgDlg(tr("PRINT"), szDispBuf, 0, 5);
-			return APP_QUIT;
+			return nRet;
 		}
-		ASSERT_QUIT(PrintTotal());
-		PrintAllRecord();
-		break;
-	case 4:
-		DoLookUp();
-		break;
-	default:
-		break;
+		if (nSelcItem != 4 && PubIsSupportPrint() == NO) {
+			PubMsgDlg(NULL, "NOSUPPORT PRINT", 3, 10);
+			return APP_SUCC;
+		}
+		switch(nSelcItem)
+		{
+		case 1:
+			PrnTotal();
+			break;
+		case 2:
+			PrintAllRecord();
+			break;
+		case 3:
+			GetRecordNum(&nRecordNum);
+			if (nRecordNum <=0 )
+			{
+				char szDispBuf[100];
+				PubGetStrFormat(DISPLAY_ALIGN_BIGFONT, szDispBuf, "|CNO TRANS");
+				PubMsgDlg(tr("PRINT"), szDispBuf, 0, 5);
+				return APP_QUIT;
+			}
+			ASSERT_QUIT(PrintTotal());
+			PrintAllRecord();
+			break;
+		case 4:
+			DoLookUp();
+			break;
+		default:
+			break;
+		}
 	}
-
-	 return APP_SUCC;
+	
+	return APP_SUCC;
  }
 
 static int ReprintMenu()
@@ -594,6 +618,11 @@ static int ReprintMenu()
 		tr("2.TRACETRX"),
 		tr("3.LAST SETTLEMENT"),
 	};
+
+	if (PubIsSupportPrint() == NO) {
+		PubMsgDlg(NULL, "NOSUPPORT PRINT", 3, 10);
+		return APP_SUCC;
+	}
 
 	nRet = PubShowMenuItems(tr("BANK DEMO"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 60);
 	if (nRet == APP_QUIT || nRet == APP_TIMEOUT)
@@ -693,23 +722,28 @@ static int MenuFuncSel(void)
     int nRet = 0;
 	int nSelcItem = 1, nStartItem = 1;
 	char *pszItems[] = {
-		tr("1.VOID"),
-		tr("2.SETTLEMENT"),
-		tr("3.REPRINT"),
-		tr("4.REPORT"),
-		tr("5.PREAUTH"),
-		tr("6.DEBUG"),
-		tr("7.SIGNIN"),
-		tr("8.BALANCE"),
-		tr("9.ADJUST"),
-		tr("10.CASHBACK"),
-		tr("11.REFUND"),
-		tr("12.QUIT")
+		tr("1.SALE"),
+		tr("2.VOID"),
+		tr("3.SETTLEMENT"),
+		tr("4.REPRINT"),
+		tr("5.REPORT"),
+		tr("6.PREAUTH"),
+		tr("7.DEBUG"),
+		tr("8.SIGNIN"),
+		tr("9.BALANCE"),
+		tr("10.ADJUST"),
+		tr("11.CASHBACK"),
+		tr("12.REFUND"),
+		tr("13.QUIT")
 	};
 
 	while(1)
 	{
- 		nRet = PubShowMenuItems(tr("BANK DEMO"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 60);
+		if (PubGetKbAttr() == KB_PHYSICAL) {
+			nRet = PubShowMenuItems(tr("BANK DEMO"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 60);
+		} else {
+			nRet = PubShowMenuItems_Ext(tr("BANK DEMO"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 60);
+		}
 		if (nRet==APP_QUIT || nRet==APP_TIMEOUT)
 		{
 			return nRet;
@@ -717,50 +751,55 @@ static int MenuFuncSel(void)
 		switch(nSelcItem)
 		{
 		case 1:
-			TxnCommonEntry(TRANS_VOID, &nInputMode);
+			TxnCommonEntry(TRANS_SALE, &nInputMode);
 			TxnL3TerminateTransaction();
 			DISP_OUT_ICC;
 			break;
 		case 2:
-			Settle(0);
+			TxnCommonEntry(TRANS_VOID, &nInputMode);
+			TxnL3TerminateTransaction();
+			DISP_OUT_ICC;
 			break;
 		case 3:
+			Settle(0);
+			break;		
+		case 4:
 			ReprintMenu();
 			break;
-		case 4:
+		case 5:
 			ReportMenu();
 			break;
-		case 5:
+		case 6:
 			PreauthMenu();
 			DISP_OUT_ICC;
 			break;
-		case 6:
+		case 7:
 			DebugMenu();
 			break;
-		case 7:
+		case 8:
 			Login();
 			break;
-		case 8:
+		case 9:
 			TxnCommonEntry(TRANS_BALANCE, &nInputMode);
 			TxnL3TerminateTransaction();
 			DISP_OUT_ICC;
 			break;
-		case 9:
+		case 10:
 			TxnCommonEntry(TRANS_ADJUST, &nInputMode);
 			TxnL3TerminateTransaction();
 			DISP_OUT_ICC;
 			break;
-		case 10:
+		case 11:
 			TxnCommonEntry(TRANS_CASHBACK, &nInputMode);
 			TxnL3TerminateTransaction();
 			DISP_OUT_ICC;
 			break;
-		case 11:
+		case 12:
 			TxnCommonEntry(TRANS_REFUND, &nInputMode);
 			TxnL3TerminateTransaction();
 			DISP_OUT_ICC;
 			break;
-		case 12:
+		case 13:
 			return KEY_FUNC_APP_SELECT;
 			break;
 		default:

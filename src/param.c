@@ -2923,7 +2923,7 @@ int Version(void)
 	PubDisplayStrInline(DISPLAY_MODE_CLEARLINE, 2, tr("Version Num:"));
 	PubDisplayStrInline(DISPLAY_MODE_CLEARLINE, 3, "%s", szSoftVer);
 	PubUpdateWindow();
-	PubGetKeyCode(0);
+	TxnWaitAnyKey(0);
 	return APP_SUCC;
 }
 

@@ -367,7 +367,7 @@ int PubCommConnect()
 				PubDispMultLines(0, 2, 1, "%s%d(%d)", szErrMsg, GetCommErrorCode(), GetNapiErrorCode());
 				PubDisplayStrInline(0, 4, "[ENTER] to retry");
 				PubUpdateWindow();
-				if (KEY_ENTER == PubGetKeyCode(30))
+				if (KEY_ENTER == PubWaitConfirm(30))
 				{
 					NAPI_ScrPop();
 					PubUpdateWindow();
@@ -1142,13 +1142,18 @@ int PubSslGetCertMsg(STSSLCERTMSG* pstSslCertMsg)
 int PubCommScanWifi(const char *pszTitle, char *pszOutSsid, int *pnWifiMode, int nTimeout)
 {
 	int i = 0;
+	int nMaxSsldNum = 0;
 	int nKey = 0;
 	int nPage = 0;
 	int nMaxPage = 0;
-	int nMaxSsldNum = 0;
 	int nMaxSelNum = 0;
 	int nMaxLcdLine = 0;
 	char szDispItem[100] = {0};
+
+	int nSelectItem, nRet;
+	char *pszItems1[WIFI_AP_NUM_MAX+1] = {
+	};
+
 	ST_WIFI_AP_LIST stAp_list;
 	ST_WIFI_AP_INFO_T lstAp_info[WIFI_AP_NUM_MAX];
 
@@ -1174,8 +1179,26 @@ int PubCommScanWifi(const char *pszTitle, char *pszOutSsid, int *pnWifiMode, int
 	}
 
 	nMaxSsldNum = stAp_list.num;
-	PubGetDispView(&nMaxLcdLine, NULL);
 	PubDebugSelectly(1, "nMaxSsldNum [%d]", nMaxSsldNum);
+
+	if (PubGetKbAttr() == KB_VIRTUAL)
+	{
+			for (i = 0; i < nMaxSsldNum; i++) {
+			pszItems1[i] = lstAp_info[i].szSsid;
+			PubDebugSelectly(1, "ssid(%d): %s emAuthType = %d", i, pszItems1[i], lstAp_info[i].emAuthType);
+		}
+		nRet = PubShowMenuItems((char *)pszTitle, pszItems1, nMaxSsldNum, &nSelectItem, NULL, nTimeout);
+		if (nRet == APP_QUIT || nRet == APP_TIMEOUT) {
+			return APP_QUIT;
+		}
+		strcpy(pszOutSsid, lstAp_info[nSelectItem-1].szSsid);
+		*pnWifiMode = lstAp_info[nSelectItem-1].emAuthType;
+		PubDebugSelectly(1, "nMaxSsldNum [%d]", nMaxSsldNum);
+		PubDebugSelectly(1, "ssid: %s  %d", pszOutSsid, *pnWifiMode);
+		return APP_SUCC;
+	}
+	
+	PubGetDispView(&nMaxLcdLine, NULL);
 
 	if (pszTitle !=NULL)
 	{
@@ -1253,6 +1276,7 @@ int PubCommScanWifi(const char *pszTitle, char *pszOutSsid, int *pnWifiMode, int
 			break;
 		}
 	}
+
 	return APP_SUCC;
 }
 

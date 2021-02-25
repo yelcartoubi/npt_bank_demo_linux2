@@ -196,7 +196,7 @@ int FindByInvoice(int PrintFlag)
 	}
 	else
 	{
-		nRet = DispTransRecord(&stTransRecord);
+		nRet = DispTransRecord(&stTransRecord, VIEWRECORD_ATTR_DETAIL);
 		if(nRet != KEY_ENTER)
 		{
 			return APP_QUIT;
@@ -296,8 +296,7 @@ int FetchLastRecord(STTRANSRECORD *pstTransRecord)
 	return FetchCurrentRecord(pstTransRecord);
 }
 
-
-int DispTransRecord(const STTRANSRECORD *pstTransRecord)
+int DispTransRecord(const STTRANSRECORD *pstTransRecord, EM_VIEWRECORD_ATTR emAttr)
 {
 	char szDispBuf[256], szContent[512], szTemp[256];
 	char szZero[12+1];
@@ -445,9 +444,24 @@ int DispTransRecord(const STTRANSRECORD *pstTransRecord)
 	sprintf(szContent+strlen(szContent), "\nREF:%12.12s",pstTransRecord->szRefnum);
 	/*------auth code-----------------*/	
 	PubGetStrFormat(DISPLAY_ALIGN_BIGFONT, szContent+strlen(szContent), "\nAUTH:%6.6s", pstTransRecord->szAuthCode);
+	if (PubGetKbAttr() == KB_VIRTUAL)
+	{
+		if (emAttr == VIEWRECORD_ATTR_DETAIL)
+		{
+			return PubUpDownMsgDlg(NULL, szContent, NO, 60, NULL);
+		} 
+		else if (emAttr == VIEWRECORD_ATTR_ONEBYONE) 
+		{
+			nRet = PubUpDownMsgDlg(NULL, szContent, NO, 60, &nKey);
+			if(nRet == APP_QUIT) {
+				return KEY_ESC;
+			}
+			return nKey;
+		}
+		return PubUpDownMsgDlg(NULL, szContent, NO, 60, NULL);
+	}
 	
 	nRet = PubUpDownMsgDlg(NULL, szContent, NO, 60, &nKey);	
-	
 	if(nRet == APP_QUIT)
 		return KEY_ESC;
 	if(nRet == APP_FUNCQUIT && nKey == KEY_ENTER)
@@ -527,8 +541,8 @@ int DispRecordInfo(const char * pszTitle, const STTRANSRECORD *pstTransRecord)
 		PubGetStrFormat(DISPLAY_ALIGN_BIGFONT, szContent+strlen(szContent),"\nAUTH CODE:|R%s", pstTransRecord->szAuthCode);
 	}
 
-	PubUpDownMsgDlg(pszTitle, szContent, YES, 30, &nKey);	
-	if(KEY_ENTER == nKey)
+	nKey = PubUpDownMsgDlg(pszTitle, szContent, YES, 30, NULL);
+	if(nKey == APP_SUCC)
 	{
 		return APP_SUCC;
 	}
@@ -561,7 +575,7 @@ int RecordOneByOne(void)
 	ASSERT(FetchLastRecord(&stTransRecord));
 	while(1)
 	{
-		nRet = DispTransRecord(&stTransRecord);
+		nRet = DispTransRecord(&stTransRecord, VIEWRECORD_ATTR_ONEBYONE);
 		switch(nRet)
 		{
 		case KEY_LEFT:
@@ -662,7 +676,6 @@ int SysToRecord(const STSYSTEM *pstSystem, STTRANSRECORD *pstTransRecord )
 	strcpy(pstTransRecord->szAuthCode, pstSystem->szAuthCode);
 	strcpy(pstTransRecord->szResponse, pstSystem->szResponse);
 	PubAscToHex((uchar *)(pstSystem->szBatchNum), 6, 0, (uchar *)pstTransRecord->sBatchNum);
-	TRACE_HEX(pstTransRecord->sBatchNum, 3, "pstTransRecord->sBatchNum:");
 	strcpy(pstTransRecord->szOldAuthCode, pstSystem->szOldAuthCode);
 	strcpy(pstTransRecord->szOldRefnum, pstSystem->szOldRefnum);
 	memcpy(pstTransRecord->szOldDate, pstSystem->szOldDate, 4);

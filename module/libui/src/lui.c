@@ -11,8 +11,11 @@
 #include "lmenu.h"
 #include "lcomm.h"
 #include "libapiinc.h"
+#include "virtualpad.h"
 
 #define PUBUIVER			"ALUILB0117053101"	
+
+#define TRACE_UI(fmt,args...) PubDebug("[%s][%s][%d]>>>"""fmt,__FILE__, __FUNCTION__, __LINE__,##args)
 
 
 typedef struct{
@@ -30,6 +33,8 @@ int gnDispLineHeight = 32;
 static int gnTmpFontSize = 24;
 static int gnTmpLineSpacing = 8;
 static int gnTmpLineHeight = 32;
+
+static EM_KEYBOARD_ATTR gemKeyboardAttr = KB_PHYSICAL;
 
 void ProDisplayInv(int nMode, int nLineno, char *pStr);
 void ProDisplayInvs(int nAlign, int nMode, int nLineno, char *pstr);
@@ -218,9 +223,59 @@ int PubGetKeyCode(int nTimeout)
 {
 	int nCode;
 
-	NAPI_ScrRefresh();
-	NAPI_KbGetCode(nTimeout, &nCode);
+	if (PubGetKbAttr() == KB_VIRTUAL) {
+		Virtual_KbCreate(NULL, INPUT_MODE_STRING);
+		nCode = Virtual_KbGetCode(nTimeout);
+	} else {
+		NAPI_ScrRefresh();
+		NAPI_KbGetCode(nTimeout, &nCode);
+	}
+
 	return nCode;
+}
+
+/**
+* @brief Get touch value before time is out. Timeout(>0) can be set, set 0 for blocking unless any key is pressed.
+* @param [in] nTimeout	
+* @return 
+* @li 0 - any touch or APP_TIMEOUT when time is out
+*/
+int PubWaitGetKbPad(int nTimeout)
+{
+	ST_PADDATA stPaddata;
+
+	NAPI_ScrRefresh();
+	if (PubGetKbAttr() == KB_VIRTUAL)
+	{
+		NAPI_KbVppTpFlush();
+	}
+	while (1) {
+		if(NAPI_KbGetPad(&stPaddata, nTimeout*1000) == NAPI_ERR_TIMEOUT)
+		{
+			return APP_TIMEOUT;
+		}
+
+		if (stPaddata.emPadState == PADSTATE_UP) {
+			break;
+		}
+	}
+
+	return APP_SUCC;
+}
+
+/** 
+* @brief Get touch value before time is out. Timeout(>0) can be set, set 0 for blocking unless any key is pressed.
+* @param [in] nTimeout	
+* @return KEY_ENTER or KEY_ESC
+* @li 
+*/
+int PubWaitConfirm(int nTimeout)
+{
+	if (PubGetKbAttr() == KB_VIRTUAL) {
+		return PubShowGetKbPad(nTimeout, BUTTON_CONFIRM, "CANCEL", "ENTER", NULL, NULL);
+	} else {
+		return PubGetKeyCode(nTimeout);
+	}
 }
 
 /**
@@ -822,6 +877,20 @@ int PubMsgDlg(const char *pszTitle, const char *pszContent, int nBeep, int nTime
 {
 	int nKey;
 
+	if (PubGetKbAttr() == KB_VIRTUAL)
+	{
+		if (nTimeOut <= 2) {
+			PubClearAll();
+			PubDisplayTitle((char*)pszTitle);
+			PubDisplayStr(DISPLAY_MODE_CLEARLINE, 4, 1, (char*)pszContent);
+			PubUpdateWindow();
+			PubBeep(nBeep);
+			PubWaitGetKbPad(nTimeOut);
+			return APP_SUCC;
+		}
+		return PubConfirmDlg(pszTitle, pszContent, nBeep, nTimeOut);
+	}
+
 	PubClearAll();
 	PubDisplayTitle((char*)pszTitle);
 	PubDisplayStr(DISPLAY_MODE_CLEARLINE,2,1, (char*)pszContent);
@@ -848,9 +917,395 @@ int PubMsgDlg(const char *pszTitle, const char *pszContent, int nBeep, int nTime
 	}
 
 	return APP_QUIT;
-
-	
 }
+
+/**
+* @brief show buttons
+* @param [in] nButton_attr   button attr (normal/confirm...)
+* @param [in] pszButton1/2/3/4 first/second/third.. button name
+* @return 
+* @li APP_SUCC    Success
+*/
+int PubShowButton(EM_BUTTON_ATTR nButton_attr, char *pszButton1, char *pszButton2, char *pszButton3, char *pszButton4)
+{
+	int nMaxLine;
+	uint unX, unY, unScrWidth, unScrHeight, unColor;
+	int nGap = 2, nButWidth, nOff = 0;
+	int nTxtWidth, nTxtHeight, x, y, nSelectLine, nColumnNum = 0, nSpace;
+	
+	PubGetDispView(&nMaxLine, NULL);
+	NAPI_ScrGetViewPort(&unX, &unY, &unScrWidth,&unScrHeight);
+	if (pszButton1 == NULL) {
+		return APP_QUIT;
+	}
+
+	nColumnNum = 1;
+	if (pszButton2 != NULL) {
+		nColumnNum++;
+	}
+
+	if (pszButton3 != NULL) {
+		nColumnNum++;
+	}
+
+	if (pszButton4 != NULL) {
+		nColumnNum++;
+	}
+
+	if (nButton_attr == BUTTON_CONFIRM || nButton_attr == BUTTON_NORMAL) {
+		nGap = 0;
+		nSelectLine = 2;
+	} else if (nButton_attr == BUTTON_HOMEMENU) {
+		nGap = 2;
+		nSelectLine = 1;
+	} else {
+		nGap = 2;
+		nSelectLine = 2;
+	}
+	nButWidth = (unScrWidth - (nColumnNum+1)*nGap) / nColumnNum;
+	nSpace = (unScrWidth - (nColumnNum+1)*nGap) % nColumnNum;
+// button1
+	if (pszButton1 != NULL)
+	{
+		nOff = nGap;
+		if (nButton_attr == BUTTON_CONFIRM) {
+			if (nColumnNum == 1) {
+				unColor = COLOR_GREEN;
+			} else if (nColumnNum == 2) {
+				unColor = COLOR_RED;
+			} else if (nColumnNum == 3) {
+				unColor = COLOR_GREEN;
+			} else {
+				unColor = COLOR_RED;
+			}
+		} else if (nButton_attr == BUTTON_HOMEMENU) {
+			unColor = COLOR_LGRAY;
+		} else {
+			unColor = COLOR_LGRAY;
+		}
+		NAPI_ScrRectangle(nOff, gnDispLineHeight*(nMaxLine-nSelectLine), nButWidth, gnDispLineHeight*nSelectLine, RECT_PATTERNS_SOLID_FILL, unColor);
+		nOff += nButWidth + nGap;
+		x = 0;
+		NAPI_ScrGetTrueTypeFontSize(pszButton1, strlen(pszButton1), &nTxtWidth, &nTxtHeight);
+		y = gnDispLineHeight*(nMaxLine-nSelectLine) + (gnDispLineHeight*nSelectLine-nTxtHeight)/2;
+		DispBoldFontText((nButWidth-nTxtWidth)/2, y, pszButton1);
+	}
+
+// button2
+	if (pszButton2 != NULL)
+	{
+		if (nButton_attr == BUTTON_CONFIRM) {
+			if (nColumnNum == 2) {
+				unColor = COLOR_GREEN;
+			} else if (nColumnNum == 3) {
+				unColor = COLOR_RED;
+			} else {
+				unColor = COLOR_LGRAY;
+			}
+		} else if (nButton_attr == BUTTON_HOMEMENU) {
+			unColor = COLOR_LGRAY;
+		} else {
+			unColor = COLOR_LGRAY;
+		}
+		if (nColumnNum == 2) {
+			nButWidth += nSpace;
+		}
+		NAPI_ScrRectangle(nOff, gnDispLineHeight*(nMaxLine-nSelectLine), nButWidth, gnDispLineHeight*nSelectLine, RECT_PATTERNS_SOLID_FILL, unColor);
+		x = nButWidth + nGap;
+		NAPI_ScrGetTrueTypeFontSize(pszButton2, strlen(pszButton2), &nTxtWidth, &nTxtHeight);
+		y = gnDispLineHeight*(nMaxLine-nSelectLine) + (gnDispLineHeight*nSelectLine-nTxtHeight)/2;
+		DispBoldFontText((nButWidth-nTxtWidth)/2+x, y, pszButton2);
+		nOff += nButWidth + nGap;
+	}
+
+// button3
+	if (pszButton3 != NULL)
+	{
+		if (nButton_attr == BUTTON_CONFIRM) {
+			if (nColumnNum == 3) {
+				unColor = COLOR_GREEN;
+			} else {
+				unColor = COLOR_RED;
+			}
+		} else {
+			unColor = COLOR_LGRAY;
+		}
+		if (nButton_attr == BUTTON_CONFIRM) {
+			if (nColumnNum == 3) {
+				unColor = COLOR_GREEN;
+			} else {
+				unColor = COLOR_LGRAY;
+			}
+		} else if (nButton_attr == BUTTON_HOMEMENU) {
+			unColor = COLOR_LGRAY;
+		} else {
+			unColor = COLOR_LGRAY;
+		}
+		if (nColumnNum == 3) {
+			nButWidth += nSpace;
+		}
+		NAPI_ScrRectangle(nOff, gnDispLineHeight*(nMaxLine-nSelectLine), nButWidth, gnDispLineHeight*nSelectLine, RECT_PATTERNS_SOLID_FILL, unColor);
+		x += nButWidth + nGap;
+		NAPI_ScrGetTrueTypeFontSize(pszButton3, strlen(pszButton3), &nTxtWidth, &nTxtHeight);
+		y = gnDispLineHeight*(nMaxLine-nSelectLine) + (gnDispLineHeight*nSelectLine-nTxtHeight)/2;
+		DispBoldFontText((nButWidth-nTxtWidth)/2+x, y, pszButton3);
+		nOff += nButWidth + nGap;
+	}
+
+	// button4
+	if (pszButton4 != NULL)
+	{
+		if (nButton_attr == BUTTON_CONFIRM) {
+			if (nColumnNum == 4) {
+				unColor = COLOR_RED;
+			} else {
+				unColor = COLOR_LGRAY;
+			}
+		} else if (nButton_attr == BUTTON_HOMEMENU) {
+			unColor = COLOR_LGRAY;
+		} else {
+			unColor = COLOR_LGRAY;
+		}
+		if (nColumnNum == 4) {
+			nButWidth += nSpace;
+		}
+		NAPI_ScrRectangle(nOff, gnDispLineHeight*(nMaxLine-nSelectLine), nButWidth, gnDispLineHeight*nSelectLine, RECT_PATTERNS_SOLID_FILL, unColor);
+		x += nButWidth + nGap;
+		NAPI_ScrGetTrueTypeFontSize(pszButton4, strlen(pszButton4), &nTxtWidth, &nTxtHeight);
+		y = gnDispLineHeight*(nMaxLine-nSelectLine) + (gnDispLineHeight*nSelectLine-nTxtHeight)/2;
+		DispBoldFontText((nButWidth-nTxtWidth)/2+x, y, pszButton4);
+		nOff += nButWidth + nGap;
+	}
+
+	PubUpdateWindow();
+	return APP_SUCC;
+}
+
+/**
+* @brief Prompt dialog box
+* @param [in] nButton_attr button attr
+* @param [in] pszButton1/pszButton2/pszButton3/pszButton3  button key name
+* @param [in] nTimeOut   Timeout : second
+* @return 
+* @ the button num = 1, return key_enter
+* @ the button num = 2, return key_esc key_enter
+* @ the button num = 3, return key_F1 key_esc key_F2
+* @ the button num = 4, return key_up/key_esc/key_enter/key_down
+* @li APP_TIMEOUT 0: Block; Non-zero: Timeout in milliseconds
+* @li APP_SUCC    Success
+*/
+int PubShowGetKbPad(int nTimeout, EM_BUTTON_ATTR nButton_attr, char *pszButton1, char *pszButton2, char *pszButton3, char *pszButton4)
+{
+	ST_PADDATA stPaddata;
+	uint unX, unY, unScrWidth, unScrHeight;
+	int nColumnNum, nButWidth, nSelectLine, nGap = 2;
+
+	if (pszButton1 == NULL) {
+		return APP_QUIT;
+	}
+
+	nColumnNum = 1;
+	if (pszButton2 != NULL) {
+		nColumnNum++;
+	}
+
+	if (pszButton3 != NULL) {
+		nColumnNum++;
+	}
+
+	if (pszButton4 != NULL) {
+		nColumnNum++;
+	}
+	NAPI_ScrGetViewPort(&unX, &unY, &unScrWidth, &unScrHeight);
+
+	if (nButton_attr == BUTTON_CONFIRM || nButton_attr == BUTTON_NORMAL) {
+		nGap = 0;
+		nSelectLine = 2;
+	} else if (nButton_attr == BUTTON_HOMEMENU) {
+		nGap = 2;
+		nSelectLine = 1;
+	} else {
+		nGap = 2;
+		nSelectLine = 2;
+	}
+	nButWidth = (unScrWidth - (nColumnNum+1)*nGap) / nColumnNum;
+
+	PubShowButton(nButton_attr, pszButton1, pszButton2, pszButton3, pszButton4);
+	NAPI_KbVppTpFlush();
+	while (1) {
+		if(NAPI_KbGetPad(&stPaddata, nTimeout*1000) == NAPI_ERR_TIMEOUT) {
+			return APP_TIMEOUT;
+		}
+
+		if(stPaddata.emPadState != PADSTATE_UP) {
+			continue;
+		}
+
+		if (nButton_attr == BUTTON_HOMEMENU || nButton_attr == BUTTON_NORMAL) {
+			break;
+		}
+
+		if (stPaddata.unPadY >= unScrHeight-nSelectLine*gnDispLineHeight) {
+			break;
+		}
+	}
+
+	if (nButton_attr == BUTTON_HOMEMENU) {
+		if (stPaddata.unPadY < unScrHeight-nSelectLine*gnDispLineHeight) {
+			return KEY_ESC;
+		}
+	}
+
+	if (nColumnNum == 3) { // F1 esc F2
+		if(stPaddata.unPadX < nButWidth) {
+			return KEY_F1;
+		}
+		if(stPaddata.unPadX < 2*nButWidth) {
+			if (nButton_attr == BUTTON_HOMEMENU) {
+				return KEY_ENTER;
+			} else {
+				return KEY_ESC;
+			}
+		}
+		return KEY_F2;
+	} else if (nColumnNum == 2) { // esc enter
+		if(stPaddata.unPadX < nButWidth) {
+			return KEY_ESC;
+		}
+		if(stPaddata.unPadX < 2*nButWidth) {
+			return KEY_ENTER;
+		}
+		return KEY_ENTER;
+	} else if (nColumnNum == 4) { //up esc enter down
+		if(stPaddata.unPadX < nButWidth) {
+			return KEY_UP;
+		} else if(stPaddata.unPadX < 2*nButWidth) {
+			return KEY_ESC;
+		} else if(stPaddata.unPadX < 3*nButWidth) {
+			return KEY_ENTER;
+		}
+		return KEY_DOWN;
+	} else { // enter
+		return KEY_ENTER;
+	}
+
+	return APP_SUCC;
+}
+
+/**
+* @brief Prompt dialog box
+* @param [in] nButton_attr button attr
+* @param [in] pszButton1/pszButton2/pszButton3/pszButton3  button key name
+* @param [in] nTimeOut   Timeout : milliseconds
+* @return 
+* @ the button num = 1, return key_enter
+* @ the button num = 2, return key_esc key_enter
+* @ the button num = 3, return key_F1 key_esc key_F2
+* @ the button num = 4, return key_up/key_esc/key_enter/key_down
+* @li APP_TIMEOUT 0: Block; Non-zero: Timeout in milliseconds
+* @li APP_SUCC    Success
+*/
+int PubShowGetKbPad_Ms(int nMilliseconds, EM_BUTTON_ATTR nButton_attr, char *pszButton1, char *pszButton2, char *pszButton3, char *pszButton4)
+{
+	ST_PADDATA stPaddata;
+	uint unX, unY, unScrWidth, unScrHeight;
+	int nColumnNum, nButWidth, nSelectLine, nGap = 2;
+
+	if (pszButton1 == NULL) {
+		return APP_QUIT;
+	}
+
+	nColumnNum = 1;
+	if (pszButton2 != NULL) {
+		nColumnNum++;
+	}
+
+	if (pszButton3 != NULL) {
+		nColumnNum++;
+	}
+
+	if (pszButton4 != NULL) {
+		nColumnNum++;
+	}
+	NAPI_ScrGetViewPort(&unX, &unY, &unScrWidth, &unScrHeight);
+
+	if (nButton_attr == BUTTON_CONFIRM || nButton_attr == BUTTON_NORMAL) {
+		nGap = 0;
+		nSelectLine = 2;
+	} else if (nButton_attr == BUTTON_HOMEMENU) {
+		nGap = 2;
+		nSelectLine = 1;
+	} else {
+		nGap = 2;
+		nSelectLine = 2;
+	}
+	nButWidth = (unScrWidth - (nColumnNum+1)*nGap) / nColumnNum;
+
+	PubShowButton(nButton_attr, pszButton1, pszButton2, pszButton3, pszButton4);
+	if (nButton_attr != BUTTON_HOMEMENU)
+	{
+		NAPI_KbVppTpFlush();
+	}
+	while (1) {
+		if(NAPI_KbGetPad(&stPaddata, nMilliseconds) == NAPI_ERR_TIMEOUT) {
+			return APP_TIMEOUT;
+		}
+
+		if(stPaddata.emPadState != PADSTATE_UP) {
+			continue;
+		}
+
+		if (nButton_attr == BUTTON_HOMEMENU || nButton_attr == BUTTON_NORMAL) {
+			break;
+		}
+
+		if (stPaddata.unPadY >= unScrHeight-nSelectLine*gnDispLineHeight) {
+			break;
+		}
+	}
+
+	if (nButton_attr == BUTTON_HOMEMENU) {
+		if (stPaddata.unPadY < unScrHeight-nSelectLine*gnDispLineHeight) {
+			return KEY_ESC;
+		}
+	}
+
+	if (nColumnNum == 3) { // F1 esc F2
+		if(stPaddata.unPadX < nButWidth) {
+			return KEY_F1;
+		}
+		if(stPaddata.unPadX < 2*nButWidth) {
+			if (nButton_attr == BUTTON_HOMEMENU) {
+				return KEY_ENTER;
+			} else {
+				return KEY_ESC;
+			}
+		}
+		return KEY_F2;
+	} else if (nColumnNum == 2) { // esc enter
+		if(stPaddata.unPadX < nButWidth) {
+			return KEY_ESC;
+		}
+		if(stPaddata.unPadX < 2*nButWidth) {
+			return KEY_ENTER;
+		}
+		return KEY_ENTER;
+	} else if (nColumnNum == 4) { //up esc enter down
+		if(stPaddata.unPadX < nButWidth) {
+			return KEY_UP;
+		} else if(stPaddata.unPadX < 2*nButWidth) {
+			return KEY_ESC;
+		} else if(stPaddata.unPadX < 3*nButWidth) {
+			return KEY_ENTER;
+		}
+		return KEY_DOWN;
+	} else { // enter
+		return KEY_ENTER;
+	}
+
+	return APP_SUCC;
+}
+
 
 /**
 * @brief Confirm dialog box(need confirmation)
@@ -896,11 +1351,13 @@ int PubConfirmDlg(const char *pszTitle, const char *pszContent, int nBeep, int n
 		PubDisplayStr(0,2,1,(char*)pszContent);
 	}
 
-	
-
-	NAPI_ScrRectangle(0, gnDispLineHeight*(nMaxLine-1), unScrWidth/2,gnDispLineHeight, RECT_PATTERNS_SOLID_FILL, 0xF800);//Draw black rectangle
-	NAPI_ScrRectangle(unScrWidth/2, gnDispLineHeight*(nMaxLine-1), unScrWidth/2,gnDispLineHeight, RECT_PATTERNS_SOLID_FILL, 0x07E0);//Draw black rectangle
-
+	if (PubGetKbAttr() == KB_VIRTUAL) {
+		NAPI_ScrRectangle(0, gnDispLineHeight*(nMaxLine-2), unScrWidth/2,gnDispLineHeight*2, RECT_PATTERNS_SOLID_FILL, 0xF800);//Draw black rectangle
+		NAPI_ScrRectangle(unScrWidth/2, gnDispLineHeight*(nMaxLine-2), unScrWidth/2,gnDispLineHeight*2, RECT_PATTERNS_SOLID_FILL, 0x07E0);//Draw black rectangle
+	} else {
+		NAPI_ScrRectangle(0, gnDispLineHeight*(nMaxLine-1), unScrWidth/2,gnDispLineHeight, RECT_PATTERNS_SOLID_FILL, 0xF800);//Draw black rectangle
+		NAPI_ScrRectangle(unScrWidth/2, gnDispLineHeight*(nMaxLine-1), unScrWidth/2,gnDispLineHeight, RECT_PATTERNS_SOLID_FILL, 0x07E0);//Draw black rectangle
+	}
 
 	if(unSWidth1 < unScrWidth/2)
 		x1 = (unScrWidth/2 - unSWidth1)/2;
@@ -922,8 +1379,14 @@ int PubConfirmDlg(const char *pszTitle, const char *pszContent, int nBeep, int n
 		unSHeight2 = gnDispLineHeight;
 	}
 
-	y1 = gnDispLineHeight*(nMaxLine-1) + (gnDispLineHeight - unSHeight1)/2;
-	y2 = gnDispLineHeight*(nMaxLine-1) + (gnDispLineHeight - unSHeight2)/2;
+	if (PubGetKbAttr() == KB_VIRTUAL) {
+		y1 = gnDispLineHeight*(nMaxLine-2) + (2*gnDispLineHeight - unSHeight1)/2;
+		y2 = gnDispLineHeight*(nMaxLine-2) + (2*gnDispLineHeight - unSHeight2)/2;
+	} else {
+		y1 = gnDispLineHeight*(nMaxLine-1) + (gnDispLineHeight - unSHeight1)/2;
+		y2 = gnDispLineHeight*(nMaxLine-1) + (gnDispLineHeight - unSHeight2)/2;
+	}
+
 	DispBoldFontText(x1, y1, str1);
 	DispBoldFontText(x2 ,y2, str2);
 
@@ -936,6 +1399,9 @@ int PubConfirmDlg(const char *pszTitle, const char *pszContent, int nBeep, int n
 	}
 
 	NAPI_ScrRefresh();
+	if (PubGetKbAttr() == KB_VIRTUAL) {
+		NAPI_KbVppTpFlush();
+	}
 
 	while(1)
 	{
@@ -964,15 +1430,21 @@ int PubConfirmDlg(const char *pszTitle, const char *pszContent, int nBeep, int n
 		}	
 		else if(stPaddata.emPadState == PADSTATE_UP)
 		{
-			nTouchline = stPaddata.unPadY/gnDispLineHeight + 1 ;
-			if(nTouchline == nMaxLine)
-			{
-				if(stPaddata.unPadX < unScrWidth/2 )
-					return APP_QUIT;
-				else
-					return APP_SUCC;
+			if (PubGetKbAttr() == KB_VIRTUAL) {
+				nTouchline = stPaddata.unPadY/gnDispLineHeight;
+				if (nTouchline < nMaxLine - 2) {
+					continue;
+				}
+			} else {
+				nTouchline = stPaddata.unPadY/gnDispLineHeight + 1;
+				if (nTouchline < nMaxLine) {
+					continue;
+				}
 			}
-			
+			if(stPaddata.unPadX < unScrWidth/2 )
+				return APP_QUIT;
+			else
+				return APP_SUCC;
 		}		
 	}
 
@@ -1481,6 +1953,214 @@ int PubGetDispForm(int *pnFontSize, int *pnLineSpacing, int *pnLineHeight)
 	return APP_SUCC;
 }
 
+/**
+ *@brief  Show a menu with items, the items format is XXX.abcd -->just shows abcd; or XXXabcd -->shows XXXabcd
+ * @param [in]  pszTitle 		
+ 				ppMenuItems	
+ 				nMenuItemNum
+ 				pnSelectItem	
+ 				pnStartItem	
+ 				nTimeout
+ * @param [out]	pnSelectItem
+ 				pnStartItem
+ *@return
+ *@li       APP_SUCC    		Success
+ *@li       APP_FAIL 			Failure
+  @author  wison
+  @data    20201215 
+*/
+int PubShowVirtualMenuItems(char *pszTitle, char **ppMenuItems, int nMenuItemNum, int *pnSelectItem, int *pnStartItem, int nTimeout)
+{
+	uint unX = 0, unY = 0, unScrWidth = 0, unScrHeight = 0;
+	int i, j = 0, k;
+	uint unTitleLine = 0;
+	ST_PADDATA stPaddata;
+	int nCurrentPage = 0, nX, nY, nGap = 2, nItemX, nItemY;
+	int nWidth, nHeight, nTxtX, nTxtY, nFunKeyWidth, nFunKeyHeight;
+	int nTxtWidth, nTxtHeight;
+	char szBuf[32] = {0};
+	int nLine = 7, nColumn = 1, nFuncColumn = 3;
+	int nPageItem = 6;
+	int nPage, nSelectItem, nSelectLine = 0, nShowItem, nTmp = 0;
+	
+	if(nMenuItemNum <= 0 || ppMenuItems == NULL)
+	{
+		return APP_FAIL;
+	}
+
+	if (nMenuItemNum % nPageItem == 0) {
+		nPage = nMenuItemNum / nPageItem - 1;
+	} else {
+		nPage = nMenuItemNum / nPageItem;
+	}
+	NAPI_ScrGetViewPort(&unX, &unY, &unScrWidth, &unScrHeight);
+	if(pszTitle != NULL && strlen(pszTitle) > 0)
+	{
+		PubDisplayTitle(pszTitle);
+		unTitleLine = 1;
+	}
+
+	if (nColumn == 1) {
+		nWidth = unScrWidth; // 2 column
+		nGap = 1;
+	} else {
+		nWidth = (unScrWidth - (nColumn+1) * nGap) / nColumn; // 2 column
+	}
+	nHeight = (unScrHeight - unTitleLine * gnDispLineHeight - (nLine+1) * nGap) / nLine; // 5 line
+	if (nFuncColumn == 1) {
+		nFunKeyWidth = unScrWidth;
+	} else {
+		nFunKeyWidth = (unScrWidth - (nFuncColumn+1) * nGap) / nFuncColumn;
+	}
+	nFunKeyHeight = (unScrHeight - (nLine-1) * nHeight - unTitleLine * gnDispLineHeight - nLine * nGap) - 3*nGap;
+//	TRACE_UI("nMenuItemNum = %d nWidth = %d nHeight = %d nFunKeyWidth =%d nFunKeyHeight = %d", nMenuItemNum, nWidth, nHeight, nFunKeyWidth, nFunKeyHeight);
+	while(1)
+	{
+		PubClear2To4();
+		if (nPage == 0 || nPage == nCurrentPage) {
+			if (nMenuItemNum % nPageItem == 0) {
+				nShowItem = nPageItem;
+			} else {
+				nShowItem = nMenuItemNum % nPageItem;
+			}
+		} else {
+			nShowItem = nPageItem;
+		}
+//		TRACE_UI("nPage = %d nCurrentPage = %d nShowItem = %d", nPage, nCurrentPage, nShowItem);
+		//Display menu from 2nd line to the last line
+		for(j = 0; j < nShowItem; j++)
+		{
+			i = nCurrentPage*nPageItem + j;
+			if (nColumn == 1) {
+				nItemX = 0;
+			} else {
+				nItemX = nGap + (i%nColumn)*(nGap+nWidth);
+			}
+			nItemY = nGap + unTitleLine * gnDispLineHeight + (j/nColumn) * (nHeight+nGap);
+			if (*pnSelectItem == i+1) {
+				NAPI_ScrRectangle(nItemX, nItemY, nWidth, nHeight, RECT_PATTERNS_SOLID_FILL, COLOR_DGREY);
+			} else {
+				NAPI_ScrRectangle(nItemX, nItemY, nWidth, nHeight, RECT_PATTERNS_SOLID_FILL, COLOR_LGRAY);
+			}
+			//check the first three bytes, such as menu is 1.item1 -->it just shows item1
+			for (k = 0, nTmp = 0; k < 3; k++)
+			{
+				if (ppMenuItems[i][k] == '.') {
+					nTmp++;
+					break;
+				}
+				nTmp++;
+			}
+			if (k >= 3) {
+				nTmp = 0;
+			}
+			strcpy(szBuf, ppMenuItems[i]+nTmp);
+			NAPI_ScrGetTrueTypeFontSize(szBuf, strlen(szBuf), &nTxtWidth, &nTxtHeight);
+			if(nTxtWidth >= nWidth) {
+				nTxtWidth = nWidth;
+			}
+			nTxtX = (nWidth - nTxtWidth)/2 + nItemX;
+			nTxtY = (nHeight - nTxtHeight)/2 + nItemY;
+//			TRACE_UI("ppMenuItems[%d] = %s j = %d nItemX = %d nItemY = %d nTxtX = %d %d", i, ppMenuItems[i], j, nItemX, nItemY, nTxtX, nTxtY);
+			DispBoldFontText(nTxtX, nTxtY, ppMenuItems[i]+nTmp);
+		}
+
+		// select Key
+		{
+//			TRACE_UI("show funckey");
+			nX = nGap;
+			nY = (nLine-1) * nHeight + (nLine+1) * nGap + unTitleLine * gnDispLineHeight;
+
+			if (nCurrentPage == 0) {
+				NAPI_ScrRectangle(nX, nY, nFunKeyWidth, nFunKeyHeight, RECT_PATTERNS_SOLID_FILL, 0xFFFF);
+			} else {
+				NAPI_ScrRectangle(nX, nY, nFunKeyWidth, nFunKeyHeight, RECT_PATTERNS_SOLID_FILL, 0x07E0);
+				NAPI_ScrGetTrueTypeFontSize("UP", strlen("UP"), &nTxtWidth, &nTxtHeight);
+				nTxtX = (nFunKeyWidth - nTxtWidth)/2 + nX;
+				nTxtY = (nFunKeyHeight - nTxtHeight)/2 + nY;
+				DispBoldFontText(nTxtX, nTxtY , "UP");
+			}
+
+			nX += (nGap + nFunKeyWidth);
+			NAPI_ScrRectangle(nX, nY, nFunKeyWidth, nFunKeyHeight, RECT_PATTERNS_SOLID_FILL, 0xF800);
+			NAPI_ScrGetTrueTypeFontSize("CANCEL", strlen("CANCEL"), &nTxtWidth, &nTxtHeight);
+			nTxtX = (nFunKeyWidth - nTxtWidth)/2 + nX;
+			nTxtY = (nFunKeyHeight - nTxtHeight)/2 + nY;
+			DispBoldFontText(nTxtX, nTxtY , "CANCEL");
+
+			nX += (nGap + nFunKeyWidth);
+			if (nCurrentPage == nPage) {
+				NAPI_ScrRectangle(nX, nY, nFunKeyWidth, nFunKeyHeight, RECT_PATTERNS_SOLID_FILL, 0xFFFF);
+			} else {
+				NAPI_ScrRectangle(nX, nY, nFunKeyWidth, nFunKeyHeight, RECT_PATTERNS_SOLID_FILL, 0x07E0);
+				NAPI_ScrGetTrueTypeFontSize("DOWN", strlen("DOWN"), &nTxtWidth, &nTxtHeight);
+				nTxtX = (nFunKeyWidth - nTxtWidth)/2 + nX;
+				nTxtY = (nFunKeyHeight - nTxtHeight)/2 + nY;
+				DispBoldFontText(nTxtX, nTxtY , "DOWN");
+			}
+		}
+		NAPI_ScrRefresh();
+GETKEYPAD:
+		TRACE_UI("start NAPI_KbGetPad");
+		NAPI_KbVppTpFlush();
+		while (1) {
+			if(NAPI_KbGetPad(&stPaddata, nTimeout*1000) == NAPI_ERR_TIMEOUT)
+			{
+				return APP_TIMEOUT;
+			}
+			if(stPaddata.emPadState == PADSTATE_UP) {
+				break;
+			}
+		}
+		TRACE_UI("stPaddata.emPadState = %d unPadX = %d unPadY = %d", stPaddata.emPadState, stPaddata.unPadX, stPaddata.unPadY);
+		if(stPaddata.unPadY <=0 )//touch bar
+			continue;
+		
+		if (stPaddata.unPadY < nY) { // >= nY is funcKey area nY = 4 * nHeight + 6 * nGap + unTitleLine * gnDispLineHeight
+			nSelectLine = 0;
+			for (i = 0; i < nLine; i++) {
+				if (stPaddata.unPadY > i * (nGap + nHeight) + nGap + unTitleLine * gnDispLineHeight) {
+					nSelectLine++;
+				}
+			}
+			if (nSelectLine == 0)
+			{
+				goto GETKEYPAD;
+			}
+			if (nColumn == 1) {
+				nSelectItem = nSelectLine;
+			} else {
+				if (stPaddata.unPadX <= nGap + nWidth) {
+					nSelectItem = (nSelectLine - 1)*nColumn+1;
+				} else {
+					nSelectItem = nSelectLine * nColumn;
+				}
+			}
+			TRACE_UI("ncurrent page = %d nSelectItem = %d nSelectLine = %d", nCurrentPage, nSelectItem, nSelectLine);
+			*pnSelectItem = nSelectItem + nPageItem*nCurrentPage;
+			if (*pnSelectItem > nMenuItemNum) {
+				goto GETKEYPAD;
+			}
+			
+			return APP_SUCC;
+		} else { // func key area
+			if (stPaddata.unPadX <= nGap + nFunKeyWidth) { // up-->previous page
+				if (nCurrentPage > 0) {
+					nCurrentPage--;
+				}
+			} else if (stPaddata.unPadX <= 2*(nGap + nFunKeyWidth)) {
+				*pnSelectItem = KEY_ESC;
+				return APP_QUIT;
+			} else { // next page
+				if (nCurrentPage < nPage) {
+					nCurrentPage++;
+				}
+			}
+			TRACE_UI("ncurrent page = %d", nCurrentPage);
+		}
+	}
+	return APP_SUCC;
+}
 
 /**
  *@brief  Show a menu with items
@@ -1509,13 +2189,16 @@ int PubShowMenuItems(char *pszTitle, char **ppMenuItems, int nMenuItemNum, int *
 	ST_PADDATA stPaddata;
 	int nTouchline, nTouchItem, nRealTouchLine;
 	BOOL bRefleshAndReturn = 0;
-	
+
+	if (PubGetKbAttr() == KB_VIRTUAL)
+	{
+		return PubShowVirtualMenuItems(pszTitle, ppMenuItems, nMenuItemNum, pnSelectItem, pnStartItem, nTimeout);
+	}
+
 	if(nMenuItemNum <= 0 || ppMenuItems == NULL)
 	{
 		return APP_FAIL;
 	}
-
-	//NAPI_KbFlush();
 	
 	NAPI_ScrGetViewPort(&unX, &unY, &unScrWidth, &unScrHeight);
 	
@@ -1585,7 +2268,6 @@ int PubShowMenuItems(char *pszTitle, char **ppMenuItems, int nMenuItemNum, int *
 			}
 			unLineNum++;
 		}
-
 		NAPI_ScrRefresh();
 		if(bRefleshAndReturn)
 			return APP_SUCC;
@@ -1683,10 +2365,183 @@ int PubShowMenuItems(char *pszTitle, char **ppMenuItems, int nMenuItemNum, int *
 				if(pnStartItem != NULL)
 				{
 					*pnStartItem = j + 1;
-				}			
+				}
 				bRefleshAndReturn = 1;
+			}	
+		}
+	}
+}
+
+/**
+ *@brief  Show a menu with items, the items format is XXX.abcd -->just shows abcd; or XXXabcd -->shows XXXabcd
+ * @param [in]  pszTitle 		
+ 				ppMenuItems	
+ 				nMenuItemNum
+ 				pnSelectItem	
+ 				pnStartItem	
+ 				nTimeout
+ * @param [out]	pnSelectItem
+ 				pnStartItem
+ *@return
+ *@li       APP_SUCC    		Success
+ *@li       APP_FAIL 			Failure
+  @author  wison
+  @data    2020-12-15 
+*/
+int PubShowMenuItems_Ext(char *pszTitle, char **ppMenuItems, int nMenuItemNum, int *pnSelectItem, int *pnStartItem, int nTimeout)
+{
+	uint unX = 0, unY = 0, unScrWidth = 0, unScrHeight = 0;
+	int i, j = 0;
+	uint unTitleLine = 0;
+	ST_PADDATA stPaddata;
+	int nCurrentPage = 0, nX, nY, nGap = 2, nItemX, nItemY;
+	int nWidth, nHeight, nTxtX, nTxtY, nFunKeyWidth, nFunKeyHeight;
+	int nTxtWidth, nTxtHeight;
+	char szBuf[32] = {0};
+
+	int nPage, nSelectItem, nSelectLine = 0, nShowItem, nTmp = 0, k;
+	
+	if(nMenuItemNum <= 0 || ppMenuItems == NULL)
+	{
+		return APP_FAIL;
+	}
+
+	nPage = nMenuItemNum / 8;
+
+	NAPI_ScrGetViewPort(&unX, &unY, &unScrWidth, &unScrHeight);
+	if(pszTitle != NULL && strlen(pszTitle) > 0)
+	{
+		PubDisplayTitle(pszTitle);
+		unTitleLine = 1;
+	}
+
+	nWidth = (unScrWidth - 3 * nGap) / 2; // 2 column
+	nHeight = (unScrHeight - unTitleLine * gnDispLineHeight - 6 * nGap) / 5; // 5 line
+	nFunKeyWidth = (unScrWidth - 4 * nGap) / 3;
+	nFunKeyHeight = (unScrHeight - 4 * nHeight - unTitleLine * gnDispLineHeight - 5 * nGap) - 3*nGap;
+	TRACE_UI("nMenuItemNum = %d nWidth = %d nHeight = %d nFunKeyWidth =%d nFunKeyHeight = %d", nMenuItemNum, nWidth, nHeight, nFunKeyWidth, nFunKeyHeight);
+	while(1)
+	{
+		PubClear2To4();
+		
+		if (nPage == 0 || nPage == nCurrentPage) {
+			nShowItem = nMenuItemNum % 8;
+		} else {
+			nShowItem = 8;
+		}
+		TRACE_UI("nPage = %d nCurrentPage = %d nShowItem = %d", nPage, nCurrentPage, nShowItem);
+		//Display menu from 2nd line to the last line
+		for(j = 0; j < nShowItem; j++)
+		{
+			i = nCurrentPage*8 + j;
+			nItemX = nGap + (i%2)*(nGap+nWidth);
+			nItemY = nGap + unTitleLine * gnDispLineHeight + (j/2) * (nHeight+nGap);
+
+			NAPI_ScrRectangle(nItemX, nItemY, nWidth, nHeight, RECT_PATTERNS_SOLID_FILL, 0xC618);
+			//check the first three bytes, such as menu is 1.item1 -->it just shows item1
+			for (k = 0, nTmp = 0; k < 3; k++)
+			{
+				if (ppMenuItems[i][k] == '.') {
+					nTmp++;
+					break;
+				}
+				nTmp++;
 			}
-			
+			if (k >= 3) {
+				nTmp = 0;
+			}
+			strcpy(szBuf, ppMenuItems[i]+nTmp);
+
+			NAPI_ScrGetTrueTypeFontSize(szBuf, strlen(szBuf), &nTxtWidth, &nTxtHeight);
+			if(nTxtWidth >= nWidth) {
+				nTxtWidth = nWidth;
+			}
+			nTxtX = (nWidth - nTxtWidth)/2 + nItemX;
+			nTxtY = (nHeight - nTxtHeight)/2 + nItemY;
+			//TRACE_UI("ppMenuItems[%d] = %s j = %d nItemX = %d nItemY = %d nTxtX = %d %d", i, ppMenuItems[i], j,nItemX, nItemY, nTxtX, nTxtY);
+			DispBoldFontText(nTxtX, nTxtY, ppMenuItems[i]+nTmp);
+		}
+
+		// select Key
+		{
+			TRACE_UI("show funckey");
+			nX = nGap;
+			nY = 4 * nHeight + 6 * nGap + unTitleLine * gnDispLineHeight;
+
+			NAPI_ScrRectangle(nX, nY, nFunKeyWidth, nFunKeyHeight, RECT_PATTERNS_SOLID_FILL, COLOR_GREEN);
+			NAPI_ScrGetTrueTypeFontSize("UP", strlen("UP"), &nTxtWidth, &nTxtHeight);
+			nTxtX = (nFunKeyWidth - nTxtWidth)/2 + nX;
+			nTxtY = (nFunKeyHeight - nTxtHeight)/2 + nY;
+			DispBoldFontText(nTxtX, nTxtY , "UP");
+
+			nX += (nGap + nFunKeyWidth);
+			NAPI_ScrRectangle(nX, nY, nFunKeyWidth, nFunKeyHeight, RECT_PATTERNS_SOLID_FILL, COLOR_RED);
+			NAPI_ScrGetTrueTypeFontSize("HOME", strlen("HOME"), &nTxtWidth, &nTxtHeight);
+			nTxtX = (nFunKeyWidth - nTxtWidth)/2 + nX;
+			nTxtY = (nFunKeyHeight - nTxtHeight)/2 + nY;
+			DispBoldFontText(nTxtX, nTxtY , "HOME");
+
+			nX += (nGap + nFunKeyWidth);
+			NAPI_ScrRectangle(nX, nY, nFunKeyWidth, nFunKeyHeight, RECT_PATTERNS_SOLID_FILL, COLOR_GREEN);
+			NAPI_ScrGetTrueTypeFontSize("DOWN", strlen("DOWN"), &nTxtWidth, &nTxtHeight);
+			nTxtX = (nFunKeyWidth - nTxtWidth)/2 + nX;
+			nTxtY = (nFunKeyHeight - nTxtHeight)/2 + nY;
+			DispBoldFontText(nTxtX, nTxtY , "DOWN");
+		}
+		NAPI_ScrRefresh();
+GETKEYPAD:
+		NAPI_KbVppTpFlush();
+		TRACE_UI("start NAPI_KbGetPad");
+		while (1) {
+			if(NAPI_KbGetPad(&stPaddata, nTimeout*1000) == NAPI_ERR_TIMEOUT)
+			{
+				return APP_TIMEOUT;
+			}
+			if(stPaddata.emPadState == PADSTATE_UP) {
+				break;
+			}
+		}
+
+		TRACE_UI("stPaddata.emPadState = %d unPadX = %d unPadY = %d", stPaddata.emPadState, stPaddata.unPadX, stPaddata.unPadY);
+		if(stPaddata.unPadY <=0 )//touch bar
+			continue;
+		
+		if (stPaddata.unPadY < nY) { // >= nY is funcKey area nY = 4 * nHeight + 6 * nGap + unTitleLine * gnDispLineHeight
+			nSelectLine = 0;
+			for (i = 0; i < 4; i++) {
+				if (stPaddata.unPadY > i * (nGap + nHeight) + nGap + unTitleLine * gnDispLineHeight) {
+					nSelectLine++;
+				}
+			}
+			if (nSelectLine == 0)
+			{
+				goto GETKEYPAD;
+			}
+			if (stPaddata.unPadX <= nGap + nWidth) {
+				nSelectItem = (nSelectLine - 1)*2+1;
+			} else {
+				nSelectItem = nSelectLine * 2;
+			}
+			TRACE_UI("ncurrent page = %d nSelectItem = %d nSelectLine = %d", nCurrentPage, nSelectItem, nSelectLine);
+			*pnSelectItem = nSelectItem + 8*nCurrentPage;
+			if (*pnSelectItem > nMenuItemNum) {
+				goto GETKEYPAD;
+			}
+			return APP_SUCC;
+		} else { // func key area
+			if (stPaddata.unPadX <= nGap + nFunKeyWidth) { // up-->previous page
+				if (nCurrentPage > 0) {
+					nCurrentPage--;
+				}
+			} else if (stPaddata.unPadX <= 2*(nGap + nFunKeyWidth)) {
+				*pnSelectItem = KEY_ESC;
+				return APP_QUIT;
+			} else { // next page
+				if (nCurrentPage < nPage) {
+					nCurrentPage++;
+				}
+			}
+			TRACE_UI("ncurrent page = %d", nCurrentPage);
 		}
 	}
 }
@@ -1716,7 +2571,11 @@ int PubSelectYesOrNo(char *pszTitle, char *pszStr, char* SelMenu[], char *pcSele
 	ST_PADDATA stPaddata;
 	int nTouchline;
 	BOOL bRefleshAndReturn = 0;
-	
+
+	uint unSWidth1 , unSWidth2,unSHeight, unScrWidth ,unScrHeight, unX, unY;
+	int x1, y;
+
+
 	if(SelMenu && SelMenu[0] &&  SelMenu[1])
 	{
 		pStr0 = SelMenu[0];
@@ -1753,20 +2612,44 @@ int PubSelectYesOrNo(char *pszTitle, char *pszStr, char* SelMenu[], char *pcSele
 	if(pszStr)
 		PubDisplayStrInline(0, 2, pszStr);
 
+	if (PubGetKbAttr() == KB_VIRTUAL) {
+		NAPI_KbVppTpFlush();
+	}
+
 	while(1)
 	{
+		if (PubGetKbAttr() == KB_VIRTUAL) {
+			NAPI_ScrGetViewPort(&unX, &unY, &unScrWidth,&unScrHeight);
+			if(nSelect == 0) {
+				NAPI_ScrRectangle(0, 240-gnDispLineHeight*2, unScrWidth,gnDispLineHeight*2, RECT_PATTERNS_SOLID_FILL, COLOR_LGRAY);
+				NAPI_ScrRectangle(0, 240, unScrWidth,gnDispLineHeight*2, RECT_PATTERNS_SOLID_FILL, COLOR_WHITE);
+				NAPI_ScrRectangle(0, 240+gnDispLineHeight*2, unScrWidth,0, RECT_PATTERNS_SOLID_FILL, COLOR_LGRAY);
+			} else {
+				NAPI_ScrRectangle(0, 240-gnDispLineHeight*2, unScrWidth,0, RECT_PATTERNS_SOLID_FILL, COLOR_LGRAY);
+				NAPI_ScrRectangle(0, 240-gnDispLineHeight*2, unScrWidth,gnDispLineHeight*2, RECT_PATTERNS_SOLID_FILL, COLOR_WHITE);
+				NAPI_ScrRectangle(0, 240, unScrWidth,gnDispLineHeight*2, RECT_PATTERNS_SOLID_FILL, COLOR_LGRAY);
+			}
 
+			NAPI_ScrGetTrueTypeFontSize(pStr0+2, strlen(pStr0+2), (int*)&unSWidth1, (int*)&unSHeight);
+			NAPI_ScrGetTrueTypeFontSize(pStr1+2, strlen(pStr1+2), (int*)&unSWidth2, (int*)&unSHeight);
+			x1 = (unScrWidth - unSWidth1)/2;
+			y = 240 + (gnDispLineHeight*2-unSHeight)/2 - gnDispLineHeight*2;
+			DispBoldFontText(x1, y, pStr0+2);
+			y = 240 + (gnDispLineHeight*2-unSHeight)/2;
+			DispBoldFontText(x1 ,y, pStr1+2);
+			PubShowButton(BUTTON_CONFIRM, "CANCEL", "ENTER", NULL, NULL);
+		} else {
+			if(nSelect == 0)
+				PubDisplayInv(nMaxLine-1 , pStr0);
+			else
+				PubDisplayStrInline(DISPLAY_MODE_CLEARLINE , nMaxLine-1, pStr0);
+	
+			if(nSelect == 1)
+				PubDisplayInv(nMaxLine, pStr1);
+			else
+				PubDisplayStrInline(DISPLAY_MODE_CLEARLINE , nMaxLine, pStr1);
+		}
 
-		if(nSelect == 0)
-			PubDisplayInv(nMaxLine-1 , pStr0);
-		else
-			PubDisplayStrInline(DISPLAY_MODE_CLEARLINE , nMaxLine-1, pStr0);
-
-		if(nSelect == 1)
-			PubDisplayInv(nMaxLine, pStr1);
-		else
-			PubDisplayStrInline(DISPLAY_MODE_CLEARLINE , nMaxLine, pStr1);
-		
 		NAPI_ScrRefresh();
 		
 		if(bRefleshAndReturn)
@@ -1775,11 +2658,10 @@ int PubSelectYesOrNo(char *pszTitle, char *pszStr, char* SelMenu[], char *pcSele
 		{
 			return APP_TIMEOUT;
 		}	
-		//nKey = PubGetKeyCode(0);
-		
+
 		if(stPaddata.emPadState == PADSTATE_KEY)
 		{
-			nKey = stPaddata.unKeycode;			
+			nKey = stPaddata.unKeycode;
 			if(nKey == KEY_1)
 			{
 				*pcSelect = '1';
@@ -1821,16 +2703,37 @@ int PubSelectYesOrNo(char *pszTitle, char *pszStr, char* SelMenu[], char *pcSele
 		{
 			if(stPaddata.unPadY <=0 )//touch bar
 				continue;
-			
-			nTouchline = stPaddata.unPadY/gnDispLineHeight + 1 ;
-			if((nTouchline == nMaxLine - 1) || (nTouchline == nMaxLine))
+			if (PubGetKbAttr() == KB_VIRTUAL)
 			{
-	
-				nSelect = (nMaxLine - nTouchline+1)%2;
-				*pcSelect = nSelect + '0';
-				bRefleshAndReturn = 1;
+				if (stPaddata.unPadY >= 240-2*gnDispLineHeight && stPaddata.unPadY < 240) {
+					*pcSelect = '0';
+					return APP_SUCC;
+				} else if (stPaddata.unPadY >= 240 && stPaddata.unPadY < 240+2*gnDispLineHeight) {
+					*pcSelect = '1';
+					return APP_SUCC;
+				}else {
+					nTouchline = stPaddata.unPadY/gnDispLineHeight ;
+					if(nTouchline >= nMaxLine-2)
+					{
+						if(stPaddata.unPadX < unScrWidth/2 ) {
+							return APP_QUIT;
+						} else {
+							*pcSelect = nSelect + '0';
+							return APP_SUCC;
+						}
+					}
+				}
 			}
-			
+			else
+			{
+				nTouchline = stPaddata.unPadY/gnDispLineHeight + 1 ;
+				if((nTouchline == nMaxLine - 1) || (nTouchline == nMaxLine))
+				{
+					nSelect = (nMaxLine - nTouchline+1)%2;
+					*pcSelect = nSelect + '0';
+					bRefleshAndReturn = 1;
+				}
+			}
 		}
 
 			
@@ -1942,4 +2845,15 @@ void ProSwitchFontSize(EM_DISPLAY_ALIGN emFont)
 	}
 	NAPI_ScrSetTrueTypeFontSizeInPixel(gnDispFontSize, gnDispFontSize);
 }
+
+void PubSetKbAttr(EM_KEYBOARD_ATTR emKbAttr)
+{
+	gemKeyboardAttr = emKbAttr;
+}
+
+EM_KEYBOARD_ATTR PubGetKbAttr()
+{
+	return gemKeyboardAttr;
+}
+
 

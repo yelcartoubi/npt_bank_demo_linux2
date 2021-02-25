@@ -54,7 +54,7 @@ void DispTrace(char* lpszFormat, ...)
 	PubClearAll();
 	NAPI_ScrPrintf(buf);
 	PubUpdateWindow();
-	PubGetKeyCode(0);
+	PubWaitConfirm(0);
 	va_end(args);
 }
 
@@ -81,7 +81,7 @@ void DispTraceHex(char* pszHexBuf, int nLen, char* lpszFormat, ...)
 	PubClearAll();
 	PubDispMultLines(DISPLAY_ALIGN_BIGFONT, 1, 1, "%s", buf);
 	va_end(args);
-	PubGetKeyCode(0);
+	PubWaitConfirm(0);
 }
 
 int MenuEmvSetDebug(void)

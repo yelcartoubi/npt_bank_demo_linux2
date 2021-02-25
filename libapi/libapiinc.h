@@ -16,6 +16,7 @@
 #include "ltool.h"
 #include "lsecurity.h"
 #include "lprint.h"
+#include "virtualpad.h"
 #include "emvl3.h"
 #include "emvconfig.h"
 #include "emverrcode.h"

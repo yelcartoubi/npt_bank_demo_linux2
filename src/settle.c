@@ -154,9 +154,9 @@ SETTLE_TAIL:
 		ASSERT_HANGUP_FAIL(SetField(11, stSystem.szTrace, 6));
 		ASSERT_HANGUP_FAIL(SetField(24, stSystem.szNii, 3));
 		ASSERT_HANGUP_FAIL(SetField(41, stSystem.szPosID, 8));
-		ASSERT_HANGUP_FAIL(SetField(42, stSystem.szShopID, 15));	
+		ASSERT_HANGUP_FAIL(SetField(42, stSystem.szShopID, 15));
 		ASSERT_HANGUP_FAIL(SetField(49, CURRENCY_CODE, 3));
-		ASSERT_HANGUP_FAIL(SetField(60, stSystem.szBatchNum, 6));		
+		ASSERT_HANGUP_FAIL(SetField(60, stSystem.szBatchNum, 6));
 		ASSERT_HANGUP_FAIL(SetField(62, stSystem.szInvoice, 6));	
 		ASSERT_HANGUP_FAIL(SetField(63, (char *)&stAmtNumSettle, 33));
 		ASSERT_HANGUP_FAIL(SetField(64, "\x00\x00\x00\x00\x00\x00\x00\x00", 8));
@@ -248,15 +248,7 @@ SETTLE_TAIL:
 		SetVarPrintDetialHalt(YES);
 		if (YES == GetVarIsPntDetail())
 		{
-			char *pszItems[] = {
-				tr("1.NO"), 
-				tr("2.YES")
-			};
-			int nSelcItem = 1, nStartItem = 1;
-			
-			nRet = PubShowMenuItems(tr("PRINT DETAIL?"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 0);
-			if (nRet == APP_SUCC && nSelcItem == 2)
-			{
+			if (PubConfirmDlg(pszTitle, tr("PRINT DETAIL?"), 0, 0) == APP_SUCC) {
 				PubClear2To4();
 				PubDisplayGen(2, tr("PRINT DETAIL..."));
 				PubUpdateWindow();
@@ -295,10 +287,8 @@ SETTLE_TAIL:
 		SetVarOfflineUnSendNum(0);
 		SetVarClrSettleDataFlag(NO);
 	}
-	PubClearAll();
-	PubDisplayTitle(pszTitle);
-	PubDisplayStrInline(DISPLAY_MODE_CENTER, 2, tr("SETTLE SUCC"));
-	PubUpdateWindow();
+
+	PubMsgDlg(pszTitle, tr("SETTLE SUCC"), 1, 1);
 
 	return APP_SUCC;
 }
@@ -618,17 +608,9 @@ int DealSettleTask(void)
 			return APP_FAIL;
 		if (APP_SUCC == Settle(1))
 		{
-
-			return APP_QUIT;
+			return APP_SUCC;
 		}
-		else
-		{
-			if (PubGetKeyCode(1) == KEY_ESC)
-			{
-				return APP_QUIT;
-			}
-			return APP_FAIL;
-		}
+		return APP_QUIT;
 	}
 	return APP_SUCC;
 }

@@ -203,21 +203,7 @@ int ProChkDigitStr(const char *psStr, const int nLen)
 
 int ProConfirm(void)
 {
-	while(1)
-	{
-	    PubUpdateWindow();
-		switch(PubGetKeyCode(0))
-		{
-		case KEY_ENTER:
-			break;
-		case KEY_ESC:
-			return APP_QUIT;
-		default:
-			continue;
-		}
-		break;
-	}
-	return APP_SUCC;
+	return PubConfirmDlg(NULL, NULL, 0, 0);
 }
 
 unsigned long long Bcd2Unit64( uchar *bcd,  int bcd_len )
