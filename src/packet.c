@@ -816,6 +816,11 @@ int PackGeneral(STSYSTEM *pstSystem, STTRANSRECORD *pstTransRecord, STTRANSCFG s
 				ASSERT_FAIL(SetField(55, pstSystem->psAddField, pstSystem->nAddFieldLen));
 			}
 			break;
+		case 57:
+			if(GetVarKeySystemType() == KS_DUKPT) {
+				ASSERT_FAIL(SetField(57, sKSN, 10));
+			}
+			break;
 		case 61:
 			ASSERT_HANGUP_FAIL(SetField(61, pstSystem->szOldDate, 4));
 			break;
