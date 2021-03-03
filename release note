@@ -1,5 +1,16 @@
 bankdemo by napi
 ====================================================
+Date: 2021/03/03 +0800
+update Newland_L3_configuration.xml file
+changes include:
+AID CLSS AMEX:added DF19/DF20/DF21
+AID CLSS INTERAC
+added:
+CAPK VISA 51
+CAPK AMEX 97
+CAPK RUPAY 04
+CAPK dinner 5C
+====================================================
 Date: 2021/02/25 +0800
 added field 57(KSN) for related transaciton (dukpt)
 ====================================================

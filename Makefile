@@ -77,7 +77,7 @@ MODEL = SP630
 # Application Name
 PARAMINI_NAME = BANKDEMO
 # Application Version
-PARAMINI_VER = 1.0.04
+PARAMINI_VER = 1.0.05
 
 # Generated program name
 NAME = main
