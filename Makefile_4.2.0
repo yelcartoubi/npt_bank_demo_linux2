@@ -18,8 +18,6 @@ PRINTINCDIR = module/libprint/inc
 PRINTSRCDIR = module/libprint/src
 SECURITYIINCDIR = module/libsecurity/inc
 SECURITYISRCDIR = module/libsecurity/src
-CARDINCDIR = module/libcard/inc
-CARDSRCDIR = module/libcard/src
 UIINCDIR = module/libui/inc
 UISRCDIR = module/libui/src
 TOOLINCDIR = module/libtool/inc
@@ -48,10 +46,10 @@ CFLAGS += -Wall -Werror -DNDEBUG $(CROSS_CFLAGS) -O -g $(INCPATH) -D DEMO
 CFLAGS += -funwind-tables
 CFLAGS += -DAPP_VERSION=\"$(PARAMINI_VER)\"
 # File search path
-VPATH = src $(PRINTSRCDIR) $(SECURITYISRCDIR) $(CARDSRCDIR) $(UISRCDIR) $(TOOLSRCDIR) $(COMMSRCDIR) $(OBJDIR)
+VPATH = src $(PRINTSRCDIR) $(SECURITYISRCDIR) $(UISRCDIR) $(TOOLSRCDIR) $(COMMSRCDIR) $(OBJDIR)
 
 # Header file search path
-INCLPATH = -I$(INCDIR) -I$(PRINTINCDIR) -I$(SECURITYIINCDIR) -I$(CARDINCDIR) -I$(UIINCDIR) -I$(TOOLINCDIR) -I$(COMMINCDIR)  -I$(LIBINCDIR) -I$(SDKNAPIINC)
+INCLPATH = -I$(INCDIR) -I$(PRINTINCDIR) -I$(SECURITYIINCDIR) -I$(UIINCDIR) -I$(TOOLINCDIR) -I$(COMMINCDIR)  -I$(LIBINCDIR) -I$(SDKNAPIINC)
 
 # Program link parameters
 LDFLAGS += -L$(SDKAPILIB) -lndk
@@ -83,7 +81,7 @@ NAME = main
 APPNAME = $(MODEL)$(PARAMINI_NAME)_$(PARAMINI_VER).NLD
 
 # Module used in the program
-SRCS = $(wildcard $(SRCDIR)/*.c $(PRINTSRCDIR)/*.c $(SECURITYISRCDIR)/*.c $(CARDSRCDIR)/*.c $(UISRCDIR)/*.c $(TOOLSRCDIR)/*.c $(COMMSRCDIR)/*.c )
+SRCS = $(wildcard $(SRCDIR)/*.c $(PRINTSRCDIR)/*.c $(SECURITYISRCDIR)/*.c $(UISRCDIR)/*.c $(TOOLSRCDIR)/*.c $(COMMSRCDIR)/*.c )
 SRSS = $(notdir $(SRCS))
 OBJS = $(subst .c,.o,$(SRSS))
 OBJSD = $(addprefix $(OBJDIR)/,$(SRSS))

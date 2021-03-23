@@ -1,5 +1,11 @@
 bankdemo by napi
 ====================================================
+Date: 2021/03/23 +0800
+remove unused module(module/libcard)
+changes include:
+1.remove libcard dir, reading card rely on libemvl3.so
+2.makefile:remove CARDINCDIR and CARDSRCDIR
+====================================================
 Date: 2021/03/03 +0800
 update Newland_L3_configuration.xml file
 changes include:
