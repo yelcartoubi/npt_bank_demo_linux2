@@ -918,11 +918,6 @@ static int ParseTomsParam(cJSON *MainNode, const char *pszStoragePath, const cha
 			memset(szLabelValue, 0, sizeof(szLabelValue));
 			if (GetTomsParamValueFromJson(ParamNode, TOMSTAG_COMM_WIFIMODE, szLabelValue, TOMSTYPE_NUMBER) == APP_SUCC) {
 				stAppCommParam.cWifiMode = GetWifiTypeByFlag(szLabelValue[0]);
-			}
-			memset(szLabelValue, 0, sizeof(szLabelValue));
-			if (GetTomsParamValueFromJson(MainNode, TOMSTAG_COMM_ISDHCP_W, szLabelValue, TOMSTYPE_BOOLEAN) == APP_SUCC) {
-				stAppCommParam.cIsDHCP = (szLabelValue[0] == 'Y') ? 1 : 0;
-			}
 
 			switch(stAppCommParam.cWifiMode)
 			{
@@ -944,6 +939,11 @@ static int ParseTomsParam(cJSON *MainNode, const char *pszStoragePath, const cha
 			default:
 				ASSERT_TOMSPARAM_FAIL(APP_FAIL, "Wifi mode error");
 				return APP_FAIL;
+    			}
+			}
+			memset(szLabelValue, 0, sizeof(szLabelValue));
+			if (GetTomsParamValueFromJson(MainNode, TOMSTAG_COMM_ISDHCP_W, szLabelValue, TOMSTYPE_BOOLEAN) == APP_SUCC) {
+				stAppCommParam.cIsDHCP = (szLabelValue[0] == 'Y') ? 1 : 0;
 			}
 			GetTomsParamValueFromJson(ParamNode, TOMSTAG_COMM_WIFISSID, stAppCommParam.szWifiSsid, TOMSTYPE_STRING);
 			GetTomsParamValueFromJson(ParamNode, TOMSTAG_COMM_WIFIKEY, stAppCommParam.szWifiKey, TOMSTYPE_STRING);
