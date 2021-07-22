@@ -1266,30 +1266,24 @@ int TxnL3LoadAIDConfig(L3_CARD_INTERFACE interface, L3_AID_ENTRY *aidEntry, unsi
 {
 	if (GetVarIsPinpadReadCard() == YES)
 	{
-		PinPad_L3LoadAIDConfig(interface, aidEntry, tlv_list, tlv_len, mode);
+		return PinPad_L3LoadAIDConfig(interface, aidEntry, tlv_list, tlv_len, mode);
 	}
 	else
 	{
-		NAPI_L3LoadAIDConfig(interface, aidEntry, tlv_list, tlv_len, mode);
+		return NAPI_L3LoadAIDConfig(interface, aidEntry, tlv_list, tlv_len, mode);
 	}
-
-	return APP_SUCC;
-
 }
 
 int TxnL3LoadCAPK(L3_CAPK_ENTRY *capk, L3_CONFIG_OP mode)
 {
 	if (GetVarIsPinpadReadCard() == YES)
 	{
-		PinPad_L3LoadCapk(capk, mode);
+		return PinPad_L3LoadCapk(capk, mode);
 	}
 	else
 	{
-		NAPI_L3LoadCAPK(capk, mode);
+		return NAPI_L3LoadCAPK(capk, mode);
 	}
-
-	return APP_SUCC;
-
 }
 
 int TxnL3LoadTerminalConfig(L3_CARD_INTERFACE cardinterface, unsigned char tlv_list[], int *tlv_len, L3_CONFIG_OP mode)
