@@ -69,6 +69,9 @@ typedef struct
     char szTOMSKeyPosDomain[50+1]; 		/**<TOMS Key POS Domain An50*/
     char szTOMSFileServerDomain[50+1];  /**<TOMS file server domain An50 */
     char szTOMSTdasDomain[50+1];        /**<TOMS file server domain An50 */
+
+    char cIsUserOid;                  /**< is user oid*/
+    char szTomsUserOid[64+1];          /**< user oid*/
 }STAPPCOMMPARAM;
 
 enum COMMTYPE
@@ -116,5 +119,7 @@ extern int ExportCommParam(void);
 extern int SetFuncCommNii(void);
 extern int SetComm();
 extern int SwitchCommType(void);
+extern int SetFuncTOMSUserOID(void);
+extern char GetUserOidSwitch();
 #endif
 

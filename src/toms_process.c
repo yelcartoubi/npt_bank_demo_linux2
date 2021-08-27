@@ -100,6 +100,7 @@ int TOMS_ProInit(void)
     ASSERT_FAIL(TOMS_SetOption(TOMS_OPT_CONF_KEYPOS_DOMAIN,             stCommParam.szTOMSKeyPosDomain));
     ASSERT_FAIL(TOMS_SetOption(TOMS_OPT_CONF_FILESERVER_DOMAIN,         stCommParam.szTOMSFileServerDomain));
     ASSERT_FAIL(TOMS_SetOption(TOMS_OPT_CONF_TDAS_DOMAIN,               stCommParam.szTOMSTdasDomain));
+    ASSERT_FAIL(TOMS_SetOption(TOMS_OPT_CONF_USER_OID,                  stCommParam.szTomsUserOid));
 
     ASSERT_FAIL(TOMS_SetOption(TOMS_OPT_SYSAPI_GET_DATETIME,            TOMS_SysGetDatetime));
     ASSERT_FAIL(TOMS_SetOption(TOMS_OPT_SYSAPI_SYS_REBOOT,              TOMS_SysReboot));
@@ -113,6 +114,7 @@ int TOMS_ProInit(void)
     ASSERT_FAIL(TOMS_SetOption(TOMS_OPT_SYSAPI_GET_NETWORK_TYPE,        TOMS_GetNetworkType));
     ASSERT_FAIL(TOMS_SetOption(TOMS_OPT_SYSAPI_GET_SIM_STATUS,          TOMS_GetSimStatus));
     ASSERT_FAIL(TOMS_SetOption(TOMS_OPT_SYSAPI_GET_PRINER_STATUS,       TOMS_GetPrinterStatus));
+    ASSERT_FAIL(TOMS_SetOption(TOMS_OPT_SYSAPI_PARSE_DNS_IP,            TOMS_ParseDNSIP));
 
     ASSERT_FAIL(TOMS_SetOption(TOMS_OPT_EXECCB_COMM_CONNECT,            TOMS_CommConnect));
     ASSERT_FAIL(TOMS_SetOption(TOMS_OPT_EXECCB_COMM_CLOSE,              TOMS_CommClose));

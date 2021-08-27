@@ -43,7 +43,7 @@ LIBL2EMVDIR = $(SDKDIR)\\Linux\\Core\\EMV\\L2_SDK\\lib\\gcc_4.9.4
 SDKSYSLIB = $(SDKDIR)\\Linux\\Compiler\\4.9.4\\arm-linux-gnueabi\\libc\\usr\\lib
 
 # -D USE_TOMS -D DEMO
-CFLAGS += -Wall -Werror -DNDEBUG $(CROSS_CFLAGS) -O -g $(INCPATH) -D DEMO
+CFLAGS += -Wall -Werror -DNDEBUG $(CROSS_CFLAGS) -O -g $(INCPATH) -D DEMO -D USE_TOMS 
 CFLAGS += -funwind-tables
 CFLAGS += -DAPP_VERSION=\"$(PARAMINI_VER)\"
 # File search path

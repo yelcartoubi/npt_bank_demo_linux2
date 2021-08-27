@@ -187,11 +187,11 @@ int InitCommParam(void)
 
 #ifdef DEV
 	/* Tetsting URL */
-	strcpy(gstAppCommParam.szTOMSAppDomain, "https://124.70.94.24:6033/");
-    strcpy(gstAppCommParam.szTOMSTdasDomain, "https://124.70.94.24:6036/");
-	strcpy(gstAppCommParam.szTOMSKeyPosDomain, "https://124.70.94.24:6039/");
-	strcpy(gstAppCommParam.szTOMSFileServerDomain, "http://124.70.94.24:6030/");
-	strcpy(gstAppCommParam.szTOMSParamDomain, "https://218.66.48.231:6082/");
+	strcpy(gstAppCommParam.szTOMSAppDomain, "http://218.66.48.231:6033/");
+	strcpy(gstAppCommParam.szTOMSParamDomain, "http://218.66.48.231:6082/");
+	strcpy(gstAppCommParam.szTOMSKeyPosDomain, "http://218.66.48.231:6039/");
+    strcpy(gstAppCommParam.szTOMSFileServerDomain, "http://218.66.48.231:6030/");
+    strcpy(gstAppCommParam.szTOMSTdasDomain, "http://218.66.48.231:6036/");
 	/* Production URL */
 #else
 	strcpy(gstAppCommParam.szTOMSAppDomain, "https://toms-t.newlandpayment.com:6043/");
@@ -1616,6 +1616,53 @@ static int SetFuncTOMSTdasDomain(void)
     ASSERT_FAIL(TOMS_UpdateDomain(TOMS_OPT_CONF_TDAS_DOMAIN, gstAppCommParam.szTOMSTdasDomain));
 	return APP_SUCC;
 }
+
+
+
+char GetUserOidSwitch()
+{
+
+    return gstAppCommParam.cIsUserOid;
+}
+
+int SetFuncTOMSUserOID(void)
+{
+	char szTemp[100+1] = {""};
+	int nLen, nOffset;
+
+    char cSelect = gstAppCommParam.cIsUserOid;
+
+    ASSERT_QUIT(PubSelectYesOrNo((char*)tr("DEMO ID"), (char*)"OPEN?", NULL, &cSelect));
+    switch(cSelect)
+    {
+    case '0':
+        gstAppCommParam.cIsUserOid = 0;
+        break;
+    case '1':
+        {
+            gstAppCommParam.cIsUserOid = 1;
+            strcpy(szTemp, "DEMO");
+            nOffset = strlen(szTemp);
+            memcpy(szTemp + nOffset, gstAppCommParam.szTomsUserOid + nOffset, sizeof(gstAppCommParam.szTomsUserOid)-1- nOffset);
+            ASSERT_FAIL(PubInputDlg(tr("OID"), tr("OID"), szTemp + nOffset, &nLen,0,60,60,INPUT_MODE_STRING));
+        }
+        break;
+    default:
+        return APP_QUIT;
+    }
+
+    memcpy(gstAppCommParam.szTomsUserOid, szTemp, sizeof(gstAppCommParam.szTomsUserOid) -1);
+
+    ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_TOMSISUSEROID, 1, &gstAppCommParam.cIsUserOid));
+    ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_TOMSUSEROID, strlen(gstAppCommParam.szTomsUserOid), gstAppCommParam.szTomsUserOid));
+
+    ASSERT_FAIL(TOMS_SetOption(TOMS_OPT_CONF_USER_OID, gstAppCommParam.szTomsUserOid));
+
+    return APP_SUCC;
+
+}
+
+
 #endif
 
 /**
@@ -2029,7 +2076,7 @@ int SetFuncWifiSsid(void)
 		PubClear2To4();
 		PubDisplayStrInline(0, 2, (char*)tr("SEARCH SSID"));
 		PubDisplayStrInline(0, 3, (char*)tr("PLEASE WAIT..."));
-		PubUpdateWindow();	
+		PubUpdateWindow();
 		ASSERT_RETURNCODE(PubCommScanWifi(tr("SET COMM"), szTemp, &nWifiMode, 60));
 		gstAppCommParam.cWifiMode = nWifiMode;
 		memset(gstAppCommParam.szWifiSsid, 0, sizeof(gstAppCommParam.szWifiSsid));

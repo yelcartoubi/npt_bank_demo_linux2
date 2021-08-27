@@ -945,15 +945,54 @@ int AdminMenu()
 }
 
 #ifdef USE_TOMS
+
+
+static int ProTomsSettingMenu()
+{
+    int nSelcItem = 1, nStartItem = 1;
+    char *pszItems[] = {
+        tr("1.Demo Mode"),
+        tr("2.Auto Obtain Command")
+    };
+
+    while(1)
+    {
+        NAPI_KbFlush();
+        ASSERT_QUIT(PubShowMenuItems(tr("Setting"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 0));
+        switch(nSelcItem)
+        {
+        case 1:
+            SetFuncTOMSUserOID();
+            break;
+        case 2:
+            SetFunctionTomsAutoObtainCmd();
+            break;
+        default:
+            break;
+        }
+    }
+    return APP_SUCC;
+
+}
+
+static char *__strcat_demo_str(char *title)
+{
+
+    static char szMenuTitle[100 + 1] = {0};
+    snprintf(szMenuTitle, sizeof(szMenuTitle), "%s%s", title, GetUserOidSwitch() ? "(Demo)" :"");
+    return szMenuTitle;
+}
+
+
 static int TOMS_Menu(void)
 {
 	int nRet = 0;
 	int nSelcItem = 1, nStartItem = 1;
 	char *pszItems[] = {
-		tr("1.Update"),
-		tr("2.Remote Command"),
-		tr("3.Auth Terminal"),
-		tr("4.Auto Obtain Command")
+        tr("1.Initialization"),
+        tr("2.Check Update"),
+        tr("3.Check Command"),
+        tr("4.Setting")
 	};
 
     while(1)
@@ -962,7 +1001,7 @@ static int TOMS_Menu(void)
         PubClearAll();
 
         ProDealLockTerminal();
-        nRet = PubShowMenuItems("MENU", pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 10);
+        nRet = PubShowMenuItems(__strcat_demo_str(tr("TOMS MENU")), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 10);
         if(nRet == APP_TIMEOUT)
         {
             continue;
@@ -974,16 +1013,16 @@ static int TOMS_Menu(void)
         switch(nSelcItem)
         {
         case 1:
-            TOMS_CheckUpdate(TOMS_OPR_DOWNLOAD_UPDATE);
-            break;
-        case 2:
-            TOMS_CheckRemoteCmds();
-            break;
-        case 3:
             TOMS_AuthTerminal();
             break;
+		case 2:
+			TOMS_CheckUpdate(TOMS_OPR_DOWNLOAD_UPDATE);
+			break;
+		case 3:
+            TOMS_CheckRemoteCmds();
+			break;
         case 4:
-            SetFunctionTomsAutoObtainCmd();
+            ProTomsSettingMenu();
             break;
         default:
             break;

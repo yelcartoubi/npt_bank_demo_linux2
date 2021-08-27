@@ -42,6 +42,7 @@ extern TOMS_ERRCODE TOMS_GetPrinterStatus(EM_TOMS_PRINTER_STATUS *pemOutType);
 
 extern TOMS_ERRCODE TOMS_SysGetVolPercent(int *nVolPercent);
 extern TOMS_ERRCODE TOMS_SysGetInfo(EM_TOMS_SYSINFO_ID InfoID, char *pszOutBuf, int *pnOutBufLen);
+extern TOMS_ERRCODE TOMS_ParseDNSIP(const char *pszDns, char *pszOutIp, int nMaxLen);
 
 extern void ProDealLockTerminal();
 

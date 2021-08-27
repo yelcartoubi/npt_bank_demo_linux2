@@ -204,7 +204,7 @@ TOMS_ERRCODE TOMS_CommConnect(int nIsUpdateUI, EM_TOMS_PROCEDURE emTrantpye)
 	nRet = PubCommDialNet();
 	if (nRet != APP_SUCC )
 	{
-		PubDispErr("fail to open ppp");
+		PubDispErr("fail");
 		return TOMS_FAIL;
 	}
 
@@ -1085,6 +1085,23 @@ FAIL:
 	return nRet;
 }
 
+
+static TOMS_ERRCODE __check_resource_version(EM_TOMS_RES_ID id, const char* pszParamVer)
+{
+    char szResourceMd5[32+1] = {0};
+    char szResourcePath[128] = {0};
+    if (__get_resource_from_file(id, szResourcePath, szResourceMd5)
+ != APP_SUCC)
+    {
+        return TOMS_FAIL;
+    }
+    if (strcmp(pszParamVer, szResourceMd5) == 0)
+    {
+        return TOMS_SUCC;
+    }
+
+    return APP_FAIL;
+}
 /**
  * TOMS_SUCC: needn't deal anything
  * TOMS_FAIL: need to download
@@ -1094,8 +1111,6 @@ TOMS_ERRCODE TOMS_CheckVersion(EM_TOMS_VERSION_TYPE emType, const char *pszAppNa
     static APP_INFO stAppInfo;
 	char szOSVer[60+1];
 	int nLen = 60;
-    char szBootLogoMd5[32+1] = {0};
-    char szBootLogoPath[128] = {0};
 
     switch (emType)
     {
@@ -1103,6 +1118,8 @@ TOMS_ERRCODE TOMS_CheckVersion(EM_TOMS_VERSION_TYPE emType, const char *pszAppNa
         memset(&stAppInfo, 0, sizeof(APP_INFO));
         if(NAPI_OK != NAPI_AppGetInfoByName(pszAppName, &stAppInfo))
         {
+            PubDebug("Error !!!  [%s]system app version: [%s], compared [%s]", pszAppName, stAppInfo.VerBuf,
+pszParamVer);
             return TOMS_FAIL;
         }
         PubDebug("[%s]system app version: [%s], compared [%s]", pszAppName, stAppInfo.VerBuf, pszParamVer);
@@ -1125,15 +1142,18 @@ TOMS_ERRCODE TOMS_CheckVersion(EM_TOMS_VERSION_TYPE emType, const char *pszAppNa
         }
         break;
     case TOMS_VER_BOOT_LOGO:
-        if (__get_resource_from_file(TOMS_RES_BOOT_LOGO, szBootLogoPath, szBootLogoMd5) != APP_SUCC)
-        {
-            return TOMS_FAIL;
-        }
-        if (strcmp(pszParamVer, szBootLogoMd5) == 0)
-        {
-            return TOMS_SUCC;
-        }
+        return __check_resource_version(TOMS_RES_BOOT_LOGO, pszParamVer);
         break;
+#if 1 // currently firmware doesn't support these
+    case TOMS_VER_POWERON_ANIMATION:
+        return TOMS_SUCC;
+        //return __check_resource_version(TOMS_RES_POWERON_ANIMATION, pszParamVer);
+        break;
+    case TOMS_VER_POWEROFF_ANIMATION:
+        return TOMS_SUCC;
+        //return __check_resource_version(TOMS_RES_POWEROFF_ANIMATION, pszParamVer);
+        break;
+#endif
     default:
         break;
     }
@@ -1141,7 +1161,8 @@ TOMS_ERRCODE TOMS_CheckVersion(EM_TOMS_VERSION_TYPE emType, const char *pszAppNa
     return TOMS_FAIL;
 }
 
-static inline int __save_resource_to_file(EM_TOMS_RES_ID emRes, char*pszResPath, char *pszMD5)
+static inline int __save_resource_to_file(EM_TOMS_RES_ID emRes, char*pszResPath, char *pszMD5)
+
 {
     int nFd, nRet = APP_SUCC;
     char szContent[1024] = {0};
@@ -1151,28 +1172,34 @@ static inline int __save_resource_to_file(EM_TOMS_RES_ID emRes, char*pszResPath,
         return APP_FAIL;
     }
 
+    sprintf(szContent, "%d %s %s", emRes, pszResPath, pszMD5);
+
     switch (emRes)
     {
     case TOMS_RES_BOOT_LOGO:
-        sprintf(szContent, "%d %s %s", emRes, pszResPath, pszMD5);
-        PubFsSeek(nFd, 0, SEEK_SET);
-        if (PubFsWrite(nFd, szContent, sizeof(szContent)) != sizeof(szContent)) {
-            nRet = APP_FAIL;
-        }
+    case TOMS_RES_POWERON_ANIMATION:
+    case TOMS_RES_POWEROFF_ANIMATION:
+        PubFsSeek(nFd, sizeof(szContent) * (int)emRes, SEEK_SET);
         break;
     default:
-        nRet = APP_FAIL;
+        PubFsClose(nFd);
+        return APP_FAIL;
         break;
     }
-    PubFsClose(nFd);
 
+    if (PubFsWrite(nFd, szContent, sizeof(szContent)) != sizeof(szContent)) {
+        nRet = APP_FAIL;
+    }
+    PubFsClose(nFd);
     return nRet;
 }
 
-static inline int __get_resource_from_file(EM_TOMS_RES_ID emRes, char*pszResPath, char *pszMD5)
+static inline int __get_resource_from_file(EM_TOMS_RES_ID emRes, char*pszResPath, char *pszMD5)
+
 {
     int nFd, nRet = APP_SUCC;
     char szContent[1024] = {0};
+    int nRes = 0;
 
     if ((nFd = PubFsOpen(TOMS_RESOURCE_FILE, "r")) < 0)
     {
@@ -1182,19 +1209,23 @@ static inline int __get_resource_from_file(EM_TOMS_RES_ID emRes, char*pszResPath
     switch (emRes)
     {
     case TOMS_RES_BOOT_LOGO:
-        PubFsSeek(nFd, 0, SEEK_SET);
-        if (PubFsRead(nFd, szContent, sizeof(szContent)) == sizeof(szContent))
-        {
-            sscanf(szContent, "%d %s %s", (int *)&emRes, pszResPath, pszMD5);
-        }
-        else
-        {
-            nRet = APP_FAIL;
-        }
+    case TOMS_RES_POWERON_ANIMATION:
+    case TOMS_RES_POWEROFF_ANIMATION:
+        PubFsSeek(nFd, sizeof(szContent) * (int)emRes, SEEK_SET);
         break;
     default:
-        nRet = APP_FAIL;
+        PubFsClose(nFd);
+        return APP_FAIL;
         break;
+    }
+
+    if (PubFsRead(nFd, szContent, sizeof(szContent)) == sizeof(szContent))
+    {
+        sscanf(szContent, "%d %s %s", &nRes, pszResPath, pszMD5);
+    }
+    else
+    {
+        nRet = APP_FAIL;
     }
     PubFsClose(nFd);
 
@@ -1213,12 +1244,24 @@ TOMS_ERRCODE TOMS_UpdateResource(EM_TOMS_RES_ID emRes, char*pszResPath, char *ps
         {
             return TOMS_FAIL;
         }
-        nRet = __save_resource_to_file(emRes, pszResPath, pszMD5);
+        break;
+    case TOMS_RES_POWERON_ANIMATION:
+        {
+            char szCmd[128] = {0};
+            snprintf(szCmd, sizeof(szCmd), "cp -f %s /app/data/logo/", pszResPath);
+            if (system(szCmd) != 0) {
+                return TOMS_FAIL;
+            }
+        }
+        break;
+    case TOMS_RES_POWEROFF_ANIMATION:
         break;
     default:
         return TOMS_FAIL;
         break;
     }
+
+    nRet = __save_resource_to_file(emRes, pszResPath, pszMD5);
 
     return nRet;
 }
@@ -1553,6 +1596,12 @@ TOMS_ERRCODE TOMS_GetPrinterStatus(EM_TOMS_PRINTER_STATUS *pemOutType)
     }
 
     return TOMS_SUCC;
+}
+
+TOMS_ERRCODE TOMS_ParseDNSIP(const char *pszDns, char *pszOutIp, int nMaxLen)
+{
+
+    return PubCommDnParse(pszDns, NULL, pszOutIp, YES) != APP_SUCC ? TOMS_FAIL : TOMS_SUCC;
 }
 
 

@@ -37,7 +37,7 @@ static char gcIsTimerOn = FALSE;
 
 static void Showinfo();
 /**
-* global variable 
+* global variable
 */
 static const char szErrCode[][48]=
 {
@@ -173,10 +173,10 @@ static int ProGetErrMsg(int nCommErrCode, char *pszErrMsg);
 
 /**
 * @brief Check whether the device support the communication type
-* @param [in] cCommType  
+* @param [in] cCommType
 * @return
-* @li APP_FAIL 
-* @li APP_SUCC 
+* @li APP_FAIL
+* @li APP_SUCC
 * @author sunh
 * @date 2014-3-24
 */
@@ -248,7 +248,7 @@ static int CommCheckIfSupport(char cCommType)
 /**
 * @brief Set communication parameters and initialize communication module
 * @param [in] pstCommParam  Communication parameters
-* @return 
+* @return
 * @li APP_FAIL Success
 * @li APP_SUCC Fail
 * @author liug
@@ -259,7 +259,7 @@ int PubCommInit(const STCOMMPARAM *pstCommParam)
 	int nRet;
 
 	PubDebugSelectly(2, "PubCommInit Start... cCommType:%x", pstCommParam->cCommType);
-	
+
 	if (APP_SUCC != CommCheckIfSupport(pstCommParam->cCommType))
 	{
 		return APP_FAIL;
@@ -286,14 +286,14 @@ int PubCommInit(const STCOMMPARAM *pstCommParam)
 /**
 * @brief Get DHCP local address
 * @param [out] pstEthParam
-* @return 
+* @return
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 * @author liug
 * @date 2013-5-7
 */
 int PubGetDhcpLocalAddr(STETHPARAM  *pstEthParam)
-{	
+{
 	STETHPARAM stEthParam;
 
 	memset(&stEthParam, 0, sizeof(stEthParam));
@@ -316,8 +316,8 @@ int PubGetDhcpLocalAddr(STETHPARAM  *pstEthParam)
 }
 
 /**
-* @brief Connect beforehand 
-* @return 
+* @brief Connect beforehand
+* @return
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 * @author liug
@@ -341,7 +341,7 @@ int PubCommPreConnect(void)
 
 /**
 * @brief Communication connect
-* @return 
+* @return
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 * @author liug
@@ -386,7 +386,7 @@ int PubCommConnect()
 }
 
 static int CommRead(int nReadType, char* psData, int nMaxLen, int* pnOutLen)
-{	
+{
 	int nRet;
 	if(gstCommParam.stCommParam.nTimeOut != 0)
 	{
@@ -411,7 +411,7 @@ static int CommRead(int nReadType, char* psData, int nMaxLen, int* pnOutLen)
 * @param [out] psData        Data received
 * @param [in] nMaxLen       Max buffer size to receive data
 * @param [out] *pnDataLen    Length of data received
-* @return 
+* @return
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 * @author liug
@@ -420,7 +420,7 @@ static int CommRead(int nReadType, char* psData, int nMaxLen, int* pnOutLen)
 int PubCommRead(char* psData, int nMaxLen, int* pnOutLen)
 {
 	int nRet;
-		
+
 	PubDebugSelectly(3, "PubCommRead Start...[nMaxLen:%d][timeout:%d]",nMaxLen, gstCommParam.stCommParam.nTimeOut);
 	nRet = CommRead(0xFF, psData, nMaxLen, pnOutLen);
 	if(nRet != APP_SUCC)
@@ -436,7 +436,7 @@ int PubCommRead(char* psData, int nMaxLen, int* pnOutLen)
 * @details Write data directly to the data channel
 * @param [in]  psData        Data to be sent
 * @param [in]  nDataLen      Data length
-* @return 
+* @return
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 * @author liug
@@ -458,7 +458,7 @@ int PubCommWrite(const char *psData,int nDataLen)
 * @brief In accordance with the modes of communication to write data
 * @param [in] psData        Data to be sent
 * @param [in] nDataLen      Data length
-* @return 
+* @return
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 * @author liug
@@ -625,9 +625,9 @@ int PubCommSend(const char *psData,int nDataLen)
 /**
 * @brief Read data
 * @details  In accordance with the modes of communication to read data
-* @param [out] psData        Data received 
+* @param [out] psData        Data received
 * @param [out] *pnDataLen    Length of data received
-* @return 
+* @return
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 * @author liug
@@ -654,7 +654,7 @@ int PubCommRecv(char *psData,int *pnDataLen)
 		return nRet;
 	}
 
-	//tpdu 
+	//tpdu
 	switch (gstCommParam.stCommParam.cCommType)
 	{
 	case COMMTYPE_SYNDIAL_TPDU:
@@ -752,7 +752,7 @@ int PubCommRecv(char *psData,int *pnDataLen)
 
 /**
 * @brief Clear communication buffer
-* @return 
+* @return
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 * @author liug
@@ -783,7 +783,7 @@ int PubCommClear()
 
 /**
 * @brief Hang up communication link
-* @return 
+* @return
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 * @author liug
@@ -817,7 +817,7 @@ int PubCommHangUpReset()
 
 /**
 * @brief Close communication
-* @return 
+* @return
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 * @author liug
@@ -832,7 +832,7 @@ int PubCommClose()
 /**
 * @brief Set communication parameter
 * @param [in] pstCommParam
-* @return 
+* @return
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 * @author liug
@@ -856,14 +856,14 @@ int PubSetCommParam(const STCOMMPARAM* pstCommParam)
 		else
 		{
 			//
-			if (memcmp(&gstCommParam.stCommParam.ConnInfo.stDialParam, &pstCommParam->ConnInfo.stDialParam, 
+			if (memcmp(&gstCommParam.stCommParam.ConnInfo.stDialParam, &pstCommParam->ConnInfo.stDialParam,
 				sizeof(STDIALPARAM)) != 0)
 			{
 				AsynDialSetParam(&pstCommParam->ConnInfo.stDialParam);
 			}
 		}
 		//
-		if (memcmp(&gstCommParam.stCommParam.ConnInfo.stDialParam, &pstCommParam->ConnInfo.stDialParam, 
+		if (memcmp(&gstCommParam.stCommParam.ConnInfo.stDialParam, &pstCommParam->ConnInfo.stDialParam,
 			sizeof(STDIALPARAM)) != 0)
 		{
 			AsynResetIndex();
@@ -884,14 +884,14 @@ int PubSetCommParam(const STCOMMPARAM* pstCommParam)
 		else
 		{
 			//
-			if (memcmp(&gstCommParam.stCommParam.ConnInfo.stDialParam, &pstCommParam->ConnInfo.stDialParam, 
+			if (memcmp(&gstCommParam.stCommParam.ConnInfo.stDialParam, &pstCommParam->ConnInfo.stDialParam,
 				sizeof(STDIALPARAM)) != 0)
 			{
                 SynDialSetParam((STDIALPARAM *)&pstCommParam->ConnInfo.stDialParam);
 			}
 		}
 		//
-		if (memcmp(&gstCommParam.stCommParam.ConnInfo.stDialParam, &pstCommParam->ConnInfo.stDialParam, 
+		if (memcmp(&gstCommParam.stCommParam.ConnInfo.stDialParam, &pstCommParam->ConnInfo.stDialParam,
 			sizeof(STDIALPARAM)) != 0)
 		{
 			SynResetIndex();
@@ -908,7 +908,7 @@ int PubSetCommParam(const STCOMMPARAM* pstCommParam)
 		}
 		break;
 	case COMMTYPE_GPRS:
-		if (memcmp(gstCommParam.stCommParam.ConnInfo.stGprsParam.szGprsApn,	pstCommParam->ConnInfo.stGprsParam.szGprsApn,40)!=0  
+		if (memcmp(gstCommParam.stCommParam.ConnInfo.stGprsParam.szGprsApn,	pstCommParam->ConnInfo.stGprsParam.szGprsApn,40)!=0
 			|| memcmp(gstCommParam.stCommParam.ConnInfo.stGprsParam.szModemDialNo, pstCommParam->ConnInfo.stGprsParam.szModemDialNo,21)!=0)
 		{
 			if (gstCommParam.cIsConnect == TRUE)
@@ -918,14 +918,14 @@ int PubSetCommParam(const STCOMMPARAM* pstCommParam)
 			}
 			gstCommParam.cIsInitComm = FALSE;
 		}
-		
+
 		//
-		if (memcmp(&gstCommParam.stCommParam.ConnInfo.stGprsParam, &pstCommParam->ConnInfo.stGprsParam, sizeof(STGPRSPARAM)) != 0 
+		if (memcmp(&gstCommParam.stCommParam.ConnInfo.stGprsParam, &pstCommParam->ConnInfo.stGprsParam, sizeof(STGPRSPARAM)) != 0
 			||memcmp(&gstCommParam.stCommParam.stServerAddress, &pstCommParam->stServerAddress, sizeof(STSERVERADDRESS)) != 0)
 		{
 			WirelessResetIndex();
 		}
-		
+
 		//ssl
 		if (gstCommParam.stCommParam.cSslFlag != pstCommParam->cSslFlag)
 		{
@@ -945,7 +945,7 @@ int PubSetCommParam(const STCOMMPARAM* pstCommParam)
 			gstCommParam.cIsInitComm = FALSE;
 		}
 		//
-		if (memcmp(&gstCommParam.stCommParam.ConnInfo.stCdmaParam, &pstCommParam->ConnInfo.stCdmaParam, sizeof(STCDMAPARAM)) != 0 
+		if (memcmp(&gstCommParam.stCommParam.ConnInfo.stCdmaParam, &pstCommParam->ConnInfo.stCdmaParam, sizeof(STCDMAPARAM)) != 0
 			||memcmp(&gstCommParam.stCommParam.stServerAddress, &pstCommParam->stServerAddress, sizeof(STSERVERADDRESS)) != 0)
 		{
 			WirelessResetIndex();
@@ -973,27 +973,27 @@ int PubSetCommParam(const STCOMMPARAM* pstCommParam)
 		{
 			EthResetIndex();
 		}
-		
+
 		//ssl
 		if (gstCommParam.stCommParam.cSslFlag != pstCommParam->cSslFlag)
 		{
 			EthUpdateSslFlag(pstCommParam->cSslFlag);
 		}
 		break;
-	case COMMTYPE_WIFI:// 
+	case COMMTYPE_WIFI://
 		//
 		if (memcmp(&gstCommParam.stCommParam.ConnInfo.stWifiParam, &pstCommParam->ConnInfo.stWifiParam, sizeof(STWIFIPARAM)) != 0)
 		{
 			WifiSetParam((STWIFIPARAM *)&pstCommParam->ConnInfo.stWifiParam);
 		}
-		
+
 		//
 		if (memcmp(&gstCommParam.stCommParam.ConnInfo.stWifiParam, &pstCommParam->ConnInfo.stWifiParam,sizeof(STWIFIPARAM)) != 0
 			||memcmp(&gstCommParam.stCommParam.stServerAddress, &pstCommParam->stServerAddress, sizeof(STSERVERADDRESS)) != 0)
 		{
 			WifiResetIndex();
 		}
-		
+
 		//ssl
 		if (gstCommParam.stCommParam.cSslFlag != pstCommParam->cSslFlag)
 		{
@@ -1002,7 +1002,7 @@ int PubSetCommParam(const STCOMMPARAM* pstCommParam)
 		break;
 	default:
 		return APP_FAIL;
-	}	
+	}
 	memcpy(&gstCommParam.stCommParam, pstCommParam, sizeof(STCOMMPARAM));
 
 	if (pstCommParam->ShowFunc != NULL)
@@ -1027,7 +1027,7 @@ int PubSetCommParam(const STCOMMPARAM* pstCommParam)
 * @date 2013-9-15
 */
 int PubGetCommParam(STCOMMPARAM* pstCommParam)
-{	
+{
 	if (pstCommParam == NULL)
 	{
 		return APP_FAIL;
@@ -1040,7 +1040,7 @@ int PubGetCommParam(STCOMMPARAM* pstCommParam)
 /**
 * @brief Get connection index
 * @param [out] pnIndex
-* @return 
+* @return
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 * @author liug
@@ -1056,7 +1056,7 @@ int PubGetConnectIndex(int *pnIndex)
 /**
 * @brief Get the version of communication module
 * @param [out] pszVer  Version string
-* @return 
+* @return
 * @li void
 */
 void PubGetCommVerion(char *pszVer)
@@ -1069,7 +1069,7 @@ void PubGetCommVerion(char *pszVer)
 }
 
 /**
-* @brief Configure ssl and use it before connection. Use default configuration if there is no setting 
+* @brief Configure ssl and use it before connection. Use default configuration if there is no setting
 * @param [in] pstSslMode ssl Related parameters
 * @return
 * @li APP_FAIL Fail
@@ -1081,7 +1081,7 @@ int PubSslSetMode(STSSLMODE *pstSslMode)
 {
 	char szDir[40] = {0};
 	STSSLMODE stSslMode;
-		
+
 	if (pstSslMode == NULL)
 		return APP_FAIL;
 
@@ -1116,10 +1116,10 @@ int PubSslSetMode(STSSLMODE *pstSslMode)
 int PubSslGetCertMsg(STSSLCERTMSG* pstSslCertMsg)
 {
 	STSSLCERTMSG stSslCertMsg;
-	
+
 	if (pstSslCertMsg == NULL)
 		return APP_FAIL;
-	
+
 	memset(&stSslCertMsg, 0, sizeof(stSslCertMsg));
 	GetSslCertMsg(&stSslCertMsg);
 	memcpy(pstSslCertMsg, &stSslCertMsg, sizeof(STSSLCERTMSG));
@@ -1197,7 +1197,7 @@ int PubCommScanWifi(const char *pszTitle, char *pszOutSsid, int *pnWifiMode, int
 		PubDebugSelectly(1, "ssid: %s  %d", pszOutSsid, *pnWifiMode);
 		return APP_SUCC;
 	}
-	
+
 	PubGetDispView(&nMaxLcdLine, NULL);
 
 	if (pszTitle !=NULL)
@@ -1282,9 +1282,9 @@ int PubCommScanWifi(const char *pszTitle, char *pszOutSsid, int *pnWifiMode, int
 
 /**
 * @brief 0x02 length data lrc(length+data) 0x03
-* @param in/out psBuf 
-* @param in/out punLen 
-* @return 
+* @param in/out psBuf
+* @param in/out punLen
+* @return
 * @li APP_SUCC
 * @li APP_FAIL
 */
@@ -1309,9 +1309,9 @@ static int InsertAsyn(char *psBuf, uint *punLen)
 }
 
 /**
-* @brief 0x02 length data 0x03 lrc(length+data+0x03) 
-* @param in/out psBuf 
-* @param in/out punLen 
+* @brief 0x02 length data 0x03 lrc(length+data+0x03)
+* @param in/out psBuf
+* @param in/out punLen
 * @li APP_SUCC
 * @li APP_FAIL
 */
@@ -1336,8 +1336,8 @@ static int InsertAsyn1(char *psBuf, uint *punLen)
 }
 /**
 * @brief Add tpdu
-* @param in/out psBuf 
-* @param in/out punLen 
+* @param in/out psBuf
+* @param in/out punLen
 * @li APP_SUCC
 * @li APP_FAIL
 */
@@ -1359,8 +1359,8 @@ static int AddTpdu(char *psBuf, uint *punLen, char *psTpdu)
 
 /**
 * @brief Delete Asyn format data(0x02 lrc 0x03 length)
-* @param in/out psBuf 
-* @param in/out punLen 
+* @param in/out psBuf
+* @param in/out punLen
 * @return
 * @li APP_SUCC
 * @li APP_FAIL
@@ -1407,8 +1407,8 @@ static int DeleteAsyn(char *psBuf, uint *punLen)
 
 /**
 * @brief Delete Asyn format data(0x02 lrc 0x03 length)
-* @param in/out psBuf 
-* @param in/out punLen 
+* @param in/out psBuf
+* @param in/out punLen
 * @li APP_SUCC
 * @li APP_FAIL
 */
@@ -1454,8 +1454,8 @@ static int DeleteAsyn1(char *psBuf, uint *punLen)
 
 /**
 * @brief Delete tpdu
-* @param in/out psBuf 
-* @param in/out punLen 
+* @param in/out psBuf
+* @param in/out punLen
 * @li APP_SUCC
 * @li APP_FAIL
 */
@@ -1480,7 +1480,7 @@ static int DelTpdu(char *psBuf, uint *punLen)
 
 static void Showinfo()
 {
-	
+
 	PubDebugSelectly(1, "Showinfo start...[nType: %d][row: %d][column: %d]", gstShowInfoxy.nType, gstShowInfoxy.nRow, gstShowInfoxy.nColumn);
 	while(1)
 	{
@@ -1528,13 +1528,13 @@ static int ProShowInfo()
 	{
 		gnTimerCount = 0;
 	}
-	
+
 	PubDebugSelectly(1, "ProShowInfo start..[gnThread: %d]", gnThread);//sh
 	if (gnThread > 0) /**/
 	{
 		return APP_SUCC;
 	}
-	
+
 	if (pthread_create(&gnThread, NULL, (void *)gstCommParam.stCommParam.ShowFunc, NULL)!= 0)
 	{
 		PubDebugSelectly(3, "ProShowInfo pthread_create fail");
@@ -1562,7 +1562,7 @@ static void ProExitShowInfo(void)
 /**
 * @brief Set style for displaying timeout interface
 * @param [in] stShowInfoxy
-* @return 
+* @return
 * @li void
 * @author liug
 * @date 2012-5-24
@@ -1578,7 +1578,7 @@ void PubSetShowXY(STSHOWINFOXY stShowInfoxy)
 /**
 * @brief Set the timeout
 * @param [in] nTimeOut  timeout(>=0)
-* @return 
+* @return
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 * @author liug
@@ -1593,7 +1593,7 @@ int PubSetCommTimeOut(int nTimeOut)
 /**
 * @brief Set the times of redial
 * @param [in] nReDialNum  Number of redial(1---9)
-* @return 
+* @return
 * @li APP_FAIL Fail
 * @li APP_SUCC Success
 * @author liug
@@ -1643,6 +1643,9 @@ int PubCommDialNet()
 
 	if(CommPppDial() != APP_SUCC)
 	{
+        char szErrMsg[64+1] = {0};
+        ProGetErrMsg(GetCommErrorCode(), szErrMsg);
+        PubSetErrorCode(GetCommErrorCode(),szErrMsg,GetNapiErrorCode());
 		return APP_FAIL;
 	}
 	PubDebugSelectly(2, "PubCommPppDial Succ.");
@@ -1670,7 +1673,7 @@ int PubCommDnParse(const char *pszDn, const char *pszDnsIp, char *pszIp, char cI
 	{
 		return APP_FAIL;
 	}
-				
+
 	PubDebugSelectly(2, "PubCommDnParse Succ.");
 	return APP_SUCC;
 }
@@ -1697,7 +1700,7 @@ int PubCommNetCheck(int *pnStatus)
 	{
 		return APP_FAIL;
 	}
-	
+
 	PubDebugSelectly(2, "PubCommNetCheck Succ.");
 	return APP_SUCC;
 }

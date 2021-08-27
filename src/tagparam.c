@@ -652,6 +652,12 @@ static void AssignToCommParam(int nTagid, int nValueLen, char *pszTagValue, STAP
     case TAG_COMM_TOMSTDASDOMAIN:
         memcpy(pstAppCommParam->szTOMSTdasDomain, pszTagValue, nValueLen);
         break;
+    case TAG_COMM_TOMSISUSEROID:
+        pstAppCommParam->cIsUserOid = pszTagValue[0];
+        break;
+    case TAG_COMM_TOMSUSEROID:
+        memcpy(pstAppCommParam->szTomsUserOid, pszTagValue, nValueLen);
+        break;
 	default:
 		break;
 	}
@@ -1308,6 +1314,9 @@ int InitCommParamFile(STAPPCOMMPARAM stAppCommParam)
     ASSERT_FAIL(AddTagParam(pszFileName, TAG_COMM_TOMSKEYPOSDOMAIN, strlen(stAppCommParam.szTOMSKeyPosDomain), stAppCommParam.szTOMSKeyPosDomain));
     ASSERT_FAIL(AddTagParam(pszFileName, TAG_COMM_TOMSFILESERDOMAIN, strlen(stAppCommParam.szTOMSFileServerDomain), stAppCommParam.szTOMSFileServerDomain));
     ASSERT_FAIL(AddTagParam(pszFileName, TAG_COMM_TOMSTDASDOMAIN, strlen(stAppCommParam.szTOMSTdasDomain), stAppCommParam.szTOMSTdasDomain));
+
+    ASSERT_FAIL(AddTagParam(pszFileName, TAG_COMM_TOMSISUSEROID, 1, &stAppCommParam.cIsUserOid));
+    ASSERT_FAIL(AddTagParam(pszFileName, TAG_COMM_TOMSUSEROID, strlen(stAppCommParam.szTomsUserOid), stAppCommParam.szTomsUserOid));
 
 	return APP_SUCC;
 }

@@ -105,7 +105,9 @@ typedef enum {
 typedef enum {
     TOMS_VER_APP,
     TOMS_VER_PATCH,
-    TOMS_VER_BOOT_LOGO
+    TOMS_VER_BOOT_LOGO,
+    TOMS_VER_POWERON_ANIMATION,
+    TOMS_VER_POWEROFF_ANIMATION,
 } EM_TOMS_VERSION_TYPE;
 
 typedef enum {
@@ -187,6 +189,7 @@ typedef enum {
     TOMSOPT(TOMS_OPT_CONF_FILESERVER_DOMAIN,        TOMS_OPTTYPE_CONFIG_BASE,    4),         // string
     TOMSOPT(TOMS_OPT_CONF_TDAS_DOMAIN,              TOMS_OPTTYPE_CONFIG_BASE,    5),         // string
     TOMSOPT(TOMS_OPT_CONF_DEBUG_SWITCH,             TOMS_OPTTYPE_CONFIG_BASE,    6),         // EM_TOMS_DEBUG_SWITCH
+    TOMSOPT(TOMS_OPT_CONF_USER_OID,                 TOMS_OPTTYPE_CONFIG_BASE,    7),         // string
 
     //TOMS_OPTTYPE_SYSAPI_BASE
     TOMSOPT(TOMS_OPT_SYSAPI_GET_DATETIME,           TOMS_OPTTYPE_SYSAPI_BASE,    1),         // toms_get_datetime_cb
@@ -201,6 +204,7 @@ typedef enum {
     TOMSOPT(TOMS_OPT_SYSAPI_GET_NETWORK_TYPE,       TOMS_OPTTYPE_SYSAPI_BASE,    10),        // toms_get_network_type_cb
     TOMSOPT(TOMS_OPT_SYSAPI_GET_SIM_STATUS,         TOMS_OPTTYPE_SYSAPI_BASE,    11),        // toms_get_sim_status_cb
     TOMSOPT(TOMS_OPT_SYSAPI_GET_PRINER_STATUS,      TOMS_OPTTYPE_SYSAPI_BASE,    12),        // toms_get_printer_status_cb
+    TOMSOPT(TOMS_OPT_SYSAPI_PARSE_DNS_IP,           TOMS_OPTTYPE_SYSAPI_BASE,    13),        // toms_parse_dns_ip_cb
 
     //TOMS_OPTTYPE_EXECCB_BASE
     TOMSOPT(TOMS_OPT_EXECCB_COMM_CONNECT,           TOMS_OPTTYPE_EXECCB_BASE,    1),        // toms_comm_connect_cb
@@ -242,6 +246,8 @@ typedef TOMS_ERRCODE (*toms_extract_log_cb)(const char *pszPerFileNameFmt, const
 typedef TOMS_ERRCODE (*toms_lock_terminal_cb)(EM_TOMS_FLOCK emlock, const char *pszTipsInfo);
 typedef TOMS_ERRCODE (*toms_get_lock_status_cb)(EM_TOMS_FLOCK *pemlock);
 typedef TOMS_ERRCODE (*toms_get_terminal_status_cb)(EM_TOMS_TERMSTATUS_INFO_ID emSS, char *pszOutInfo, int nMaxLen);
+
+typedef TOMS_ERRCODE (*toms_parse_dns_ip_cb)(const char *pszDns, char *pszOutIp, int nMaxLen);
 
 /**
 * @brief set toms options such as configures, callbacks and so on.
