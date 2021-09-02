@@ -1174,8 +1174,8 @@ static int CandidateParse(unsigned char tlv_list[], int tlv_len, L3_CANDIDATE_LI
 			memcpy(&pstCandidate->priority , stTlvObj[i].pusValue, 1);
 			break;
 		case 0x4F:
-			memcpy(pstCandidate->perferName , stTlvObj[i].pusValue, stTlvObj[i].unValueLen);
-			pstCandidate->perferNameLen = stTlvObj[i].unValueLen;
+			memcpy(pstCandidate->aid , stTlvObj[i].pusValue, stTlvObj[i].unValueLen);
+			pstCandidate->aidLen = stTlvObj[i].unValueLen;
 			break;
 		case 0x9F11:
 			memcpy(&pstCandidate->issuerCodeTableIndex , stTlvObj[i].pusValue, 1);
@@ -1205,11 +1205,13 @@ static int Pinpad_SELECT_CANDIDATE_LIST(char *pszData, char *pszOutPut, int *pnO
 	uchar szLable[10][20+1] = {{0}};
 	uchar szPerferName[10][20+1] = {{0}};
 	uchar customTagData[10][64+1] = {{0}};
-	
+	char szTlvList[32+1] = {0};
+	int nResult = 0; // RFU
 	int nListNum;
 	int nTlvLen;
 	int nOff = 0, nRet, nSelect, i;
 
+	memset((char *)&stL3Param, 0, sizeof(STPINPADL3_IN));
 	nListNum = pszData[nOff];
 	nOff += 1;
 
@@ -1238,17 +1240,18 @@ static int Pinpad_SELECT_CANDIDATE_LIST(char *pszData, char *pszOutPut, int *pnO
 	}
 
 	nOff = 0;
-	szInputData[nOff] = nSelect;
+	szInputData[nOff] = 0xFF;
 	nOff += 1;
-	nOff += 2; // length
-	memcpy(szInputData + nOff, "\x9F\x06", 2);
-	nOff += 2;
-	szInputData[nOff] = candidateList[nSelect].aidLen;
+	PubIntToC4((uchar *)szInputData + nOff, (uint)nResult);
+	nOff += 4;
+	nOff += 4;// data Length
+	szInputData[nOff] = nSelect; // index
 	nOff += 1;
-	memcpy(szInputData + nOff, candidateList[nSelect].aid, candidateList[nSelect].aidLen);
-	nOff += candidateList[nSelect].aidLen;
-
-	PubIntToC2((uchar *)szInputData + 1, (uint)nOff - 3);
+	nTlvLen = 0;
+	TlvAdd(0x9F06, candidateList[nSelect].aidLen, (char *)candidateList[nSelect].aid, szTlvList, &nTlvLen);
+	memcpy(szInputData + nOff, szTlvList, nTlvLen);
+	nOff += nTlvLen;
+	PubIntToC4((uchar *)szInputData + 5, (uint)nOff - 9);// 9 = L3_callback_id(0xFF) + result length + data length
 	stL3Param.cMsgType = PINPAD_L3CALLBACK;
 	stL3Param.pszInputData = szInputData;
 	stL3Param.nInputDataLen = nOff;
@@ -1261,7 +1264,11 @@ static int Pinpad_AFTER_FINAL_SELECT(char *pszData, char *pszOutPut, int *pnOutL
 	STPINPADL3_IN stL3Param;
 	int nOff = 0;
 	int nAidLen;
-	char szInputData[32]= {0};
+	int nTlvLen = 0;
+	int nResult = 0; // RFU
+	char szInputData[64] = {0};
+	char szTlvList[32+1] = {0};
+	char szTmpData[8] = {0};
 	char szAid[16] = {0};
 
 	memset((char *)&stL3Param, 0, sizeof(STPINPADL3_IN));
@@ -1272,35 +1279,33 @@ static int Pinpad_AFTER_FINAL_SELECT(char *pszData, char *pszOutPut, int *pnOutL
 	memcpy(szAid, pszData + nOff, nAidLen);
 
 	nOff = 0;
-	szInputData[nOff] = L3_CALLBACK_AFTER_FINAL_SELECT;
+	szInputData[nOff] = 0xFF;
 	nOff += 1;
+	PubIntToC4((uchar *)szInputData + nOff, (uint)nResult);
+	nOff += 4;
 	nOff += 4; // data length
 	if (L3_CONTACT == cardInterface)
 	{
 		if (0 == memcmp(szAid, "\xA0\x00\x00\x00\x04\x30\x60", 7))
 		{
-			memcpy(szInputData + nOff, "\x9F\x09", 2);
-			nOff += 2;
-			szInputData[nOff] = 0x02;
-			nOff += 1;
-			memcpy(szInputData + nOff, "\x00\x02", 2);
-			nOff += 2;
+			memcpy(szTmpData, "\x00\x02", 2);
+			TlvAdd(0x9F09, 2, szTmpData, szTlvList, &nTlvLen);
 		}
 	}
 	else //CONTACTLESS
 	{
 		if (0 == memcmp(szAid, "\xA0\x00\x00\x03\x33", 5))
 		{
-			memcpy(szInputData + nOff, "\x5F\x2A", 2);
-			nOff += 2;
-			szInputData[nOff] = 0x02;
-			nOff += 1;
-			memcpy(szInputData + nOff, "\x01\x56", 2);
-			nOff += 2;
+			memcpy(szTmpData, "\x01\x56", 2);
+			TlvAdd(0x5F2A, 2, szTmpData, szTlvList, &nTlvLen);
 		}
 	}
 
-	PubIntToC4((uchar *)szInputData + 1, (uint)nOff - 5);
+	TlvAdd(0xDF21, 6, "\x00\x00\x33\x33\x33\x33", szTlvList, &nTlvLen);
+	memcpy(szInputData + nOff, szTlvList, nTlvLen);
+	nOff += nTlvLen;
+
+	PubIntToC4((uchar *)szInputData + 5, (uint)nOff - 9); // 9 = L3_callback_id(0xFF) + result length + data length
 	stL3Param.cMsgType = PINPAD_L3CALLBACK;
 	stL3Param.pszInputData = szInputData;
 	stL3Param.nInputDataLen = nOff;
@@ -1312,6 +1317,7 @@ static int Pinpad_GET_PIN(char *pszData, char *pszOutPut, int *pnOutLen)
 	int nOff;
 	int nIndex;
 	int nTlvLen = 0;
+	int nResult = 0; // skpi pin (0xFFFFFFFD = -610)
 	char szInputData[64] = {0};
 	char szTlvList[32+1] = {0};
 	char szTmpData[8] = {0};
@@ -1326,9 +1332,11 @@ static int Pinpad_GET_PIN(char *pszData, char *pszOutPut, int *pnOutLen)
 
 	// package send data
 	nOff = 0;
-	szInputData[nOff] = L3_CALLBACK_GET_PIN;
+	szInputData[nOff] = 0xFF;
 	nOff += 1;
-	nOff += 2; // len
+	PubIntToC4((uchar *)szInputData + nOff, (uint)nResult);
+	nOff += 4;
+	nOff += 4; // data length
 	if (type == L3_PIN_ONLINE)
 	{
 		// KeyType
@@ -1340,12 +1348,16 @@ static int Pinpad_GET_PIN(char *pszData, char *pszOutPut, int *pnOutLen)
 		szTmpData[0] = nIndex;
 		TlvAdd(0x1F8137, 1, szTmpData, szTlvList, &nTlvLen);
 	}
+	TlvAdd(0x1F8135, 10, "\x00\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c", szTlvList, &nTlvLen);
 	// timeout
 	szTmpData[0] = 60;
 	TlvAdd(0x1F8138, 1, szTmpData, szTlvList, &nTlvLen);
-	PubIntToC2((uchar *)szInputData + 1, (uint)nTlvLen);
+
 	memcpy(szInputData + nOff, szTlvList, nTlvLen);
 	nOff += nTlvLen;
+	
+	PubIntToC4((uchar *)szInputData + 5, (uint)nOff - 9);
+	
 	stL3Param.cMsgType = PINPAD_L3CALLBACK;
 	stL3Param.pszInputData = szInputData;
 	stL3Param.nInputDataLen = nOff;
@@ -1361,6 +1373,7 @@ static int Pinpad_CHECK_CREDENTIALS(char *pszData, char *pszOutPut, int *pnOutLe
     int nLen = 1;
 	int nOff;
 	int nTlvLen;
+	int nResult = 0;
 	STPINPADL3_IN stL3Param;
 
 	memset(&stL3Param, 0, sizeof(STPINPADL3_IN));
@@ -1404,9 +1417,13 @@ static int Pinpad_CHECK_CREDENTIALS(char *pszData, char *pszOutPut, int *pnOutLe
 	NAPI_ScrPop();
 
 	nOff = 0;
-	pszData[nOff] = L3_CALLBACK_CHECK_CREDENTIALS;
+	pszData[nOff] = 0xFF;
 	nOff += 1;
-	PubIntToC4((uchar *)pszData + nOff, nRet);
+	nResult = nRet;
+	PubIntToC4((uchar *)pszData + nOff, nResult);
+	nOff += 4;
+	nOff += 4; // data length
+	PubIntToC4((uchar *)pszData + 5, (uint)nOff - 9);
 	stL3Param.cMsgType = PINPAD_L3CALLBACK;
 	stL3Param.pszInputData = pszData;
 	stL3Param.nInputDataLen = nOff;
@@ -1418,9 +1435,10 @@ static int Pinpad_CardConfirm(char *pszOutPut, int *pnOutLen)
 	char cEntryMode;
 	char szInputData[32]= {0};
 	STPINPADL3_IN stL3Param;
-	int nLen, nRet, nOff = 0;
+	int nLen, nRet, nOff = 0, nResult;
 	char szPan[19+1] = {0};
 
+	memset((char *)&stL3Param, 0, sizeof(STPINPADL3_IN));
 	TxnL3GetData(L3_DATA_POS_ENTRY_MODE, &cEntryMode, 1);
 	if(cEntryMode == ATTR_CONTACT || cEntryMode == ATTR_CONTACTLESS)
 	{
@@ -1439,11 +1457,13 @@ static int Pinpad_CardConfirm(char *pszOutPut, int *pnOutLen)
 		nRet = L3_ERR_FAIL;
 	}
 	nOff = 0;
-	szInputData[nOff] = 0x0D;
+	szInputData[nOff] = 0xFF;
 	nOff += 1;
-	
-	PubIntToC4((uchar *)szInputData + nOff, (uint)nRet);
+	nResult = nRet;
+	PubIntToC4((uchar *)szInputData + nOff, nResult);
 	nOff += 4;
+	nOff += 4; // data length
+	PubIntToC4((uchar *)szInputData + 5, (uint)nOff - 9);
 	stL3Param.cMsgType = PINPAD_L3CALLBACK;
 	stL3Param.pszInputData = szInputData;
 	stL3Param.nInputDataLen = nOff;

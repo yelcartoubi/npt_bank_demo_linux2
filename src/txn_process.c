@@ -1173,6 +1173,15 @@ void TxnL3TerminateTransaction()
 	if (GetVarIsPinpadReadCard() == YES)
 	{
 		PinPad_L3TerminateTransaction();
+		while(1) {
+			if (PubCheckIcc_PINPAD() != APP_SUCC) {
+				break;
+			}
+			PubClearAll();
+			PubDisplayGen(5, tr("remove card from Pinpad"));
+			PubUpdateWindow();
+			PubBeep_PINPAD();
+		}
 		PubClrPinPad_PINPAD();
 	}
 	else

@@ -445,8 +445,12 @@ static int PinPad_SendRecv(char cFlag, uchar *psSend, uint nSendLen, uchar *psRe
 		if (nRet == APP_QUIT) // press cancel button when checking STX flag
 		{
 			if (memcmp(psSend, "32", 2) == 0)
-			{		
+			{
 				PubCancelPIN_PINPAD();
+			}
+			if (memcmp(psSend, "\x4C\x30\x2F\x36", 4) == 0)
+			{
+				PubL3CancalReadCard();
 			}
 			return SendAck(nPort);
 		}
@@ -2000,11 +2004,10 @@ int PubEsignature_PINPAD(char *pszCharaterCode, char *pszSignName, int nTimeOut)
 	return nRet;
 }
 
-
-int PubCalcKcv_PINPAD( int nKeyIndex,int nKeyType, char *psKcv)
+int PubGetKcv_PINPAD( int nKeyIndex,int nKeyType, char *psKcv)
 {
 	int nRet = 0;
-	int nLen = 0;
+	int nLen = 0, nOff;
 	
 	nRet = ProInitPinpadAux(nPinpadPort, nPinpadBps);
 	if (nRet != APP_SUCC)
@@ -2016,41 +2019,44 @@ int PubCalcKcv_PINPAD( int nKeyIndex,int nKeyType, char *psKcv)
 
 	MEMSETSENDBUF;
 	MEMSETRECVBUF;
-	
+	nOff = 0;
 	memcpy(sSendBuf, "52", 2);
-	sSendBuf[2] = SEPERATOR_CMD;
-	sSendBuf[3] = nKeyIndex;
+	nOff += 2;
+	sSendBuf[nOff] = SEPERATOR_CMD;
+	nOff += 1;
+	sSendBuf[nOff] = nKeyIndex;
+	nOff += 1;
 	switch(nKeyType)
 	{
 	case KEY_TYPE_TMK:
-		sSendBuf[4] = 0;
+		sSendBuf[nOff] = 0;
 		break;		
 	case KEY_TYPE_PIN:
-		sSendBuf[4] = 1;
+		sSendBuf[nOff] = 1;
 		break;
 	case KEY_TYPE_MAC:
-		sSendBuf[4] = 2;
+		sSendBuf[nOff] = 2;
 		break;
 	case KEY_TYPE_DATA:
-		sSendBuf[4] = 3;
+		sSendBuf[nOff] = 3;
 		break;
 	default:
 		return APP_FAIL;
 	}
 
-	nLen = 5;
+	nOff += 1;
 	
-	nRet = PinPad_SendRecv(1, sSendBuf, nLen, sRecvBuf, (uint *)&nLen, nPinpadPort, nPinpadTimeOut);
+	nRet = PinPad_SendRecv(1, sSendBuf, nOff, sRecvBuf, (uint *)&nLen, nPinpadPort, nPinpadTimeOut);
 	if (nRet != APP_SUCC)
 	{
-		PINPAD_TRACE_SECU("PubCalcKcv_PINPAD:PinPad_SendRecv APP_FAIL");
+		PINPAD_TRACE_SECU("PubGetKcv_PINPAD:PinPad_SendRecv APP_FAIL");
 		ProSetSecurityErrCode(ERR_PINPAD_SENDEXRF, 0);
 		return APP_FAIL;
 	}
 
 	if(memcmp(sRecvBuf, "53", 2) != 0)
 	{
-		PINPAD_TRACE_SECU("PubCalcKcv_PINPAD:CMD erro");
+		PINPAD_TRACE_SECU("PubGetKcv_PINPAD:CMD erro");
 		ProSetSecurityErrCode(ERR_PINPAD_RECEIVEEXRF, 0);
 		return APP_FAIL;
 	}
@@ -2946,6 +2952,141 @@ void PubL3CancalReadCard()
 		PINPAD_TRACE_SECU("cancel read card fail = %d",nRet);
 		return;
 	}
+}
+
+/**
+* @brief check ICC
+* @return description
+* @retval app_succ IC card detected
+*/
+int PubCheckIcc_PINPAD()
+{
+	int nRet, nLen;
+	int nOff = 0;
+	char cCardType;
+	
+	nRet = ProInitPinpadAux(nPinpadPort, nPinpadBps);
+	if (nRet != APP_SUCC)
+	{
+		PINPAD_TRACE_SECU("PubScrClrs:ProInitPinpadAux APP_FAIL");
+		ProSetSecurityErrCode(ERR_PINPAD_INITAUX, 0);
+		return APP_FAIL;
+	}
+
+	MEMSETSENDBUF;
+	MEMSETRECVBUF;
+	
+	memcpy(sSendBuf, "BM", 2);
+	nOff += 2;
+	sSendBuf[nOff] = SEPERATOR_CMD;
+	nOff += 1;
+	memcpy(sSendBuf + nOff, "remove card", 11);
+	nOff += 11;
+	sSendBuf[nOff] = 0x1C;
+
+	nRet = PinPad_SendRecv(1, sSendBuf, nOff, sRecvBuf, (uint *)&nLen, nPinpadPort, nPinpadTimeOut);
+	if (nRet != APP_SUCC)
+	{
+		PINPAD_TRACE_SECU("PubScrClrs_PINPAD:PinPad_SendRecv APP_FAIL");
+		ProSetSecurityErrCode(ERR_PINPAD_SENDEXRF, 0);
+		return APP_FAIL;
+	}
+
+	nOff = 0;
+	if(memcmp(sRecvBuf, "BN", 2) != 0)
+	{
+		PINPAD_TRACE_SECU("PubScrClrs_PINPAD:CMD erro");
+		ProSetSecurityErrCode(ERR_PINPAD_RECEIVEEXRF, 0);
+		return APP_FAIL;
+	}
+	nOff += 3;
+	if(memcmp(sRecvBuf+nOff, "00", 2) != 0)
+	{
+		return APP_QUIT;
+	}
+	nOff += 2;
+	cCardType = sRecvBuf[nOff];
+	if (cCardType == 0x01) { // 01 -IC 02 - RF
+		return APP_SUCC;
+	}
+	
+	return APP_QUIT;
+}
+
+int PubBeep_PINPAD()
+{
+	int nRet, nLen;
+	int nOff = 0;
+	
+	nRet = ProInitPinpadAux(nPinpadPort, nPinpadBps);
+	if (nRet != APP_SUCC)
+	{
+		PINPAD_TRACE_SECU("PubScrClrs:ProInitPinpadAux APP_FAIL");
+		ProSetSecurityErrCode(ERR_PINPAD_INITAUX, 0);
+		return APP_FAIL;
+	}
+
+	MEMSETSENDBUF;
+	MEMSETRECVBUF;
+	
+	memcpy(sSendBuf, "39", 2);
+	nOff += 2;
+	sSendBuf[nOff] = SEPERATOR_CMD;
+	nOff += 1;
+	sSendBuf[nOff] = 0x00;
+	nOff += 1;
+	PubIntToC2(sSendBuf + nOff, 100);
+	nOff += 2;
+
+	nRet = PinPad_SendRecv(0, sSendBuf, nOff, sRecvBuf, (uint *)&nLen, nPinpadPort, nPinpadTimeOut);
+	if (nRet != APP_SUCC)
+	{
+		PINPAD_TRACE_SECU("PubScrClrs_PINPAD:PinPad_SendRecv APP_FAIL");
+		ProSetSecurityErrCode(ERR_PINPAD_SENDEXRF, 0);
+		return APP_FAIL;
+	}
+
+	return APP_SUCC;
+}
+
+int PubReboot_PINPAD()
+{
+	int nRet, nLen;
+	int nOff = 0;
+	
+	nRet = ProInitPinpadAux(nPinpadPort, nPinpadBps);
+	if (nRet != APP_SUCC)
+	{
+		PINPAD_TRACE_SECU("PubScrClrs:ProInitPinpadAux APP_FAIL");
+		ProSetSecurityErrCode(ERR_PINPAD_INITAUX, 0);
+		return APP_FAIL;
+	}
+
+	MEMSETSENDBUF;
+	MEMSETRECVBUF;
+
+	memcpy(sSendBuf, "A2", 2);
+	nOff += 2;
+	sSendBuf[nOff] = SEPERATOR_CMD;
+	nOff += 1;
+
+	nRet = PinPad_SendRecv(0, sSendBuf, nOff, sRecvBuf, (uint *)&nLen, nPinpadPort, nPinpadTimeOut);
+	if (nRet != APP_SUCC)
+	{
+		PINPAD_TRACE_SECU("PubScrClrs_PINPAD:PinPad_SendRecv APP_FAIL");
+		ProSetSecurityErrCode(ERR_PINPAD_SENDEXRF, 0);
+		return APP_FAIL;
+	}
+
+	nOff = 0;
+	if(memcmp(sRecvBuf, "A3", 2) != 0)
+	{
+		PINPAD_TRACE_SECU("PubScrClrs_PINPAD:CMD erro");
+		ProSetSecurityErrCode(ERR_PINPAD_RECEIVEEXRF, 0);
+		return APP_FAIL;
+	}
+
+	return APP_SUCC;
 }
 
 /* End of pindpad.c */

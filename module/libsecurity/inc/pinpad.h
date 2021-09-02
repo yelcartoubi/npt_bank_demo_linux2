@@ -140,7 +140,7 @@ extern int PubCancelPIN_PINPAD(void);
 extern int PubDoScan_PINPAD(char *pszBuffer);
 extern int PubEsignature_PINPAD(char *pszCharaterCode, char *pszSignName, int nTimeOut);
 extern int PubInjectKey_PINPAD(int nKeyType, int nSrcIndex, int nDstIndex,const char *psKeyValue, int nKeyLen, char *psCheckValue);
-extern int PubCalcKcv_PINPAD( int nKeyIndex,int nKeyType, char *psKcv);
+extern int PubGetKcv_PINPAD( int nKeyIndex,int nKeyType, char *psKcv);
 extern int PubSetFontColor_PINPAD(unsigned short usColor, char cObject);
 extern int PubLoadImg_PINPAD(unsigned char ucImgID, int nImgLen, char *psImgData);
 extern int PubDispImg_PINPAD(unsigned char ucImgID, int nX, int nY);
@@ -155,6 +155,9 @@ extern int PubSwipeCard_PINPAD(char *pIn, char *pOut);
 extern int PubL3OrderSet_PINPAD(char *pL3Cfg, char *pszOutPut, int *pnOutPutLen);
 extern int PubL3PerformRecv_PINPAD(char *pszOutPut, int *pnOutPutLen);
 extern void PubL3CancalReadCard();
+extern int PubCheckIcc_PINPAD();
+extern int PubBeep_PINPAD();
+extern int PubReboot_PINPAD();
 #endif
 
 /**< End of lpindpad.h */
