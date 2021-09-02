@@ -907,12 +907,13 @@ int TxnCommonEntry(char cTransType, int *pnInputMode)
 	STSYSTEM stSystem, stSystemBak;
 	STREVERSAL stReversal;
 	STTRANSCFG stTransCfg;
-	STTRANSRECORD stTransRecord;
+	STTRANSRECORD stTransRecord, stOldTransRecord;
 
 	memset(&stSystem, 0, sizeof(STSYSTEM));
 	memset(&stSystemBak, 0, sizeof(STSYSTEM));
 	memset(&stReversal, 0, sizeof(STREVERSAL));
 	memset(&stTransRecord, 0, sizeof(STTRANSRECORD));
+	memset(&stOldTransRecord, 0, sizeof(STTRANSRECORD));
 
 	stSystem.cTransType = cTransType;
 	
@@ -951,8 +952,8 @@ int TxnCommonEntry(char cTransType, int *pnInputMode)
 	*/
 	if (stTransCfg.cOperFlag & CFG_SEARCH) 
 	{
-		ASSERT_FAIL(TxnSearchRecord(szTitle, cTransType, &stTransRecord, szInvno));
-		TxnObtainFromRecord(stTransRecord, &stSystem); // update system data from original record
+		ASSERT_FAIL(TxnSearchRecord(szTitle, cTransType, &stOldTransRecord, szInvno));
+		TxnObtainFromRecord(stOldTransRecord, &stSystem); // update system data from original record
 	}
 
 	/**

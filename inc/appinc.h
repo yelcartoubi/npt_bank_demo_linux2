@@ -15,6 +15,7 @@
 #define _APPINC_H_
 
 #include "main.h"
+#include "elecsign.h"
 #include "txn_process.h"
 #include "batch.h"
 #include "settle.h"

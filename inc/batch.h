@@ -85,6 +85,7 @@ extern void GetRecordNum(int *);
 extern int FetchCurrentRecord(STTRANSRECORD *);
 extern int RecordOneByOne(void);
 extern int FindByInvoice(int);
+extern int FindSignpicByTrace();
 extern int GetFailSendNum(char);
 extern int DispRecordInfo(const char * , const STTRANSRECORD *);
 extern int GetTcNum(int *pnTcNum);

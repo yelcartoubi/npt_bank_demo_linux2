@@ -638,7 +638,8 @@ int DoLookUp()
 	char *pszItems[] = {
 		tr("1.VIEW DETAIL"),
 		tr("2.VIEW ANY"),
-		tr("3.VIEW TOTAL")
+		tr("3.VIEW TOTAL"),
+		tr("4.VIEW Sign"),
 	};
 	int nSelcItem = 1, nStartItem = 1;
 
@@ -655,6 +656,9 @@ int DoLookUp()
 		break;
 	case 3:
 		ViewTotal();
+		break;
+	case 4:
+		FindSignpicByTrace();
 		break;
 	default:
 		break;

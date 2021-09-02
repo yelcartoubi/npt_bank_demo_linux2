@@ -26,6 +26,7 @@ static int gnCurrentRecNo=0;
 int InitBatchFile(void)
 {
 	STRECFILE stTransRecordFile;
+	char szCmd[32] = {0};
 
 	strcpy( stTransRecordFile.szFileName, FILE_RECORD);
 	stTransRecordFile.cIsIndex = FILE_NOCREATEINDEX;				
@@ -36,6 +37,9 @@ int InitBatchFile(void)
 	stTransRecordFile.unIndex2Len = 1;
 	gnCurrentRecNo = 0;
 	ASSERT_FAIL(PubCreatRecFile(&stTransRecordFile));
+
+	sprintf(szCmd, "rm %s/*.bmp", ELECSIGN_PATH);
+	system(szCmd);
 
 	return APP_SUCC;
 }
@@ -215,6 +219,44 @@ int FindByInvoice(int PrintFlag)
 	}
 	return APP_SUCC;
 }
+
+ /**
+* @brief Find sign pic with trace number and display in the screen
+* @param
+* @return
+* @li APP_SUCC		
+* @li APP_FAIL
+*/
+int FindSignpicByTrace()
+{
+	int nLen;
+	char szInvno[6+1];
+	char sTrace[3] = {0};
+	char szDispTitle[32] = {0};
+	char szFileName[64] = {0};
+
+	strcpy(szDispTitle, tr("VIEW Sign"));
+
+	nLen = 6;
+	memset(szInvno, 0, sizeof(szInvno));
+	ASSERT_QUIT(PubInputDlg(szDispTitle, tr("TRACE NO:"), szInvno, &nLen, 1, 6, 0, INPUT_MODE_NUMBER));	
+	PubAddSymbolToStr(szInvno, 6, '0', 0);
+	PubAscToHex((uchar *)szInvno, 6, 0, (uchar *)sTrace);	
+	PubClearAll();
+	sprintf(szFileName, "%s/%s.bmp", ELECSIGN_PATH, szInvno);
+	if (PubFsExist(szFileName) == NAPI_ERR) {
+		memset(szDispTitle, 0, sizeof(szDispTitle));
+		sprintf(szDispTitle, "%s is not exist", szFileName);
+		PubMsgDlg("warning", szDispTitle, 1, 30);
+		return APP_QUIT;
+	}
+	PubDisplayLogo(szFileName, 0, 30);
+	PubUpdateWindow();
+	PubWaitConfirm(30);
+
+	return APP_SUCC;
+}
+
 
 /**
 * @brief Get current translog

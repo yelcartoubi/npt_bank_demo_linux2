@@ -174,6 +174,17 @@ int PrePrintInMiddle( char *pszStr, int nLineFeed)
 	//PubPrePrinter(szLineFeed);
 }
 
+static int PrintSign(const STTRANSRECORD *pstTransRecord)
+{
+	char szTrace[6+1] = {0};
+	char szFileName[32+1] = {0};
+
+	PubHexToAsc((uchar *)pstTransRecord->sTrace, 6, 0, (uchar *)szTrace);
+	sprintf(szFileName, "%s/%s.bmp", ELECSIGN_PATH, szTrace);
+	PubPrintPicture(0, szFileName);
+	return APP_SUCC;
+}
+
 static int PrintStatement(const STTRANSRECORD *pstTransRecord, const int nCurrentPage)
 {
 	char szTmpStr[128] = {0};
@@ -202,6 +213,7 @@ static int PrintStatement(const STTRANSRECORD *pstTransRecord, const int nCurren
 	{
 		PrePrintInMiddle(tr("NO SIGNATURE REQUIRED"), 1);
 	}
+	PrintSign(pstTransRecord);
 
 	if (nCurrentPage == 1) //merchant copy
 	{

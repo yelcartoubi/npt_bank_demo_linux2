@@ -98,6 +98,7 @@ static int FirstRunChk(void)
 	char szVersion[32+1] = {0};
 	char szLanguage[1+1] = {0};
 	int nLen;
+	char szCmd[32] = {0};
 
 	if (APP_SUCC != IsFirstRun())
 	{
@@ -119,6 +120,8 @@ static int FirstRunChk(void)
 		ChkPdAndRF();
 		LoadKey();
 #endif
+		sprintf(szCmd, "mkdir %s", ELECSIGN_PATH);
+		system(szCmd);
 	}
 
 	if (GetTag(FILE_APPPOSPARAM, TAG_LANGUAGE, &nLen, szLanguage) == APP_SUCC)
@@ -136,6 +139,11 @@ static int FirstRunChk(void)
 	{
 		UpdateTagParam(FILE_APPPOSPARAM, TAG_VERSION, strlen(APP_VERSION), APP_VERSION);
 		InitExPosParam();
+	}
+
+	if (PubFsExist(ELECSIGN_PATH) == NAPI_ERR) {
+		sprintf(szCmd, "mkdir %s", ELECSIGN_PATH);
+		system(szCmd);
 	}
 
 	return APP_SUCC;

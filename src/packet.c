@@ -634,6 +634,7 @@ int TradeComplete(char* pszTitle, const STSYSTEM *pstSystem, STTRANSRECORD *pstT
 {
 	int nRet;
 	char sTrace[3+1];
+	char szTrace[6+1] = {0};
 	STTRANSRECORD stTransRecordOld;
 	STREVERSAL stReversal;	
 	
@@ -677,6 +678,12 @@ int TradeComplete(char* pszTitle, const STSYSTEM *pstSystem, STTRANSRECORD *pstT
 	}
 
 	ChangeSettle(pstSystem);
+
+	PubHexToAsc((uchar *)pstTransRecord->sTrace, 6, 0, (uchar *)szTrace);
+
+	if ((PubIsSupportPrint() == NO) || (pstSystem->cPinAndSigFlag & CVM_SIG)) {
+		ElecSign(szTrace);
+	}
 
 	PubClearAll();
 	PubDisplayTitle(pszTitle);
