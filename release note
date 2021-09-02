@@ -1,5 +1,11 @@
 bankdemo by napi
 ====================================================
+Date: 2021/09/02 +0800
+update Newland_L3_configuration.xml file
+changes include:
+AID CLSS MIR configure
+AID CLSS INTERAC configure
+====================================================
 Date: 2021/09/01 +0800
 modify pinpad instruction set.
 changes include:
