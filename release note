@@ -1,5 +1,11 @@
 bankdemo by napi
 ====================================================
+Date: 2021/09/13 +0800
+added Electronic signature setting
+changes include:
+manage: 7.SYSTEM->8.ELEC SIGN-> "OPEN ELEC SIGN?"?
+mainMenu: REPORT->4.LOOK UP->"4.VIEW SIGN"
+====================================================
 Date: 2021/09/02 +0800
 added Electronic signature
 ====================================================

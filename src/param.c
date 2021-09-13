@@ -168,6 +168,7 @@ int InitPosDefaultParam()
 	gstAppPosParam.cFontSize = 24;
 	gstAppPosParam.cPinPadUsage = PINPADMODE_CARD | PINPADMODE_PIN;
 	gstAppPosParam.cTomsObtainCmd = NO;
+	gstAppPosParam.cElecSignFlag = NO;
 	InitPosParamFile(gstAppPosParam);
 
 	/**<Settle data*/
@@ -3909,4 +3910,55 @@ int GetIsLoadXMLConfig()
 	}
 	return TRUE;
 }
+
+char GetElecSignFlag()
+{
+	return gstAppPosParam.cElecSignFlag;
+}
+
+void SetElecSignFlag(char cFlag)
+{
+	if (cFlag != YES && cFlag != NO) {
+		cFlag = NO;
+	}
+	gstAppPosParam.cElecSignFlag = cFlag;
+	UpdateTagParam(FILE_APPPOSPARAM, TAG_ELECSIGN, 1, &gstAppPosParam.cElecSignFlag);
+}
+
+/**
+* @brief Set is use Electronic sign
+* @return
+* @li APP_SUCC
+* @li APP_QUIT
+* @li APP_FAIL
+*/
+int SetFunctionIsELecSign(void)
+
+{
+	char cSelect = 0;
+
+	if (APP_SUCC != PubGetHardwareSuppot(HARDWARE_SUPPORT_TOUCH_SCREEN, NULL))
+	{
+		PubMsgDlg(tr("Warning"),tr("Touch screen is not supported"), 1, 3);
+		return APP_QUIT;
+	}
+
+	cSelect = gstAppPosParam.cElecSignFlag == YES ? 1 : 0;
+	ASSERT_RETURNCODE(PubSelectYesOrNo((char*)tr("SET ELEC SIGN"), (char*)tr("OPEN ELEC SIGN?"), NULL, &cSelect));
+	switch(cSelect)
+	{
+	case '0':
+	case '1':
+		gstAppPosParam.cElecSignFlag = cSelect;
+		break;
+	default:
+		return APP_QUIT;
+	}
+	ASSERT_FAIL(UpdateTagParam(FILE_APPPOSPARAM, TAG_ELECSIGN, 1, &gstAppPosParam.cElecSignFlag));
+
+	return APP_SUCC;
+}
+
+
+
 

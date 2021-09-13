@@ -681,7 +681,7 @@ int TradeComplete(char* pszTitle, const STSYSTEM *pstSystem, STTRANSRECORD *pstT
 
 	PubHexToAsc((uchar *)pstTransRecord->sTrace, 6, 0, (uchar *)szTrace);
 
-	if ((PubIsSupportPrint() == NO) || (pstSystem->cPinAndSigFlag & CVM_SIG)) {
+	if (GetElecSignFlag() == YES) {
 		ElecSign(szTrace);
 	}
 

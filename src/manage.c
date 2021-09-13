@@ -635,16 +635,18 @@ int DoPrint()
 
 int DoLookUp()
 {
-	char *pszItems[] = {
+	int nSelcItem = 1, nStartItem = 1, nNum = 3;
+	char *pszItems1[5] = {
 		tr("1.VIEW DETAIL"),
 		tr("2.VIEW ANY"),
 		tr("3.VIEW TOTAL"),
-		tr("4.VIEW Sign"),
 	};
-	int nSelcItem = 1, nStartItem = 1;
 
-
-	ASSERT_QUIT(PubShowMenuItems(tr("LOOK UP"), pszItems, sizeof(pszItems)/sizeof(char *), &nSelcItem, &nStartItem, 0));
+	if (GetElecSignFlag() == YES) {
+		pszItems1[nNum] = tr("4.VIEW SIGN");
+		nNum++;
+	}
+	ASSERT_QUIT(PubShowMenuItems(tr("LOOK UP"), pszItems1, nNum, &nSelcItem, &nStartItem, 0));
 
 	switch (nSelcItem)
 	{
@@ -907,7 +909,8 @@ int AdminMenu()
 		tr("4.PINPAD"),
 		tr("5.LANGUAGE"),
 		tr("6.FONT SIZE"),
-		tr("7.EXTERN RF")
+		tr("7.EXTERN RF"),
+		tr("8.ELEC SIGN")
 	};
 	int nSelcItem = 1, nStartItem = 1;
 
@@ -940,6 +943,9 @@ int AdminMenu()
 			break;
 		case 7:
 			SetFunctionIsExRF();
+			break;
+		case 8:
+			SetFunctionIsELecSign();
 			break;
 		default:
 			break;

@@ -498,6 +498,9 @@ static void AssignToPosParam(int nTagid, int nValueLen, char *pszTagValue, STAPP
     case TAG_LOCKPROMPTINFO:
         memcpy(pstAppPosParam->szLockPromptInfo, pszTagValue, nValueLen);
         break;
+	case TAG_ELECSIGN:
+        pstAppPosParam->cElecSignFlag = pszTagValue[0];
+        break;
 	default:
 	break;
 	}
@@ -1247,6 +1250,7 @@ int UpdateAppPosParam(char *pszFileName, STAPPPOSPARAM stAppPosParam)
 	ASSERT_FAIL(UpdateTagParam(pszFileName, TAG_KEYSYSTEMTYPE, 1, &stAppPosParam.cKeySystemType));
 	ASSERT_FAIL(UpdateTagParam(pszFileName, TAG_LANGUAGE, 1, &stAppPosParam.cLanguage));
 	ASSERT_FAIL(UpdateTagParam(pszFileName, TAG_FONTSIZE, 1, &stAppPosParam.cFontSize));
+	ASSERT_FAIL(UpdateTagParam(pszFileName, TAG_ELECSIGN, 1, &stAppPosParam.cElecSignFlag));
 
 	SetAppPosParam(stAppPosParam);
 
@@ -1388,6 +1392,7 @@ int InitPosParamFile(STAPPPOSPARAM stAppPosParam)
 	ASSERT_FAIL(AddTagParam(pszFileName, TAG_FONTSIZE, 1, &stAppPosParam.cFontSize));
 	GenerateAppChkValue(szChkValue);
 	ASSERT_FAIL(AddTagParam(pszFileName, TAG_APPCHKVALUE, APPCHKLEN + 1, szChkValue));
+	ASSERT_FAIL(AddTagParam(pszFileName, TAG_ELECSIGN, 1, &stAppPosParam.cElecSignFlag));
 
 	return APP_SUCC;
 }

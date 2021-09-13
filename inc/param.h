@@ -130,6 +130,7 @@ typedef struct
 	char cL3initStatus;
     char cLockTerminal;
     char szLockPromptInfo[32+1];
+	char cElecSignFlag;
 }STAPPPOSPARAM;
 
 /**
@@ -446,5 +447,8 @@ extern char GetLockTerminal();
 extern int SetLockPromptInfo(char *pszPromptInfo);
 extern char *GetLockPromptInfo();
 
+extern char GetElecSignFlag();
+extern void SetElecSignFlag(char cFlag);
+extern int SetFunctionIsELecSign(void);
 #endif
 
