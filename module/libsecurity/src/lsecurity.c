@@ -252,6 +252,93 @@ int PubGetKeySystemType()
 	return gcKeySystem;
 }
 
+static int LoadKeyBySec(int nKeyType, int nKeyIndex, const char *psKey, const char *psKSN, int nKeyLen, const char* psCheckValue)
+{
+	int nRet;
+	ST_SEC_KEYIN_DATA stKGData;
+	ST_SEC_KCV_DATA stKcvData;
+
+	if (ProCheckInit() != APP_SUCC)
+	{
+		return APP_FAIL;
+	}
+
+	if(psKey == NULL)
+	{
+		PINPAD_TRACE_SECU("psKey error");
+		ProSetSecurityErrCode(ERR_PINPAD_PARAM,0);
+		return APP_FAIL;
+	}
+
+	if(nKeyLen != 16 && nKeyLen != 24) /* no support 8 bytes*/
+	{
+		PINPAD_TRACE_SECU("nKeyLen error");
+		ProSetSecurityErrCode(ERR_PINPAD_PARAM,0);
+		return APP_FAIL;
+	}
+	if(nKeyType != KEY_TYPE_TMK)
+	{
+		PINPAD_TRACE_SECU("nKeyType error");
+		ProSetSecurityErrCode(ERR_PINPAD_PARAM,0);
+		return APP_FAIL;
+	}
+
+	if (gnSecurityMode == SECRITY_MODE_INSIDE)
+	{
+		memset(&stKGData, 0, sizeof(stKGData));
+		memset(&stKcvData, 0, sizeof(stKcvData));
+
+		stKGData.ucKeyIdx  = nKeyIndex;
+		stKGData.KeyType = KEY_TYPE_DES;
+		
+		stKGData.pKeyData = (uchar *)psKey;
+		stKGData.nKeyDataLen = nKeyLen;
+		stKGData.nKeyLen = nKeyLen;
+
+		if(gcKeySystem == SECRITY_KEYSYSTEM_DUKPT) {
+			stKGData.KeyUsage = KEY_USE_DUKPT;
+			stKGData.psKsn = (uchar *)psKSN;
+			stKGData.nKsnLen = 10;
+		} else {
+			stKGData.KeyUsage = KEY_USE_KEK;
+		}
+
+		if (psCheckValue != NULL)
+		{
+			stKcvData.nCheckMode = NAPI_SEC_KCV_ZERO;
+			stKcvData.nLen = 3;
+			memcpy(stKcvData.sCheckBuf, psCheckValue, stKcvData.nLen);
+		}
+		else
+		{
+			stKcvData.nCheckMode = NAPI_SEC_KCV_NONE;
+			stKcvData.nLen = 0;
+		}
+		nRet = NAPI_SecGenerateKey(SEC_KIM_CLEAR, &stKGData, &stKcvData);
+		if (nRet != NAPI_OK)
+		{
+			ProSetSecurityErrCode(ERR_LOADKEY,nRet);
+			PINPAD_TRACE_SECU("NAPI_SecGenerateKey error [nRet = %d] index = %d",nRet, nKeyIndex);
+			return APP_FAIL;
+		}
+		PINPAD_TRACE_SECU("(%d,%d) INSIDE SUCC",nKeyIndex,nKeyType);
+		return APP_SUCC;
+	}
+	else
+	{
+		int nInDex;
+		if (nKeyType == KEY_TYPE_DATA)
+		{
+			nInDex = 128 + gnMainKeyIndex;
+		}
+		else
+		{
+			nInDex = gnMainKeyIndex;
+		}
+		return gstPinpad.pLoadKey(nKeyType, nInDex, psKey, nKeyLen, NULL);
+	}
+}
+
 static int LoadKeyByKLA(int nKeyType, int nKeyIndex, const char *psKey, const char *psKSN, int nKeyLen)
 {
 	enum sec_key_arch 
@@ -364,7 +451,7 @@ static int LoadKeyByKLA(int nKeyType, int nKeyIndex, const char *psKey, const ch
 		return APP_FAIL;
 	}
 
-	return NAPI_OK;
+	return APP_SUCC;
 }
 
 /**
@@ -410,10 +497,14 @@ int PubLoadMainKey(int nIndex, const char *psKey, const char *psKSN, int nKeyLen
 
 	if (gnSecurityMode == SECRITY_MODE_INSIDE)
 	{
-		nRet = LoadKeyByKLA(KEY_TYPE_TMK, nIndex, psKey, psKSN, nKeyLen);
-		if (nRet != NAPI_OK)
+		if (PubGetSecCfg(SEC_CFG_CLEARKEY_LIMIT) == YES) {
+			nRet = LoadKeyBySec(KEY_TYPE_TMK, nIndex, psKey, psKSN, nKeyLen, NULL);
+		} else {
+			nRet = LoadKeyByKLA(KEY_TYPE_TMK, nIndex, psKey, psKSN, nKeyLen);
+		}
+		if (nRet != APP_SUCC)
 		{
-			PINPAD_TRACE_SECU("LoadKeyByKLA error nRet=%d",nRet);
+			PINPAD_TRACE_SECU("LoadKey error nRet=%d",nRet);
 			ProSetSecurityErrCode(ERR_LOADKEY,nRet);
 			return APP_FAIL;
 		}

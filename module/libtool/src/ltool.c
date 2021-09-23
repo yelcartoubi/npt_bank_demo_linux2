@@ -5406,3 +5406,53 @@ int PubGetPosInfo(int emFlag, char* pszBuf, int nBuffLen)
 	return APP_FAIL;
 }
 
+/**
+* @brief Get Security configure
+* @param [in] emFlag	EM_SEC_CFG 
+* @param 
+* @return 
+* @li YES
+* @li NO
+*/
+YESORNO PubGetSecCfg(int emSecCfg)
+{
+	uint unCfg;
+	int nRet;
+
+	nRet = NAPI_SecGetCfg(&unCfg);
+	if (nRet != NAPI_OK) {
+		PubDebug("NAPI_SecGetCfg = %d", nRet);
+		return APP_FAIL;
+	}
+
+	PubDebug("unCfg = %x", unCfg);
+	switch (emSecCfg)
+	{
+	case SEC_CFG_UNIQUE:
+		if (unCfg & 0x00000002) {
+			return YES;
+		}
+		break;
+	case SEC_CFG_MISUSE:
+		if (unCfg & 0x00000004) {
+			return YES;
+		}
+		break;
+	case SEC_CFG_KEYLEN_LIMIT:
+		if (unCfg & 0x00000020) {
+			return NO;
+		}
+		return YES;
+	case SEC_CFG_CLEARKEY_LIMIT:
+		if (unCfg & 0x00000100) {
+			return NO;
+		}
+		return YES;
+	default:
+		break;
+	}
+
+	return NO;
+}
+
+

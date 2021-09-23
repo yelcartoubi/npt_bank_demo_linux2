@@ -81,6 +81,17 @@ enum EM_ADDCH_MODE
 	ADDCH_MODE_BEFORE_AFTER_STRING		/**<Add characters before and after a string*/
 };
 
+typedef enum
+{
+	SEC_CFG_UNIQUE,			/* check if installing key is unique : 1 - yes */
+	SEC_CFG_MISUSE,			/* check if key is misused according to its type : 1 - yes */
+	SEC_CFG_TRIES_LIMIT,	/* check if current function is overrun: 1 - yes */
+	SEC_CFG_STRENGTH,		/* keys should be protected by the same or higher strength keys: 1 - yes */
+	SEC_CFG_KEYLEN_LIMIT,	/* key length should be stronger than 8 bytes : 0- support */
+	SEC_CFG_KSN_UPDATE,		/* KSN updated after the KSN has been used : 1 - yes */
+	SEC_CFG_CLEARKEY_LIMIT, /* check if the clearkey is allowed to be installed: 0 - support */
+} EM_SEC_CFG;
+
 enum EM_HARDWARE_SUPPORT
 {
 	HARDWARE_SUPPORT_WIRELESS=0,		/**<Wireless modem*/
@@ -1556,6 +1567,17 @@ void PubBufToAux(const char *pszBuf, const int nBufLen);
 int PubGetDebugPortLevel(void);
 
 void ProGetLogFileAttr(char *pszFilePath, char *pszLogFileName, char *pszOldLogFileName);
+
+/**
+* @brief Get Security configure
+* @param [in] emFlag	EM_SEC_CFG 
+* @param 
+* @return 
+* @li YES
+* @li NO
+*/
+YESORNO PubGetSecCfg(int emSecCfg);
+
 
 /** @}*/ // End of Debug
 

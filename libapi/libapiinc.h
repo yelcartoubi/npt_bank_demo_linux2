@@ -34,5 +34,6 @@
 #include "napi_serialport.h"
 #include "napi_led.h"
 #include "napi_smartcard.h"
+#include "napi_crypto.h"
 #endif
 
