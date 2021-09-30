@@ -497,10 +497,10 @@ int PubLoadMainKey(int nIndex, const char *psKey, const char *psKSN, int nKeyLen
 
 	if (gnSecurityMode == SECRITY_MODE_INSIDE)
 	{
-		if (PubGetSecCfg(SEC_CFG_CLEARKEY_LIMIT) == YES) {
-			nRet = LoadKeyBySec(KEY_TYPE_TMK, nIndex, psKey, psKSN, nKeyLen, NULL);
-		} else {
+		if (PubFsExist("/usr/sbin/NKLoader") == NAPI_OK) {
 			nRet = LoadKeyByKLA(KEY_TYPE_TMK, nIndex, psKey, psKSN, nKeyLen);
+		} else {
+			nRet = LoadKeyBySec(KEY_TYPE_TMK, nIndex, psKey, psKSN, nKeyLen, NULL);
 		}
 		if (nRet != APP_SUCC)
 		{

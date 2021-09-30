@@ -1,5 +1,10 @@
 bankdemo by napi
 ====================================================
+Date: 2021/09/30 +0800
+Updated the criteria for installing plaintext keys
+changes include:
+PubLoadMainKey: PubGetSecCfg --> PubFsExist("/usr/sbin/NKLoader")
+====================================================
 Date: 2021/09/23 +0800
 added loading clear key by NAPI_SecGenerateKey
 changes include:
