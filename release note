@@ -1,5 +1,17 @@
 bankdemo by napi
 ====================================================
+Date: 2021/10/18 +0800
+remove second GAC in DEMO mode
+changes include:
+int CompleteTransaction {
+...
+#ifdef DEMO
+    strcpy(pstSystem->szResponse, "00");
+	return APP_SUCC;
+#endif
+...
+}
+====================================================
 Date: 2021/09/30 +0800
 Updated the criteria for installing plaintext keys
 changes include:

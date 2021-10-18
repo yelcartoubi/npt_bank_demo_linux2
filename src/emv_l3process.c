@@ -333,8 +333,8 @@ int CompleteTransaction(char* pszTitle, int nOnlineResult, STSYSTEM* pstSystem, 
     L3_TXN_RES res; 
 
 #ifdef DEMO
-    //return APP_SUCC;
     strcpy(pstSystem->szResponse, "00");
+	return APP_SUCC;
 #endif
 
     szTlvList[0] = (char)nOnlineResult;
