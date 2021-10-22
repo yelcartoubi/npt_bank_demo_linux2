@@ -118,7 +118,6 @@ static int FirstRunChk(void)
 #ifdef DEMO
 		SetControlChkPinpad(YES);
 		ChkPdAndRF();
-		LoadKey();
 #endif
 		sprintf(szCmd, "mkdir %s", ELECSIGN_PATH);
 		system(szCmd);

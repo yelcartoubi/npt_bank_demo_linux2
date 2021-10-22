@@ -20,11 +20,9 @@
 static void ClearRevFlag(void);
 static int DoClear(void);
 static int KeyManage(void);
-static int SetTmkByHand(void);
 static int PosPrintSet(void);
 static int MerchantManage(void);
 static int ResendManage(void);
-
 
 /**
 * @brief Clear revesal flag
@@ -164,129 +162,6 @@ int ChkRF(void)
 	return APP_SUCC;
 }
 
-/**
-* @brief 				Get mainkey from Key pos
-* @param in cFlag 		0x03++16Tmi+16TAK+8REFNO
-* @return
-* @li APP_SUCC
-* @li APP_FAIL
-*/
-int GetTmkFromKeyPos()
-{
-	int nKeyIndex;
-	int nRet;
-	int nLen;
-	char szBuffer[21];
-	char szBcdKey[16+1];
-	STCOMMPARAM stPubCommParam;
-	char *pszTitle = tr("DOWNLOAD TMK");
-	// int nKeyLen;
-	char cIsPinPad=NO;
-	STSHOWINFOXY stShowInfoxy;
-
-	cIsPinPad = GetVarIsPinpad();
-	if (YES == cIsPinPad && YES == GetControlChkPinpad())
-	{
-		if (APP_SUCC != ChkPinpad())
-		{
-			return APP_FAIL;
-		}
-		SetControlChkPinpad(NO);
-	}
-	memset(&stPubCommParam, 0, sizeof(stPubCommParam));
-	stPubCommParam.cCommType= COMMTYPE_PORT;
-	stPubCommParam.ConnInfo.stPortParam.nAux = RS232;
-	stPubCommParam.ConnInfo.stPortParam.nBaudRate = BAUD9600;
-	stPubCommParam.ConnInfo.stPortParam.nDataBits = DATA_8;
-	stPubCommParam.ConnInfo.stPortParam.nParity = PAR_NONE;
-	stPubCommParam.ConnInfo.stPortParam.nStopBits = STOP_1;
-	stPubCommParam.cPreDialFlag = 0;
-	stPubCommParam.nTimeOut = 3;
-	stPubCommParam.cIsSupportQuitRecv = 1;
-
-	stShowInfoxy.nType = 0;
-	stShowInfoxy.nColumn = 0;
-	stShowInfoxy.nRow = 0;
-	PubSetShowXY(stShowInfoxy);
-
-	nRet = PubCommInit(&stPubCommParam);
-	if (nRet != APP_SUCC)
-	{
-		return APP_FAIL;
-	}
-	SetControlCommInit();
-
-	PubClearAll();
-	PubDisplayTitle(pszTitle);
-	PubDisplayStrInline(1, 2, tr("Connect To Key Pos"));
-	PubDisplayStrInline(1, 4, tr("[Cancel] to quit"));
-
-	PubUpdateWindow();
-
-	PubCommConnect();
-	while(1)
-	{
-		szBuffer[0] = EOT;
-		if(PubCommWrite(szBuffer, 1)==APP_FAIL)
-		{
-			PubMsgDlg(pszTitle, tr("SEND FAIL"), 3, 3);
-			PubCommHangUp();
-			return APP_FAIL;
-		}
-
-		szBuffer[0]=0;
-		nRet = PubCommRead(szBuffer, 1, &nLen);
-		if(APP_QUIT == nRet)
-		{
-			PubCommHangUp();
-			return APP_QUIT;
-		}
-		else if (APP_FAIL == nRet)
-		{
-			continue;
-		}
-
-		if(szBuffer[0]==ETX)
-		{
-			break;
-		}
-	}
-	memset(szBuffer, 0, sizeof(szBuffer));
-	nRet = PubCommRead(szBuffer, 2, &nLen);
-	if (nRet==APP_FAIL || nLen != 2 )
-	{
-		PubMsgDlg(pszTitle, tr("Index Err"), 3, 3);
-		PubCommHangUp();
-		return APP_FAIL;
-	}
-	nKeyIndex = atoi(szBuffer);
-
-	// nKeyLen = 16;
-
-	memset(szBcdKey, 0, sizeof(szBcdKey));
-	nRet = PubCommRead(szBcdKey, 16, &nLen);
-	if (nRet==APP_FAIL || nLen != 16 )
-	{
-		PubMsgDlg(pszTitle, tr("LEN ERR"), 3, 3);
-		PubCommHangUp();
-		return APP_FAIL;
-	}
-
-	nRet = PubLoadMainKey(nKeyIndex, szBcdKey, NULL, nLen);
-	if (nRet != APP_SUCC)
-	{
-		PubMsgDlg(pszTitle, tr("INSTALL KEY FAILS"), 3, 3);
-		PubCommHangUp();
-		return APP_FAIL;
-	}
-
-	SetVarMainKeyNo(nKeyIndex);
-
-	sprintf(szBuffer,  tr("Download Tmk(%d) Ok"),nKeyIndex);
-    PubMsgDlg(pszTitle, szBuffer, 1, 3);
-	return APP_SUCC;
-}
-
 static int GetKcv(void)
 {
 	int nIndex, nRet;
@@ -313,6 +188,11 @@ static int GetKcv(void)
 		return APP_FAIL;
 	}
 	DispTraceHex((char *)sKcv, nKcvLen, "TMK KCV: ");
+
+	if (KeyUsage == KEY_USE_DUKPT)
+	{
+		return APP_SUCC;
+	}
 
 	memset(sKcv, 0, sizeof(sKcv));
 	nKcvLen = 0;
@@ -350,6 +230,33 @@ static int GetKcv(void)
 	return APP_SUCC;
 }
 
+int CheckIsTmkExist()
+{
+	uchar sKcv[50] = {0};
+	int nKcvLen = 0, nIndex, nRet;
+	EM_SEC_CRYPTO_KEY_TYPE emType;
+	EM_SEC_KEY_USAGE emKeyUsage;
+
+	GetVarMainKeyNo(&nIndex);
+	emType = KEY_TYPE_DES;
+	if (GetVarKeySystemType() == KS_MSK)
+	{
+		emKeyUsage = KEY_USE_KEK;
+	}
+	else
+	{
+		emKeyUsage = KEY_USE_DUKPT;
+	}
+
+	nRet = NAPI_SecGetKeyInfo(SEC_KEY_INFO_KCV, (uchar)nIndex, emType, emKeyUsage, NULL, 0, sKcv, &nKcvLen);
+	if (nRet != NAPI_OK)
+	{
+		return APP_FAIL;
+	}
+
+	return APP_SUCC;
+}
+
 
 /**
 * @brief Key manage
@@ -361,13 +268,11 @@ int KeyManage(void)
 	int	nRet;
 	char *pszItems[] = {
 		tr("1.KEY SYSTEM TYPE"),
-		tr("2.INPUT TMK"),
-		tr("3.KEYNO"),
-		tr("4.CLEAR"),
-		tr("5.CHECK KCV")
+		tr("2.KEYNO"),
+		tr("3.CLEAR"),
+		tr("4.CHECK KCV")
 	};
 	int nSelcItem = 1, nStartItem = 1;
-
 
 	while(1)
 	{
@@ -378,13 +283,10 @@ int KeyManage(void)
 		case 1:
 			SetFunctionKeySystemType();
 			break;
- 		case 2:
-			SetTmkByHand();
-			break;
-		case 3:
+		case 2:
 			SetFunctionMainKeyNo();
 			break;
-		case 4:
+		case 3:
 			nRet = PubConfirmDlg(tr("KEY MANAGE"),tr("Clear all keys?"), 0, 0);
 			if (nRet == APP_SUCC)
 			{
@@ -394,90 +296,13 @@ int KeyManage(void)
 				}
 			}
 			break;
-		case 5:
+		case 4:
 			GetKcv();
 			break;
 		default:
 			break;
 		}
 	}
-
-	return APP_SUCC;
-}
-
-/**
-* @brief Set Tmk by hand
-*/
-int SetTmkByHand(void)
-{
-	int nKeyIndex;
-	int nRet;
-	int nLen = 0;
-	char szKeyIndex[2+1];
-	char szTmpStr[21] = {0};
-	char szAscKey[32+1], sBcdKey[16];
-	char szAscIPEK[32+1], sBcdIPEK[16];
-	char szAscKSN[20+1], sBcdKSN[10];
-	char *pszTitle = tr("INPUT BY MANUAL");
-	YESORNO cIsPinPad = NO;
-
-	/********************TMK**********************/
-	cIsPinPad = GetVarIsPinpad();
-	if (YES == cIsPinPad && YES == GetControlChkPinpad())
-	{
-		if (APP_SUCC != ChkPinpad())
-		{
-			return APP_FAIL;
-		}
-		SetControlChkPinpad(NO);
-	}
-
-	while (1)
-	{
-		memset(szKeyIndex, 0, sizeof(szKeyIndex));
-		ASSERT_QUIT(PubInputDlg(tr("INPUT KEY NO.:"),"(1 ~ 9)", szKeyIndex, &nLen, 1, 1, 0, INPUT_MODE_NUMBER));
-		nKeyIndex = atoi(szKeyIndex);
-		if ((nKeyIndex >= 1) && (nKeyIndex <= 9))
-		{
-			break;
-		}
-	}
-
-	if (GetVarKeySystemType() == KS_MSK)
-	{
-		memset(szAscKey, 0, sizeof(szAscKey));
-		ASSERT_QUIT(PubInputDlg(pszTitle, tr("INPUT TMK(32):"), szAscKey, &nLen, 32, 32, 0, INPUT_MODE_STRING));
-		PubAscToHex((uchar *)szAscKey, nLen, 0, (uchar *)sBcdKey);
-		nLen >>= 1;
-
-		nRet = PubLoadMainKey(nKeyIndex, sBcdKey, NULL, nLen);
-		if (nRet != APP_SUCC)
-		{
-			PubDispErr(tr("LOAD MAINKEY FAIL"));
-			return APP_FAIL;
-		}
-	}
-	else
-	{
-		memset(szAscIPEK, 0, sizeof(szAscIPEK));
-		ASSERT_QUIT(PubInputDlg(pszTitle, tr("INPUT IPEK(32):"), szAscIPEK, &nLen, 32, 32, 0, INPUT_MODE_STRING));
-		PubAscToHex((uchar *)szAscIPEK, nLen, 0, (uchar *)sBcdIPEK);
-
-		memset(szAscKSN, 0, sizeof(szAscKSN));
-		ASSERT_QUIT(PubInputDlg(pszTitle, tr("INPUT KSN(20):"), szAscKSN, &nLen, 20, 20, 0, INPUT_MODE_STRING));
-		PubAscToHex((uchar *)szAscKSN, nLen, 0, (uchar *)sBcdKSN);
-
-
-		nRet = PubLoadMainKey(nKeyIndex, sBcdIPEK, sBcdKSN, 16);
-		if (nRet != APP_SUCC)
-		{
-			PubDispErr("LOAD DUKPT FAIL");
-			return APP_FAIL;
-		}
-	}
-
-	sprintf(szTmpStr, tr("LOAD(%d) SUC"), nKeyIndex);
-	PubMsgDlg(pszTitle, tr("SET TMK OK"), 1, 1);
 
 	return APP_SUCC;
 }

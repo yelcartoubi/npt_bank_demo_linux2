@@ -110,20 +110,6 @@ int PubInitSecrity(int nMode, const STPINPADPARAM* pstPinpadParam);
 int PubClearKey(void);
 
 /**
-* @brief Intall main key
-* @param [in] nIndex  >= 1
-* @param [in] psKey   The buffer of main key
-* @param [in] psKSN   The buffer of KSN used in DUKPT mode
-* @param [in] nKeyLen key length is 8 or 16
-* @return 
-* @li APP_FAIL Fail
-* @li APP_SUCC Success
-* @author chenwu
-* @date 2018-5-25
-*/
-int PubLoadMainKey(int nIndex, const char *psKey, const char *psKSN, int nKeyLen);
-
-/**
 * @brief Set the index of current main key.
 * @param [in] nIndex Index of key
 * @return 

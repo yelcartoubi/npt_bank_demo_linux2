@@ -296,6 +296,12 @@ int Login(void)
 	memset(&stSystem, 0, sizeof(STSYSTEM));
 	memset(&stTransCfg, 0, sizeof(STTRANSCFG));
 
+	if (CheckIsTmkExist() != APP_SUCC)
+	{
+		PubMsgDlg(NULL, tr("PLEASE LOADING TMK FIRST"), 3, 1);
+		return APP_QUIT;
+	}
+
 	ASSERT_QUIT(TxnLoadConfig(cTransType, &stTransCfg));
 	strcpy(szTitle, tr(stTransCfg.szTitle));
 	PubDisplayTitle(szTitle);
@@ -336,7 +342,6 @@ int Login(void)
 	ASSERT_FAIL(ChkRespon(&stSystem, sPackBuf + 2));
 
 	PubClearAll();
-	
 	if (memcmp(stSystem.szResponse, "00", 2) != 0)
 	{
 		DispResp(stSystem.szResponse);
@@ -424,7 +429,7 @@ int DealPosLimit(void)
 	PubFsGetDiskSpace(1, &nSpace);
 
 	nRet = DealSettleTask();
-	 if (APP_SUCC != nRet)
+	if (APP_SUCC != nRet)
 	{
 		return nRet;
 	}
@@ -440,8 +445,7 @@ int DealPosLimit(void)
 				PubMsgDlg(tr("Settle Fail"), tr("Please re settle"), 3, 10);
 				return APP_FAIL;
 			}
-			//ASSERT(SetVarIsLogin(NO));
-			
+
 			return APP_QUIT;
 		}
 		else
@@ -549,68 +553,43 @@ int ChkTransOnOffStatus(char cTransType)
 int LoadKey()
 {
 	int nRet = 0, nIndex = 0;
-	char sTmk[16] = {0};
 	char sPinKey[16] = {0};
 	char sMacKey[16] = {0};
 	char sDataKey[16] = {0};
-	char sIPEK[16] = {0xBD,0x35,0x71,0xDB,0x88,0x36,0xCD,0x71,0xD4,0xE4,0x37,0x47,0x35,0x4E,0xC2,0x36};
-	char sKSN[10] = {0x00,0x01,0x03,0x00,0x64,0x56,0x00,0xE0,0x00,0x00}; 
-	char sInput[8] = {0}, sOutput[8] = {0}; //Used to veryfiy DUKPT key. It's like to calculate key check value.
-	
-	memset(sTmk, 0x00, sizeof(sTmk));
-	memset(sPinKey, 0x11, 16);	//kcv "\xCA\x25\x1B"
-	memset(sMacKey, 0x22, 16);	//kcv "\x10\x82\x38"
-	memset(sDataKey, 0x33, 16);	//kcv "\xD9\x7E\xB4"
+
+	memset(sPinKey, 0x11, 16);
+	memset(sMacKey, 0x22, 16);
+	memset(sDataKey, 0x33, 16);
 
 	GetVarMainKeyNo(&nIndex);
+	if(GetVarKeySystemType() == KS_DUKPT)
+	{
+		return APP_SUCC;
+	}
 
-	if(GetVarKeySystemType() == KS_MSK)	//MK/SK
+	PubSetCurrentMainKeyIndex(nIndex);
+	//sPinKey(work key) should be ciphertext.
+	nRet = PubLoadWorkKey(KEY_TYPE_PIN, sPinKey, 16, NULL);
+	if (nRet != APP_SUCC)
 	{
-		nRet = PubLoadMainKey(nIndex, sTmk, NULL, 16);//sTmk(main key) should be plain text
-		if (nRet != APP_SUCC)
-		{
-			PubDispErr("LOAD MAINKEY FAIL");
-			return APP_FAIL;
-		}
-		
-		PubSetCurrentMainKeyIndex(nIndex);
-		//sPinKey(work key) should be ciphertext. It you want to inject 32byte 0x11, 
-		//you should calculate the ciphertext of 32byte 0x11 (encrypt 32byte 0x11 by sTmk (32 bytes 0x00)), then inject ciphertext to terminal.
-		nRet = PubLoadWorkKey(KEY_TYPE_PIN, sPinKey, 16, "\xCA\x25\x1B");
-		if (nRet != APP_SUCC)
-		{
-			PubDispErr(tr("Load PIN Key Fail"));
-			return APP_FAIL;
-		}
-		//sMacKey(work key) should be ciphertext. Same steps as pin key.
-		nRet = PubLoadWorkKey(KEY_TYPE_MAC, sMacKey, 16, "\x10\x82\x38");
-		if (nRet != APP_SUCC)
-		{
-			PubDispErr(tr("Load MAC Key Fail"));
-			return APP_FAIL;
-		}
-		//sDataKey(work key) should be ciphertext. Same steps as pin key.
-		nRet = PubLoadWorkKey(KEY_TYPE_DATA, sDataKey, 16, "\xD9\x7E\xB4");
-		if (nRet != APP_SUCC)
-		{
-			PubDispErr(tr("Load Data Key Fail"));
-			return APP_FAIL;
-		}
+		PubDispErr(tr("Load PIN Key Fail"));
+		return APP_FAIL;
 	}
-	else	//DUKPT
+	//sMacKey(work key) should be ciphertext. Same steps as pin key.
+	nRet = PubLoadWorkKey(KEY_TYPE_MAC, sMacKey, 16, NULL);
+	if (nRet != APP_SUCC)
 	{
-		nRet = PubLoadMainKey(nIndex, sIPEK, sKSN, 16);//sIPEK should be plain text
-		if (nRet != APP_SUCC)
-		{
-			PubDispErr("LOAD MAINKEY FAIL");
-			return APP_FAIL;
-		}
-		PubGetDukptKSN(sKSN);
-		TRACE_HEX(sKSN, 10, "sKSN: ");
-		PubSetCurrentMainKeyIndex(nIndex);
-		PubDes3(sInput, 8, sOutput);
-		TRACE_HEX(sOutput, 8, "sOutput: ");
+		PubDispErr(tr("Load MAC Key Fail"));
+		return APP_FAIL;
 	}
+	//sDataKey(work key) should be ciphertext. Same steps as pin key.
+	nRet = PubLoadWorkKey(KEY_TYPE_DATA, sDataKey, 16, NULL);
+	if (nRet != APP_SUCC)
+	{
+		PubDispErr(tr("Load Data Key Fail"));
+		return APP_FAIL;
+	}
+
 	return APP_SUCC;
 }
 #endif

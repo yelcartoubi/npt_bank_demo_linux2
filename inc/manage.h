@@ -20,7 +20,7 @@ extern int ChkPinpad(void);
 extern int DealFuncMenu();
 extern int SystemManage();
 extern int DoLookUp();
-
+extern int CheckIsTmkExist();
 
 #endif
 

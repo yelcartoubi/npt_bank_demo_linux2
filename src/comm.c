@@ -320,7 +320,6 @@ int CommPreDial(void)
 		}
 	}
 	return APP_SUCC;
-
 }
 
 /**

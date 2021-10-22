@@ -160,6 +160,12 @@ static int TxnPreprocess(const char cTransType)
 	*/
 	ASSERT_QUIT(ChkLoginStatus());
 
+	if (CheckIsTmkExist() != APP_SUCC)
+	{
+		PubMsgDlg(NULL, tr("PLEASE LOADING TMK FIRST"), 3, 1);
+		return APP_QUIT;
+	}
+
 	/**
 	* check limit
 	*/
@@ -918,7 +924,7 @@ int TxnCommonEntry(char cTransType, int *pnInputMode)
 	stSystem.cTransType = cTransType;
 	
 	/**
-	* pre-processing: check ON-OFF, login status, tranction count limit, battary for print
+	* pre-processing: check ON-OFF, login status, TMK, tranction count limit, battary for print
 	*/
 	ASSERT_QUIT(TxnPreprocess(cTransType));
 
