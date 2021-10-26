@@ -41,8 +41,8 @@ static char gcKeySystem = SECRITY_KEYSYSTEM_MSKEY;		/**< default key system type
 
 typedef struct {
 	int (*pLoadKey)(int , int , const char *, int , char*);
-	int (*pGetPinBlock)(char *, int *, int , int , const char *, int , int);
-	int (*pCalMac)(char*, int, int, const char*, int);
+	int (*pGetPinBlock)(char *, int *, int , int , int, const char *, int , int);
+	int (*pCalMac)(char*, int, int, int, const char*, int);
 	int (*pClrPinpad)(void);
 	int (*pDispPinpad)(const char *, const char *, const char *, const char *);
 	int (*pDespinpad)(const char *, int , char *, int , int );
@@ -55,6 +55,8 @@ typedef struct {
 	int (*pSwipeCard)(char *, char *);
 	int (*pL3OrderSet)(char *, char *, int *);
 	int (*pSetFontSize)(char );
+	int (*pGetDukptKSN)(int , char *);
+	int (*PIncDukptKSN)(int);
 }STPINPAD;
 
 static STPINPAD gstPinpad;					/**< structure for callback funtions*/
@@ -81,7 +83,8 @@ static int ProInitPinpadParam(const STPINPADPARAM stPinpadParam)
 	gstPinpad.pSwipeCard = PubSwipeCard_PINPAD;
 	gstPinpad.pL3OrderSet = PubL3OrderSet_PINPAD;
 	gstPinpad.pSetFontSize = PubSetFontSize_PINPAD;
-
+	gstPinpad.pGetDukptKSN = PubGetDukptKSN_PINPAD;
+	gstPinpad.PIncDukptKSN = PubIncDukptKSN_PINPAD;
 	return APP_SUCC;
 }
 
@@ -638,7 +641,7 @@ static int ProGetPin(char *psPin, int *pnPinLen, int nMode, const char *pszCardn
 	}
 	else
 	{
-		nRet = gstPinpad.pGetPinBlock(psPin, pnPinLen, nMode, gnMainKeyIndex, pszCardno, strlen(pszCardno), nMaxLen);
+		nRet = gstPinpad.pGetPinBlock(psPin, pnPinLen, nMode, gcKeySystem, gnMainKeyIndex, pszCardno, strlen(pszCardno), nMaxLen);
 		PubClrPinPad();
 		return nRet;
 	}
@@ -835,8 +838,7 @@ int PubCalcMac(int nMode,const char *psData, int nDataLen, char * psMac)
 			return APP_FAIL;
 			break;
 		}
-
-		return gstPinpad.pCalMac(psMac, nMacType, gnMainKeyIndex, psData, nDataLen);
+		return gstPinpad.pCalMac(psMac, gcKeySystem, nMacType, gnMainKeyIndex, psData, nDataLen);
 	}
 }
 
@@ -917,7 +919,7 @@ int PubGetDukptKSN(char *psKSN)
 	}
 	else
 	{
-		return APP_FAIL;
+		nRet = gstPinpad.pGetDukptKSN(gnMainKeyIndex, psKSN);
 	}
 	PINPAD_TRACE_SECU("PubGetDukptKSN SUCC");
 	return APP_SUCC;

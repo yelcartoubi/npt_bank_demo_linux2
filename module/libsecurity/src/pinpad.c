@@ -837,6 +837,8 @@ int PubInjectKey_PINPAD(int nKeyType, int nSrcIndex, int nDstIndex,const char *p
 * @param [out] pszPin	 Pointer to PIN-block buffer
 * @param [out] pnPinLen  Pointer to PIN-block-length buffer
 * @param [in]  nMode	 0-Encrypt with PAN, 1-Encrypt without PAN 2-Plain
+* @param [in]  nKeyType - 0 - Master/Session, 1 - DUKPT, 2 - AES
+* @param [in]  nKeyIndex
 * @param [in]  pszCardno Card Number/(NULL)
 * @param [in]  nPanLen	 Length of card NO.
 * @param [in]  nMaxLen	 Maximum PIN length (4-12)
@@ -850,7 +852,7 @@ int PubInjectKey_PINPAD(int nKeyType, int nSrcIndex, int nDstIndex,const char *p
 * @author chenwu
 * @date 2018-3-22
 */
-int PubGetPinBlock_PINPAD(char *psPin, int *pnPinLen, int nMode, int nKeyIndex, const char *pszCardno, int nPanLen, int nMaxLen)
+int PubGetPinBlock_PINPAD(char *psPin, int *pnPinLen, int nMode, int nKeyType, int nKeyIndex, const char *pszCardno, int nPanLen, int nMaxLen)
 {
 	int nRet = 0;
 	int nLen = 0;
@@ -875,7 +877,7 @@ int PubGetPinBlock_PINPAD(char *psPin, int *pnPinLen, int nMode, int nKeyIndex, 
 	{
 		ProSetSecurityErrCode(ERR_PINPAD_PARAM, 0);
 		return APP_FAIL;
-	}	
+	}
 	
 	nRet = ProInitPinpadAux(nPinpadPort, nPinpadBps);
 	if (nRet != APP_SUCC)
@@ -890,7 +892,7 @@ int PubGetPinBlock_PINPAD(char *psPin, int *pnPinLen, int nMode, int nKeyIndex, 
 	memcpy(sSendBuf, "32", 2);
 	sSendBuf[2] = SEPERATOR_CMD;
 	sSendBuf[3] = nKeyIndex;
-	sSendBuf[4] = 0x00;	//0 - Master/Session, 1 - DUKPT, 2 - AES
+	sSendBuf[4] = nKeyType;	//0 - Master/Session, 1 - DUKPT, 2 - AES
 	sSendBuf[5] = 0x00;
 
 	nLen = strlen(pszCardno);
@@ -994,12 +996,12 @@ int PubGetPinBlock_PINPAD(char *psPin, int *pnPinLen, int nMode, int nKeyIndex, 
 * @author chenwu
 * @date 2018-3-22
 */
-int PubCalcMac_PINPAD(char *psMac, int nMode, int nKeyIndex, const char *psData, int nDataLen)
+int PubCalcMac_PINPAD(char *psMac, int nKeyType, int nMode, int nKeyIndex, const char *psData, int nDataLen)
 {
 	int nRet = 0;
 	int nLen = 0;
 	char sStr[1024] = {0};
-	int nStrLen;
+	int nStrLen, nOff = 0;
 
 	nStrLen = nDataLen;
 	memcpy(sStr, psData, nStrLen);
@@ -1017,41 +1019,50 @@ int PubCalcMac_PINPAD(char *psMac, int nMode, int nKeyIndex, const char *psData,
 
 	MEMSETSENDBUF;
 	MEMSETRECVBUF;
-	
+	nOff = 0;
 	memcpy(sSendBuf, "8C", 2);
-	sSendBuf[2] = SEPERATOR_CMD;
-	sSendBuf[3] = nKeyIndex;
-	sSendBuf[4] = 0x00;	//0 - Master/Session, 1 - DUKPT, 2 - AES
+	nOff += 2;
+	sSendBuf[nOff] = SEPERATOR_CMD;
+	nOff += 1;
+	sSendBuf[nOff] = nKeyIndex;
+	nOff += 1;
+	sSendBuf[nOff] = nKeyType;	//0 - Master/Session, 1 - DUKPT, 2 - AES
+	nOff += 1;
 	switch(nMode)
 	{
 	case PINPAD_X99:
-		sSendBuf[5] = 0x00;
+		sSendBuf[nOff] = 0x00;
 		break;
 	case PINPAD_X919:
-		sSendBuf[5] = 0x01;
+		sSendBuf[nOff] = 0x01;
 		break;
 	case PINPAD_ECB:
-		sSendBuf[5] = 0x02;
+		sSendBuf[nOff] = 0x02;
 		break;
 	case PINPAD_9606:
-		sSendBuf[5] = 0x03;
+		sSendBuf[nOff] = 0x03;
+		break;
+	case PINPAD_AES:
+		sSendBuf[nOff] = 0x05;
 		break;
 	default:
 		ProSetSecurityErrCode(ERR_PINPAD_PARAM, 0);
 		return APP_FAIL;
 	}
-	
-	sSendBuf[6] = 0x03;
+	nOff += 1;
+	sSendBuf[nOff] = 0x03; // only block for less than 4096
+	nOff += 1;
 
-	PubIntToC2(sSendBuf + 7, nStrLen);
-	memcpy(sSendBuf + 9, sStr, nStrLen);
-	nLen = 9 + nStrLen;
-	sSendBuf[nLen] = 0x00;
-	nLen++;
-	sSendBuf[nLen + 1] = 0x00;
-	nLen++;
+	PubIntToC2(sSendBuf + nOff, nStrLen);
+	nOff += 2;
+	memcpy(sSendBuf + nOff, sStr, nStrLen);
+	nOff += nStrLen;
+	sSendBuf[nOff] = 0x00;
+	nOff += 1;
+	sSendBuf[nOff] = 0x00;
+	nOff += 1;
 	
-	nRet = PinPad_SendRecv(1, sSendBuf, nLen, sRecvBuf, (uint *)&nLen, nPinpadPort, nPinpadTimeOut);
+	nRet = PinPad_SendRecv(1, sSendBuf, nOff, sRecvBuf, (uint *)&nLen, nPinpadPort, nPinpadTimeOut);
 	if (nRet != APP_SUCC)
 	{
 		PINPAD_TRACE_SECU("PubCalcMac_PINPAD:PinPad_SendRecv APP_FAIL");
@@ -1059,19 +1070,23 @@ int PubCalcMac_PINPAD(char *psMac, int nMode, int nKeyIndex, const char *psData,
 		return APP_FAIL;
 	}
 
+	nOff = 0;
 	if(memcmp(sRecvBuf, "8D", 2) != 0)
 	{
 		PINPAD_TRACE_SECU("PubCalcMac_PINPAD:CMD erro");
 		ProSetSecurityErrCode(ERR_PINPAD_RECEIVEEXRF, 0);
 		return APP_FAIL;
 	}
-	if(memcmp(sRecvBuf + 4, "00", 2) != 0)
+	nOff += 4;
+	if(memcmp(sRecvBuf + nOff, "00", 2) != 0)
 	{
 		ProSetSecurityErrCode(ERR_GETMAC,nRet);
 		PINPAD_TRACE_SECU("Response Code [%2.2s]", sRecvBuf + 4);
 		return APP_FAIL;
 	}
-	memcpy(psMac, sRecvBuf + 6, 8);
+	nOff += 2;
+	memcpy(psMac, sRecvBuf + nOff, 8); // dukpt/MK/SK
+
 	return APP_SUCC;
 }
 
@@ -1496,7 +1511,7 @@ int PubCancelPIN_PINPAD()
 {
 	int nRet = 0;
 	int nLen = 0;
-	
+
 	nRet = ProInitPinpadAux(nPinpadPort, nPinpadBps);
 	if (nRet != APP_SUCC)
 	{
@@ -3085,6 +3100,114 @@ int PubReboot_PINPAD()
 		ProSetSecurityErrCode(ERR_PINPAD_RECEIVEEXRF, 0);
 		return APP_FAIL;
 	}
+
+	return APP_SUCC;
+}
+
+// Dukpt
+int PubIncDukptKSN_PINPAD(int nKeyIndex)
+{
+	int nRet, nLen;
+	int nOff = 0;
+	
+	nRet = ProInitPinpadAux(nPinpadPort, nPinpadBps);
+	if (nRet != APP_SUCC)
+	{
+		PINPAD_TRACE_SECU("PubScrClrs:ProInitPinpadAux APP_FAIL");
+		ProSetSecurityErrCode(ERR_PINPAD_INITAUX, 0);
+		return APP_FAIL;
+	}
+
+	MEMSETSENDBUF;
+	MEMSETRECVBUF;
+
+	memcpy(sSendBuf, "7g", 2);
+	nOff += 2;
+	sSendBuf[nOff] = SEPERATOR_CMD;
+	nOff += 1;
+	if (nKeyIndex < 1 || nKeyIndex > 250)
+	{
+		PINPAD_TRACE_SECU("invalid key value (%d)", nKeyIndex);
+		return APP_FAIL;
+	}
+	sSendBuf[nOff] = nKeyIndex;
+	nOff += 1;
+
+	nRet = PinPad_SendRecv(1, sSendBuf, nOff, sRecvBuf, (uint *)&nLen, nPinpadPort, nPinpadTimeOut);
+	if (nRet != APP_SUCC)
+	{
+		PINPAD_TRACE_SECU("PubScrClrs_PINPAD:PinPad_SendRecv APP_FAIL");
+		ProSetSecurityErrCode(ERR_PINPAD_SENDEXRF, 0);
+		return APP_FAIL;
+	}
+
+	nOff = 0;
+	if(memcmp(sRecvBuf, "7h", 2) != 0)
+	{
+		PINPAD_TRACE_SECU("PubScrClrs_PINPAD:CMD erro");
+		ProSetSecurityErrCode(ERR_PINPAD_RECEIVEEXRF, 0);
+		return APP_FAIL;
+	}
+
+	nOff += 3;
+	if(memcmp(sRecvBuf+nOff, "00", 2) != 0)
+	{
+		return APP_QUIT;
+	}
+
+	return APP_SUCC;
+}
+
+int PubGetDukptKSN_PINPAD(int nKeyIndex, char *pszKsn)
+{
+	int nRet, nLen;
+	int nOff = 0;
+	
+	nRet = ProInitPinpadAux(nPinpadPort, nPinpadBps);
+	if (nRet != APP_SUCC)
+	{
+		PINPAD_TRACE_SECU("PubScrClrs:ProInitPinpadAux APP_FAIL");
+		ProSetSecurityErrCode(ERR_PINPAD_INITAUX, 0);
+		return APP_FAIL;
+	}
+
+	MEMSETSENDBUF;
+	MEMSETRECVBUF;
+
+	memcpy(sSendBuf, "34", 2);
+	nOff += 2;
+	sSendBuf[nOff] = SEPERATOR_CMD;
+	nOff += 1;
+	if (nKeyIndex < 1 || nKeyIndex > 250)
+	{
+		PINPAD_TRACE_SECU("invalid key value (%d)", nKeyIndex);
+		return APP_FAIL;
+	}
+	sSendBuf[nOff] = nKeyIndex;
+	nOff += 1;
+
+	nRet = PinPad_SendRecv(1, sSendBuf, nOff, sRecvBuf, (uint *)&nLen, nPinpadPort, nPinpadTimeOut);
+	if (nRet != APP_SUCC)
+	{
+		PINPAD_TRACE_SECU("PubScrClrs_PINPAD:PinPad_SendRecv APP_FAIL");
+		ProSetSecurityErrCode(ERR_PINPAD_SENDEXRF, 0);
+		return APP_FAIL;
+	}
+
+	nOff = 0;
+	if(memcmp(sRecvBuf, "35", 2) != 0)
+	{
+		PINPAD_TRACE_SECU("PubScrClrs_PINPAD:CMD erro");
+		ProSetSecurityErrCode(ERR_PINPAD_RECEIVEEXRF, 0);
+		return APP_FAIL;
+	}
+	nOff += 3;
+	if(memcmp(sRecvBuf+nOff, "00", 2) != 0)
+	{
+		return APP_QUIT;
+	}
+	nOff += 2;
+	memcpy(pszKsn, sRecvBuf + nOff, 10);
 
 	return APP_SUCC;
 }

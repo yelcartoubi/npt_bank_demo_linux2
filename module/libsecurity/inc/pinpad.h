@@ -15,10 +15,12 @@
 #define	BPS76800	9
 #define	BPS115200	10
 
-#define PINPAD_9606	0
-#define PINPAD_X99	1
+#define PINPAD_X99	0
+#define PINPAD_X919	1
 #define PINPAD_ECB	2
-#define PINPAD_X919	3
+#define PINPAD_9606	3
+#define PINPAD_AES	5
+
 
 
 typedef struct {
@@ -125,8 +127,9 @@ typedef struct {
 
 extern int PubResetPinpad_PINPAD(const int nPort, const int nTimeOut);
 extern int PubLoadKey_PINPAD(int nKeyType, int nGroupNo, const char *psKeyValue, int nKeyLen, char* psCheckValue);
-extern int PubGetPinBlock_PINPAD(char *pszPin, int *pnPinLen, int nMode, int nKeyIndex, const char *pszCardno, int nPanLen, int nMaxLen);
-extern int PubCalcMac_PINPAD(char *psMac, int nMode, int nKeyIndex, const char *psData, int nDataLen);
+extern int PubGetPinBlock_PINPAD(char *psPin, int *pnPinLen, int nMode, int nKeyType, int nKeyIndex, const char *pszCardno, int nPanLen, int nMaxLen);
+extern int PubCalcMac_PINPAD(char *psMac, int nKeyType, int nMode, int nKeyIndex, const char *psData, int nDataLen);
+
 extern int PubClrPinPad_PINPAD(void);
 extern int PubDispPinPad_PINPAD(const char *pszLine1, const char *pszLine2, const char *pszLine3, const char *pszLine4);
 extern int PubDesPinpad_PINPAD(const char *psSrc, int nSrcLen, char *psDest, int nKeyIndex, int nDesMode);
@@ -158,6 +161,9 @@ extern void PubL3CancalReadCard();
 extern int PubCheckIcc_PINPAD();
 extern int PubBeep_PINPAD();
 extern int PubReboot_PINPAD();
+
+extern int PubIncDukptKSN_PINPAD(int nKeyIndex);
+extern int PubGetDukptKSN_PINPAD(int nKeyIndex, char *pszKsn);
 #endif
 
 /**< End of lpindpad.h */

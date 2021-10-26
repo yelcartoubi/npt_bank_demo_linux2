@@ -315,12 +315,12 @@ int CheckMac(const char *psBuffer,  int nDataLen)
 	}
 	if (memcmp(sCalcMacBuf, psBuffer+nDataLen - 8, 8) == 0 )
 	{
-		TRACE_HEX(sCalcMacBuf,8,"sCalcMacBuf:");
-		TRACE_HEX((char *)(psBuffer+nDataLen-8),8,"realmac:");
 		return APP_SUCC;
 	}
 	else
 	{
+		TRACE_HEX(sCalcMacBuf,8,"sCalcMacBuf:");
+		TRACE_HEX((char *)(psBuffer+nDataLen-8),8,"realmac:");
 		return APP_FAIL;
 	}
 }
