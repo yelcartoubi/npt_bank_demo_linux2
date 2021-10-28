@@ -16,6 +16,8 @@
 #define OPENDB_CONSOLE		FILEDIR"CONSOLEDBG"
 
 static char gcInitAux = 0;
+static char gcInitUsbAux = 0;
+
 static int ProInitDebugPort(int nPortType);
 static void WriteFileLog(const char* psData, int nLen)
 {
@@ -85,6 +87,10 @@ void PubExportDebugFile()
 	}
 
     NAPI_PortClose((PORT_TYPE)nPortNum);
+	if (nPortNum == USB_SERIAL)
+	{
+		gcInitUsbAux = 0;
+	}
 
 	return ;
 }
@@ -99,6 +105,7 @@ static void DebugBufToAux(const char *pszBuf, const int nBufLen)
 {
 	int nIndex;
 	int nPortNum;
+	int nRet;
 
 	nPortNum = PubGetDebugPortNum();
 	if (PubGetDebugMode() == DEBUG_FILE)
@@ -121,15 +128,18 @@ static void DebugBufToAux(const char *pszBuf, const int nBufLen)
 		{
 			if ((nIndex+1024) < nBufLen)
 			{
-                NAPI_PortWrite((PORT_TYPE)nPortNum, (uchar *)pszBuf+nIndex, 1024);
+                nRet = NAPI_PortWrite((PORT_TYPE)nPortNum, (uchar *)pszBuf+nIndex, 1024);
 				nIndex += 1024;
 				PubSysMsDelay(100);
 			}
 			else
 			{
-                NAPI_PortWrite((PORT_TYPE)nPortNum, (uchar *)pszBuf+nIndex, nBufLen - nIndex);
+                nRet = NAPI_PortWrite((PORT_TYPE)nPortNum, (uchar *)pszBuf+nIndex, nBufLen - nIndex);
 				nIndex = nBufLen;
 				PubSysMsDelay(20);
+			}
+			if (nRet != NAPI_OK) {
+				gcInitUsbAux = 0;
 			}
 		}
 	}
@@ -278,7 +288,7 @@ int PubGetDebugMode(void)
 */
 int PubSetDebugMode(int nMode)
 {
-    int nFileHandle = 0;
+    int nFileHandle = 0, nPort;
 
     switch(nMode & 0x0F)
     {
@@ -288,7 +298,12 @@ int PubSetDebugMode(int nMode)
 		PubFsDel(FILEDEBUG);
 		PubFsDel(OLDFILEDEBUG);
 		PubFsDel(OPENDB_CONSOLE);
-        NAPI_PortClose((PORT_TYPE)PubGetDebugPortNum());
+		nPort = PubGetDebugPortNum();
+        NAPI_PortClose((PORT_TYPE)nPort);
+		if (nPort == USB_SERIAL) {
+			gcInitUsbAux = 0;
+		}
+		
 		return APP_SUCC;
 		break;
 	case DEBUG_PORT:
@@ -554,6 +569,10 @@ void PubSetDebugPort(int nPortType)
 	if(nOldPortNum != nPortType)
 	{
         NAPI_PortClose((PORT_TYPE)nOldPortNum);
+		if (nPortType == USB_SERIAL)
+		{
+			gcInitUsbAux = 0;
+		}
 	}
 
 	if (ProInitDebugPort(nPortType) != NAPI_OK)
@@ -569,13 +588,25 @@ void PubSetDebugPort(int nPortType)
 int ProInitDebugPort(int nPortType)
 {
 	PORT_SETTINGS PortSettings;
+	int nRet;
 
 	PortSettings.BaudRate = BAUD115200;
 	PortSettings.DataBits = DATA_8;
 	PortSettings.Parity = PAR_NONE;
 	PortSettings.StopBits = STOP_1;
 
-    return NAPI_PortOpen((PORT_TYPE)nPortType, PortSettings);
+	if (nPortType == USB_SERIAL && gcInitUsbAux == 1) {
+		return NAPI_OK;
+	}
+
+	nRet = NAPI_PortOpen((PORT_TYPE)nPortType, PortSettings);
+	if (nRet == NAPI_OK && nPortType == USB_SERIAL) {
+		gcInitUsbAux = 1;
+	} else {
+		gcInitUsbAux = 0;
+	}
+
+    return nRet;
 }
 
 int PubGetDebugPortLevel(void)

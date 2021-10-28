@@ -1,5 +1,10 @@
 bankdemo by napi
 ====================================================
+Date: 2021/10/28 +0800
+improve the USB debug mode
+changes include:
+tooldebug.c
+====================================================
 Date: 2021/10/26 +0800
 added dukpt for pinpad.
 changes include:
