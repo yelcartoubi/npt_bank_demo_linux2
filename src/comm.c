@@ -299,9 +299,6 @@ int CommPreDial(void)
 {
 	int nRet = 0;
 
-#ifdef DEMO
-	return APP_SUCC;
-#endif
 	nRet = PubCommPreConnect();
 	if (nRet != APP_SUCC)
 	{
@@ -389,10 +386,6 @@ int CommConnect(void)
 {
 	int nRet = 0;
 	STSHOWINFOXY stShowInfoxy;
-
-#ifdef DEMO
-	return APP_SUCC;
-#endif
 
 	SSLConfig();
 	PubClear2To4();
@@ -518,10 +511,6 @@ int CommSend(const char *psSendBuf, int nSendLen)
 	PubClear2To4();
 	PubDisplayStrInline(DISPLAY_MODE_CENTER, 3, tr("Sending..."));
 	PubUpdateWindow();
-#ifdef DEMO
-	PubSysDelay(10);
-	return APP_SUCC;
-#endif
 	if (YES == GetVarIsPrintIso() && APP_SUCC == PubConfirmDlg(NULL, tr("Print ISO?"), 0, 10))
 	{
 		PrintIsoData(psSendBuf);
@@ -557,10 +546,6 @@ int CommRecv(char *psRecvBuf, int *nRecvLen)
 	PubClear2To4();
 	PubDisplayStrInline(DISPLAY_MODE_CENTER, 3, tr("Receiving..."));
 	PubUpdateWindow();
-#ifdef DEMO
-	PubSysDelay(20);
-	return APP_SUCC;
-#endif
 	stShowInfoxy.nType = 0;
 	stShowInfoxy.nColumn = 7;
 	stShowInfoxy.nRow = 4;

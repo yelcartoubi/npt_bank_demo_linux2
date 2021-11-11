@@ -42,8 +42,8 @@ LIBL2EMVDIR = $(SDKDIR)\\Linux\\Core\\EMV\\L2_SDK\\lib\\gcc_4.9.4
 # Libc
 SDKSYSLIB = $(SDKDIR)\\Linux\\Compiler\\4.9.4\\arm-linux-gnueabi\\libc\\usr\\lib
 
-# -D USE_TOMS -D DEMO
-CFLAGS += -Wall -Werror -DNDEBUG $(CROSS_CFLAGS) -O -g $(INCPATH) -D USE_TOMS -D DEMO
+# -D USE_TOMS
+CFLAGS += -Wall -Werror -DNDEBUG $(CROSS_CFLAGS) -O -g $(INCPATH) -D USE_TOMS
 CFLAGS += -funwind-tables
 CFLAGS += -DAPP_VERSION=\"$(PARAMINI_VER)\"
 # File search path
@@ -69,13 +69,13 @@ LDFLAGS += -L$(LIBL2EMVDIR) -lemvl2 -lentrypoint -lbase
 LDFLAGS += -L$(LIBAPPDIR) -ltoms
 LDFLAGS += -L$(LIBAPPDIR) -lemvl3
 
-# model such as SP630
+# model such as SP630/sp630Pro/sp830/sp930/U1000/ME60
 MODEL = SP630
 
 # Application Name
 PARAMINI_NAME = BANKDEMO
 # Application Version
-PARAMINI_VER = 1.0.08
+PARAMINI_VER = 1.0.09
 
 # Generated program name
 NAME = main

@@ -64,9 +64,6 @@ void DealSystem(STSYSTEM *pstSystem)
 */
 int ChkLoginStatus(void)
 {
-#ifdef DEMO
-	return APP_SUCC;
-#endif
 	if (GetVarKeySystemType() == KS_MSK && YES != GetVarIsLogin())
 	{
 		PubMsgDlg(NULL, "PLEASE SIGN IN", 3, 1);
@@ -90,10 +87,6 @@ int ChkRespMsgID(const char *psReqMsgID, const char *psRespMsgID)
 {
 	uchar szReqMsgId[2+1];
 	char *pszTitle = "UNPACK";
-
-#ifdef DEMO
-	return APP_SUCC;
-#endif
 
 	PubAscToHex((uchar *)psReqMsgID, 4, 0, szReqMsgId);
 	szReqMsgId[1] |= 0x10;
@@ -330,13 +323,6 @@ int Login(void)
 
 	CommHangUp();
 
-#ifdef DEMO
-	ASSERT_FAIL(LoadKey());
-	ASSERT(SetVarIsLogin(YES));
-	PubMsgDlg(szTitle, tr("SIGN IN OK"), 1, 1);
-	return APP_SUCC;
-#endif
-
 	ASSERT_FAIL(Unpack(sPackBuf, nPackLen));
 	ASSERT_FAIL(ChkRespMsgID(stSystem.szMsgID, sPackBuf));
 	ASSERT_FAIL(ChkRespon(&stSystem, sPackBuf + 2));
@@ -548,49 +534,4 @@ int ChkTransOnOffStatus(char cTransType)
 	}
 	return APP_SUCC;
 }
-
-#ifdef DEMO
-int LoadKey()
-{
-	int nRet = 0, nIndex = 0;
-	char sPinKey[16] = {0};
-	char sMacKey[16] = {0};
-	char sDataKey[16] = {0};
-
-	memset(sPinKey, 0x11, 16);
-	memset(sMacKey, 0x22, 16);
-	memset(sDataKey, 0x33, 16);
-
-	GetVarMainKeyNo(&nIndex);
-	if(GetVarKeySystemType() == KS_DUKPT)
-	{
-		return APP_SUCC;
-	}
-
-	PubSetCurrentMainKeyIndex(nIndex);
-	//sPinKey(work key) should be ciphertext.
-	nRet = PubLoadWorkKey(KEY_TYPE_PIN, sPinKey, 16, NULL);
-	if (nRet != APP_SUCC)
-	{
-		PubDispErr(tr("Load PIN Key Fail"));
-		return APP_FAIL;
-	}
-	//sMacKey(work key) should be ciphertext. Same steps as pin key.
-	nRet = PubLoadWorkKey(KEY_TYPE_MAC, sMacKey, 16, NULL);
-	if (nRet != APP_SUCC)
-	{
-		PubDispErr(tr("Load MAC Key Fail"));
-		return APP_FAIL;
-	}
-	//sDataKey(work key) should be ciphertext. Same steps as pin key.
-	nRet = PubLoadWorkKey(KEY_TYPE_DATA, sDataKey, 16, NULL);
-	if (nRet != APP_SUCC)
-	{
-		PubDispErr(tr("Load Data Key Fail"));
-		return APP_FAIL;
-	}
-
-	return APP_SUCC;
-}
-#endif
 

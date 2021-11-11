@@ -188,9 +188,6 @@ int WirelessInit(STGPRSPARAM *pstGprsParam, STCDMAPARAM *pstCdmaParam, char cSsl
 		return APP_FAIL;
 	}
 
-#ifdef DEMO
-    return APP_SUCC;
-#endif /* DEMO */
 	switch (emSimStatus)
 	{
 	case SIM_ABSENT:

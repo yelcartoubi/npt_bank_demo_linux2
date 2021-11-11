@@ -545,20 +545,7 @@ int DealPackAndComm(char* pszTitle, EM_OPERATEFLAG cOperFlag,STSYSTEM *pstSystem
 		CommHangUp();
 		return nRet;
 	}
-	
-#ifdef DEMO
-	sprintf(pstSystem->szRefnum, "%s%s", pstSystem->szTime, pstSystem->szTrace);
-	sprintf(pstSystem->szAuthCode, "%.3s000", pstSystem->szTrace+3);
-	strcpy(pstSystem->szResponse, "00");
 
-	if(GetVarKeySystemType() == KS_DUKPT)	//DUKPT
-	{	
-		GetVarMainKeyNo(&nMainKeyNo);
-		PubSetCurrentMainKeyIndex(nMainKeyNo);
-		PubDukptIncreaseKSN();
-	}
-	return APP_SUCC;
-#endif
 	CommHangUpSocket();
 
 	ASSERT_HANGUP_FAIL(Unpack(sPackBuf, nPackLen));

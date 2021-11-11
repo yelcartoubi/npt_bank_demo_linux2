@@ -1963,10 +1963,6 @@ int ProCheckPwd(char *pszTitle, uchar cType)
 	char szThePwd[16+1] = {0};
 	char szTmp[128] = {0};
 
-#ifdef DEMO
-	return APP_SUCC;
-#endif
-
 	switch (cType)
 	{
 	case EM_NONE_PWD:

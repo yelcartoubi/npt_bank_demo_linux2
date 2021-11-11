@@ -238,10 +238,6 @@ static void TxnShowBalance(STSYSTEM stSystem)
 {
 	char szDispAmt[DISPAMTLEN] = {0};
 
-#ifdef DEMO
-	strcpy(stSystem.szAmount, "999999999");
-#endif
-
 	ProAmtToDispOrPnt(stSystem.szAmount, szDispAmt);
 	PubClearAll();
 	if (YES == GetVarIsPinpad())
@@ -517,9 +513,6 @@ int TxnReversal(void)
 			}
 		}
 
-#ifdef DEMO
-		strcpy(stSystem.szResponse, "00");
-#endif
 		if ((memcmp(stSystem.szResponse, "00", 2) == 0))
 		{
 			SetVarIsReversal(NO);
@@ -582,10 +575,6 @@ int TxnSendOffline(const char cSendFlag)
 	STTRANSCFG stTransCfg = {
 		0, "","", "", "", CFG_NULL, {2,3,4,11,14,22,23,24,25,35,41,42,48,52,55,62,64}
 	};
-
-#ifdef DEMO
-	return APP_SUCC;
-#endif
 
 	memset(&stSystem, 0, sizeof(STSYSTEM));
 	memset(&stTransRecord, 0, sizeof(STTRANSRECORD));

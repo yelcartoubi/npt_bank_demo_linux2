@@ -115,10 +115,6 @@ static int FirstRunChk(void)
 		PubDeReclFile(LASTSETTLEFILE);
 		EmvClearRecord();
 		ASSERT_FAIL(InitPosDefaultParam());
-#ifdef DEMO
-		SetControlChkPinpad(YES);
-		ChkPdAndRF();
-#endif
 		sprintf(szCmd, "mkdir %s", ELECSIGN_PATH);
 		system(szCmd);
 	}

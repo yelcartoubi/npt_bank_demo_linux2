@@ -332,15 +332,10 @@ int CompleteTransaction(char* pszTitle, int nOnlineResult, STSYSTEM* pstSystem, 
     char szRecvFiled55[256] = {0};
     L3_TXN_RES res; 
 
-#ifdef DEMO
-    strcpy(pstSystem->szResponse, "00");
-	return APP_SUCC;
-#endif
-
     szTlvList[0] = (char)nOnlineResult;
     nTlvLen = 1;
     if (nOnlineResult == 1)
-	{
+    {
         if((memcmp(pstSystem->szResponse, "00", 2) != 0) && (memcmp(pstSystem->szResponse, "01", 2) != 0))
         {
             TlvAdd(0x8A, 2, "05", szTlvList, &nTlvLen);
@@ -349,16 +344,11 @@ int CompleteTransaction(char* pszTitle, int nOnlineResult, STSYSTEM* pstSystem, 
         {
             TlvAdd(0x8A, 2, pstSystem->szResponse, szTlvList, &nTlvLen);
         }
-#ifdef DEMO // clear warning
-		(void)nFieldLen;
-		(void)szRecvFiled55;
-#else
-		nFieldLen = 255;
+        nFieldLen = 255;
         GetField(55, szRecvFiled55+2, &nFieldLen);
         PubIntToC2((uchar *)szRecvFiled55, (uint)nFieldLen);
         memcpy(szTlvList+nTlvLen, szRecvFiled55+2, nFieldLen);
         nTlvLen += nFieldLen;
-#endif
 	}
 
 	nErrcode = TxnL3CompleteTransaction(szTlvList, nTlvLen, &res);

@@ -41,8 +41,8 @@ LIBL2EMVDIR = $(SDKDIR)\\Core\\EMV\\L2_SDK\\lib\\gcc_4.2.0
 
 SDKSYSLIB = $(SDKDIR)\\Compiler\\4.2.0\\arm-unknown-linux-gnu\\sys-root\\usr\\lib
 
-# -D USE_TOMS -D DEMO
-CFLAGS += -Wall -Werror -DNDEBUG $(CROSS_CFLAGS) -O -g $(INCPATH) -D DEMO -D USE_TOMS
+# -D USE_TOMS
+CFLAGS += -Wall -Werror -DNDEBUG $(CROSS_CFLAGS) -O -g $(INCPATH) -D USE_TOMS
 CFLAGS += -funwind-tables
 CFLAGS += -DAPP_VERSION=\"$(PARAMINI_VER)\"
 # File search path
@@ -68,13 +68,13 @@ LDFLAGS += -L$(LIBL2EMVDIR) -lemvl2 -lentrypoint -lbase
 LDFLAGS += -L$(LIBAPPDIR) -ltoms
 LDFLAGS += -L$(LIBAPPDIR) -lemvl3
 
-# model such as ME51R
+# model such as ME51R/ME51G/U100/sp600
 MODEL = ME51R
 
 # Application Name
 PARAMINI_NAME = BANKDEMO
 # Application Version
-PARAMINI_VER = 1.0.08
+PARAMINI_VER = 1.0.09
 
 # Generated program name
 NAME = main

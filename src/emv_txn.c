@@ -794,10 +794,6 @@ int EmvSendTC(void)
 	int nRecNum;
 	int nFileHandle;
 	int nBatchNum = 0;
-	
-#ifdef DEMO
-	return APP_SUCC;
-#endif
 
 	GetRecordNum(&nRecNum);
 	if (nRecNum > 0)

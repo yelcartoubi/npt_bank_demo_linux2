@@ -28,9 +28,7 @@ static int DispSettleDataItem(char *, SETTLE_NUM, SETTLE_AMT);
 static int ChangeSettleItem(char, const char *, SETTLE_NUM *, SETTLE_AMT *);
 static int BatchTrans(const int, const int, int *);
 static int DoBatchUp(void);
-#ifndef DEMO
 static int CheckSettleReponse(STSYSTEM stSystem);
-#endif
 
 /**
 * @brief Settlement
@@ -171,9 +169,6 @@ SETTLE_TAIL:
 		CommHangUpSocket();
 
 		/*Check response code*/
-#ifdef DEMO
-		SetVarIsTotalMatch(YES);
-#else
 		ASSERT_HANGUP_FAIL(Unpack(sPackBuf, nPackLen));
 		ASSERT_HANGUP_FAIL(ChkRespMsgID("0500", sPackBuf));
 		ASSERT_HANGUP_FAIL(ChkRespon(&stSystem, sPackBuf + 2));
@@ -190,7 +185,6 @@ SETTLE_TAIL:
 			}
 		}
 		ASSERT_HANGUP_FAIL(CheckSettleReponse(stSystem));
-#endif
 		/**
 		* Save settle date time
 		*/
@@ -939,7 +933,6 @@ int DealBatchUpFail(STTRANSRECORD *pstTransRecord, int nHandle, int nRecNo)
 	return APP_SUCC;
 }
 
-#ifndef DEMO
 static int CheckSettleReponse(STSYSTEM stSystem)
 {
 	if (memcmp(stSystem.szResponse, "95", 2) == 0)
@@ -965,4 +958,4 @@ static int CheckSettleReponse(STSYSTEM stSystem)
 	}
 	return APP_SUCC;
 }
-#endif
+

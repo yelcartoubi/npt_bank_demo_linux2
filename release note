@@ -1,5 +1,11 @@
 bankdemo by napi
 ====================================================
+Date: 2021/11/11 +0800
+remove macro "DEMO"
+changes include:
+remove -D DEMO from makefle
+remove "ifdef DEMO" from code
+====================================================
 Date: 2021/11/01 +0800
 transfer file format : unix to windows
 changes include:

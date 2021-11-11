@@ -27,10 +27,5 @@ extern int ChkTransOnOffStatus(char cTransType);
 extern int CheckAutoReboot();
 extern int DealPosLimit(void);
 
-#ifdef DEMO
-extern int LoadKey();
-#endif
-
-
 #endif
 
