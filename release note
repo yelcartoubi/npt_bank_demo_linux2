@@ -1,5 +1,10 @@
 bankdemo by napi
 ====================================================
+Date: 2021/12/31 +0800
+update AMEX AID configure
+changes include:
+Newland_L3_configuration.xml : AMEX
+====================================================
 Date: 2021/11/11 +0800
 remove macro "DEMO"
 changes include:
