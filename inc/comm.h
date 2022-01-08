@@ -121,5 +121,6 @@ extern int SetComm();
 extern int SwitchCommType(void);
 extern int SetFuncTOMSUserOID(void);
 extern char GetUserOidSwitch();
+extern int SetFuncCommTpdu(void);
 #endif
 

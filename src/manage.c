@@ -237,6 +237,10 @@ int CheckIsTmkExist()
 	EM_SEC_CRYPTO_KEY_TYPE emType;
 	EM_SEC_KEY_USAGE emKeyUsage;
 
+	if (GetVarIsPinpad() == YES)
+	{
+		return APP_SUCC;
+	}
 	GetVarMainKeyNo(&nIndex);
 	emType = KEY_TYPE_DES;
 	if (GetVarKeySystemType() == KS_MSK)

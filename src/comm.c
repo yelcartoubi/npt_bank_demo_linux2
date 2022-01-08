@@ -447,11 +447,13 @@ int CommConnect(void)
 static int AddTpdu(char *psBuf, uint *punLen)
 {
 	char sTemp[MAX_SEND_SIZE]={0};
+
+#if 0
 	char szTpdu[10+1] = {0};
 
 	sprintf(szTpdu, "600%3.3s0000", gstAppCommParam.szNii);
 	PubAscToHex((uchar *)szTpdu, 10, 0, (uchar *)gstAppCommParam.sTpdu);
-
+#endif
 	if (NULL == psBuf ||NULL == punLen)
 	{
 		return APP_FAIL;
@@ -713,7 +715,7 @@ void CommMenu(void)
 	const char *pszItems[] = {
 		tr("1.COMMTYPE1"),
 		tr("2.COMMTYPE2"),
-		tr("3.NII"),
+		tr("3.NII/TPDU"),
 		tr("4.PSTN"),
 		tr("5.GPRS"),
 		tr("6.CDMA"),
@@ -740,6 +742,7 @@ void CommMenu(void)
 			break;
 		case 3:
 			SetFuncCommNii();
+			SetFuncCommTpdu();
 			break;
 		case 4:
 			{
@@ -2282,7 +2285,6 @@ int SetFuncCommNii(void)
 {
 	char szTemp[3+1];
 	int nLen;
-	char szTpdu[10+1] = {0};
 
 	memset(szTemp, 0, sizeof(szTemp));
 	memcpy(szTemp, gstAppCommParam.szNii, sizeof(gstAppCommParam.szNii)-1);
@@ -2290,10 +2292,30 @@ int SetFuncCommNii(void)
 	ASSERT_RETURNCODE(PubInputDlg(tr("SET COMM"), "Nii", szTemp, &nLen,3,3,60,INPUT_MODE_STRING));
 	memcpy(gstAppCommParam.szNii, szTemp, sizeof(gstAppCommParam.szNii) -1);
 
-	//save TPDU
-	sprintf(szTpdu, "600%3.3s0000", gstAppCommParam.szNii);
-	PubAscToHex((uchar *)szTpdu, 10, 0, (uchar *)gstAppCommParam.sTpdu);
 	ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_NII, sizeof(gstAppCommParam.szNii) - 1, gstAppCommParam.szNii));
+	return APP_SUCC;
+}
+
+/**
+** brief: Set TPDU
+** param: void
+** return: APP_SUCC or APP_FAIL
+** auther:
+** date: 2016-7-4
+** modify:
+*/
+int SetFuncCommTpdu(void)
+{
+	char szTemp[3+1];
+	int nLen;
+	char szTpdu[10+1] = {0};
+
+	memset(szTemp, 0, sizeof(szTemp));
+	PubHexToAsc((uchar *)gstAppCommParam.sTpdu, 10, 0, (uchar *)szTpdu);
+	nLen = strlen(szTemp);
+	ASSERT_RETURNCODE(PubInputDlg(tr("SET COMM"), "TPDU", szTpdu, &nLen,10,10,60,INPUT_MODE_NUMBER));
+
+	PubAscToHex((uchar *)szTpdu, 10, 0, (uchar *)gstAppCommParam.sTpdu);
 	ASSERT_FAIL(UpdateTagParam(FILE_APPCOMMPARAM, TAG_COMM_TPDU, 5, gstAppCommParam.sTpdu));
 	return APP_SUCC;
 }

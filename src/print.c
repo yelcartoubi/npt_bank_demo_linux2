@@ -1379,7 +1379,7 @@ static int PrintBillHead()
 	if (NO == GetIsPntTitleMode())//'0' logo
 	{
 		//print logo
-		PubPrintPicture(70, "PrintLogo.bmp");
+		PubPrintPicture(0, "PrintLogo.bmp");
 		ASSERT(PubSetPrtFont(14, PRN_MODE_HEIGHT_DOUBLE, 0));
 	}
 	else

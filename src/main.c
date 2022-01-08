@@ -257,7 +257,7 @@ static void EnableDispDefault(void)
 		strcpy(szShowInfo, "");
 	}
 	PubClearAll();
-	PubDisplayLogo("DispLogo.png", 36, 26);
+	PubDisplayLogo("DispLogo.png", 4, 26);
 
 	if (PubGetKbAttr() == KB_VIRTUAL) {
 		PubDisplayGen(nMaxLine/2 + 1, szShowInfo);
