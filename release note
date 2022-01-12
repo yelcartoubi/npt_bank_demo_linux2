@@ -1,5 +1,12 @@
 bankdemo by napi
 ====================================================
+Date: 2021/01/12 +0800
+added some link libraries
+changes include:
+libnapi_c_externalmemory.so
+libnapi_c_scan.so
+libnapi_c_timer.so
+====================================================
 Date: 2021/01/08 +0800
 update logo
 changes include:

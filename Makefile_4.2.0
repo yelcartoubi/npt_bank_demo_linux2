@@ -55,10 +55,11 @@ INCLPATH = -I$(INCDIR) -I$(PRINTINCDIR) -I$(SECURITYIINCDIR) -I$(UIINCDIR) -I$(T
 LDFLAGS += -L$(SDKAPILIB) -lndk
 
 LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_app -lnapi_c_sysinfo
-LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_datetime -lnapi_c_kb -lnapi_c_power -lnapi_c_beeper
-LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_eth -lnapi_c_modem -lnapi_c_net -lnapi_c_wifi -lnapi_c_wlm
-LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_ctlscard -lnapi_c_magcard -lnapi_c_smartcard
-LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_crypto -lnapi_c_printer -lnapi_c_led -lnapi_c_display -lnapi_c_serialport
+LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_datetime -lnapi_c_kb -lnapi_c_power -lnapi_c_beeper -lnapi_c_timer
+LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_eth -lnapi_c_modem -lnapi_c_wifi -lnapi_c_wlm -lnapi_c_bt
+LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_net -lnapi_c_mdb -lnapi_c_externalmemory -lnapi_c_socket -lnapi_c_fs
+LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_ctlscard -lnapi_c_magcard -lnapi_c_smartcard -lnapi_c_scan
+LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_crypto -lnapi_c_alg -lnapi_c_printer -lnapi_c_led -lnapi_c_display -lnapi_c_serialport
 
 LDFLAGS += -L$(SDKSYSLIB) -lssl -lcrypto -lcurl -lpthread -ldl -lz
 
