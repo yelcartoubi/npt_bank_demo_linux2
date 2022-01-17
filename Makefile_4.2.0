@@ -57,8 +57,8 @@ LDFLAGS += -L$(SDKAPILIB) -lndk
 LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_app -lnapi_c_sysinfo
 LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_datetime -lnapi_c_kb -lnapi_c_power -lnapi_c_beeper -lnapi_c_timer
 LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_eth -lnapi_c_modem -lnapi_c_wifi -lnapi_c_wlm -lnapi_c_bt
-LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_net -lnapi_c_mdb -lnapi_c_externalmemory -lnapi_c_socket -lnapi_c_fs
-LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_ctlscard -lnapi_c_magcard -lnapi_c_smartcard -lnapi_c_scan
+LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_net -lnapi_c_externalmemory -lnapi_c_socket -lnapi_c_fs
+LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_ctlscard -lnapi_c_magcard -lnapi_c_smartcard
 LDFLAGS += -L$(SDKNAPILIB) -lnapi_c_crypto -lnapi_c_alg -lnapi_c_printer -lnapi_c_led -lnapi_c_display -lnapi_c_serialport
 
 LDFLAGS += -L$(SDKSYSLIB) -lssl -lcrypto -lcurl -lpthread -ldl -lz
@@ -69,8 +69,8 @@ LDFLAGS += -L$(LIBL2EMVDIR) -lemvl2 -lentrypoint -lbase
 LDFLAGS += -L$(LIBAPPDIR) -ltoms
 LDFLAGS += -L$(LIBAPPDIR) -lemvl3
 
-# model such as ME51R/ME51G/U100/sp600
-MODEL = ME51R
+# model such as ME51R/ME51G/U100/sp600, these are compiled by gcc4.2.0
+MODEL = GCC420
 
 # Application Name
 PARAMINI_NAME = BANKDEMO

@@ -1,5 +1,8 @@
 bankdemo by napi
 ====================================================
+Date: 2021/01/17 +0800
+remove mdb/scan link libraries
+====================================================
 Date: 2021/01/12 +0800
 added some link libraries
 changes include:
