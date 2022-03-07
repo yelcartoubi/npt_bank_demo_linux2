@@ -620,11 +620,13 @@ int RecordOneByOne(void)
 		nRet = DispTransRecord(&stTransRecord, VIEWRECORD_ATTR_ONEBYONE);
 		switch(nRet)
 		{
+		case KEY_STAR:
 		case KEY_LEFT:
 		case KEY_ENTER:
 			ASSERT(FetchPreviousRecord(&stTransRecord));
 			break;
 		case KEY_RIGHT:
+		case KEY_SHARP:
 			ASSERT(FetchNextRecord(&stTransRecord));
 			break;
 		case 0:

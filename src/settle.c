@@ -52,9 +52,19 @@ int Settle(char cFlag)
 	char szSettleDateTime[5+1];
 	char cProcStep = 0;
 	char szContent[100]={0};
+	char sKSN[10+1] = {0};
+	int nMainKeyNo = 0;
 
 	memset(&stSystem, 0, sizeof(STSYSTEM));
 	memset(szContent, 0, sizeof(szContent));
+
+	if(GetVarKeySystemType() == KS_DUKPT)	//DUKPT
+	{
+		GetVarMainKeyNo(&nMainKeyNo);
+		PubSetCurrentMainKeyIndex(nMainKeyNo);
+		PubGetDukptKSN(sKSN);
+		TRACE_HEX(sKSN, 10, "sKSN: ");
+	}
 
 	GetRecordNum(&nRecordNum);
 	if(nRecordNum == 0)
@@ -154,6 +164,9 @@ SETTLE_TAIL:
 		ASSERT_HANGUP_FAIL(SetField(41, stSystem.szPosID, 8));
 		ASSERT_HANGUP_FAIL(SetField(42, stSystem.szShopID, 15));
 		ASSERT_HANGUP_FAIL(SetField(49, CURRENCY_CODE, 3));
+		if(GetVarKeySystemType() == KS_DUKPT) {
+			ASSERT_FAIL(SetField(57, sKSN, 10));
+		}
 		ASSERT_HANGUP_FAIL(SetField(60, stSystem.szBatchNum, 6));
 		ASSERT_HANGUP_FAIL(SetField(62, stSystem.szInvoice, 6));	
 		ASSERT_HANGUP_FAIL(SetField(63, (char *)&stAmtNumSettle, 33));

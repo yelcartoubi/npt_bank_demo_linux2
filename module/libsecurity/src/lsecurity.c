@@ -879,7 +879,7 @@ int PubDukptIncreaseKSN(void)
 	}
 	else
 	{
-		return APP_FAIL;
+		return PubIncDukptKSN_PINPAD(gnMainKeyIndex);
 	}
     PINPAD_TRACE_SECU("PubDukptIncreaseKSN SUCC");
 	return APP_SUCC;

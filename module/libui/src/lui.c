@@ -1862,6 +1862,7 @@ GETKEYCODE:
 		switch(nKey)
 		{
 		case KEY_F1:
+		case KEY_STAR:
 			if(nCurPos-nMaxLine*8 >= 0)
 			{
 				nCurPos -= nMaxLine*8;
@@ -1872,6 +1873,7 @@ GETKEYCODE:
 			}
 			break;
 		case KEY_F2:
+		case KEY_SHARP:
 		case KEY_ENTER:
 			if(nCurPos + nMaxLine*8 < nLen)
 			{
@@ -2676,14 +2678,14 @@ int PubSelectYesOrNo(char *pszTitle, char *pszStr, char* SelMenu[], char *pcSele
 			{
 				return APP_QUIT;
 			}
-			else if(nKey == KEY_F1 )
+			else if(nKey == KEY_F1 || nKey == KEY_STAR)
 			{
 				if(nSelect == 0XFF)
 					nSelect = 1;
 				else
 					nSelect = (nSelect + 1)%2;
 			}
-			else if(nKey == KEY_F2)
+			else if(nKey == KEY_F2 || nKey == KEY_SHARP)
 			{
 				if(nSelect == 0XFF)
 					nSelect = 0;

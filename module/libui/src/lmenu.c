@@ -168,10 +168,12 @@ static void DispListItem( uint unX, uint unY, const char* pszStr, int nTimeOut, 
 		switch (nKey)
 		{
 		case KEY_F1:
+		case KEY_STAR:
 			if((nCurrentNo-nLineNum*2) >= 0)
 				nCurrentNo -= nLineNum*2;
 			break;
 		case KEY_F2:
+		case KEY_SHARP:
 			if((nCurrentNo+nLineNum*2) < nItemNum)
 				nCurrentNo += nLineNum*2;
 			break;
