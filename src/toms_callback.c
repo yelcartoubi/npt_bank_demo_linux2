@@ -1455,6 +1455,18 @@ void TOMS_SysReboot(void)
 
 TOMS_ERRCODE TOMS_SysAppInstall(const char *FilePath)
 {
+	int nVolPercent = 0;
+
+	CheckAutoReboot();
+	if (NAPI_SysGetVolPercent(&nVolPercent) == NAPI_OK)
+	{
+        if (nVolPercent && nVolPercent < 5) // 5: Power less than 5%
+		{
+			PubMsgDlg(tr("Warning"),tr("LOW BATTERY\nPLEASE CHARGE"), 1, 10);
+			return APP_SUCC;
+		}
+	}
+
     if (strstr(FilePath, ".NLD") == NULL || NAPI_AppInstall(FilePath) != NAPI_OK)
     {
         return TOMS_FAIL;
