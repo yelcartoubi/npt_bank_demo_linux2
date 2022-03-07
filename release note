@@ -1,5 +1,8 @@
 bankdemo by napi
 ====================================================
+Date: 2021/03/07 +0800
+update Toms lib: Optimize internal functional logic
+====================================================
 Date: 2021/01/17 +0800
 remove mdb/scan link libraries
 ====================================================
