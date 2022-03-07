@@ -1,5 +1,13 @@
 bankdemo by napi
 ====================================================
+Date: 2022/03/07 +0800
+update Newland_L3_configuration.xml and tag DF13 for Refund
+changes include:
+1. AID CLSS MIR: add tag 1F811E
+2. according to the M/Chip Requirements a refund should lead to an AAC(test case:MCD01.Test.02.Scenario.02)
+Func_AFTER_FINAL_SELECT:
+TxnL3SetData(_EMVPARAM_DF13_TACDENIAL, "\xFF\xFF\xFF\xFF\xFF", 5);
+====================================================
 Date: 2021/03/07 +0800
 update Toms lib: Optimize internal functional logic
 ====================================================

@@ -245,6 +245,8 @@ int PerformTransaction(char *pszTitle, STSYSTEM *pstSystem, int *pnInputMode)
     //To be done 9F03 (Cash back)
     AddTransType(pstSystem, szTlvList, &nTlvLen);
 
+	SetCurTransType(pstSystem->cTransType);
+
     PubGetCurrentDatetime(szDate);
 
     PubAscToHex((uchar* )szDate+2, 6, 0, (uchar*)szTmpData);
@@ -292,7 +294,7 @@ int PerformTransaction(char *pszTitle, STSYSTEM *pstSystem, int *pnInputMode)
         return APP_FAIL;
         break;
     case L3_TXN_APPROVED:
-		// for paywave should not be trated as a "decline" of the refund
+		// for paywave should not be treated as a "decline" of the refund
 		if (pstSystem->cTransType == TRANS_REFUND && CheckIsPayWave(pstSystem) == YES) {
 			break;
 		}

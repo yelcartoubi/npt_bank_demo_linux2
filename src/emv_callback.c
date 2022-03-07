@@ -24,6 +24,7 @@ static char gszExpriryDate[4+1] = {0};
 static char gszCvv[4+1] = {0};
 
 static char gcIsCreateVirtualKb = NO;
+static char gcTransType = 0xFF;
 
 extern int ActivePIN(L3_PIN_TYPE type, char *pszPan, publicKey *pinPK);
 extern int PubGetKeySystemType();
@@ -674,11 +675,15 @@ int Func_AFTER_FINAL_SELECT(L3_CARD_INTERFACE interface, unsigned char *aid, int
 	}
 	else //CONTACTLESS
 	{
-		if (0 == memcmp(aid, "\xA0\x00\x00\x03\x33", 5))
+		if (memcmp(aid, "\xA0\x00\x00\x03\x33", 5) == 0)
 		{
 		    TxnL3SetData(_EMVPARAM_5F2A_TRANSCCODE, "\x01\x56", 2);
 		}
-	    
+		else if (memcmp(aid, "\xA0\x00\x00\x00\x04", 5) == 0 && gcTransType == TRANS_REFUND)
+		{
+			// according to the M/Chip Requirements a refund should lead to an AAC(test case:MCD01.Test.02.Scenario.02)
+			TxnL3SetData(_EMVPARAM_DF13_TACDENIAL, "\xFF\xFF\xFF\xFF\xFF", 5);
+		}
 	}
 	
 	return 0;
@@ -1656,5 +1661,10 @@ int PinPad_PerformTransaction(char *pszInput, int nInPutLen, L3_TXN_RES *res, ST
 void ResetVirtualkbStatus()
 {
 	gcIsCreateVirtualKb = NO;
+}
+
+void SetCurTransType(char cTransType)
+{
+	gcTransType = cTransType;
 }
 

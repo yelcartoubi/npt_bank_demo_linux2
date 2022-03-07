@@ -76,7 +76,7 @@ MODEL = GCC494
 # Application Name
 PARAMINI_NAME = BANKDEMO
 # Application Version
-PARAMINI_VER = 1.0.9
+PARAMINI_VER = 1.0.10
 
 # Generated program name
 NAME = main

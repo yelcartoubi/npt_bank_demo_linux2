@@ -26,6 +26,7 @@ extern void EmvClrOnlinePin();
 extern int PinPad_PerformTransaction(char *pszInput, int nInPutLen, L3_TXN_RES *res, STSYSTEM *pstSystem, char *pszResPonseCode);
 
 extern void ResetVirtualkbStatus();
+extern void SetCurTransType(char cTransType);
 
 #endif
 
